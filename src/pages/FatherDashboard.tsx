@@ -1,0 +1,116 @@
+import type { FamilyData } from '../data/mockData';
+
+interface FatherDashboardProps {
+  familyData: FamilyData;
+}
+
+export default function FatherDashboard({ familyData }: FatherDashboardProps) {
+  // Calculate total family balance (sum of all kids' saved amounts)
+  const totalBalance = familyData.kids.reduce((sum, kid) => sum + kid.saved, 0);
+
+  return (
+    <div className="mx-auto w-full max-w-3xl space-y-8 font-sans text-right">
+      {/* Father Header Card */}
+      <div className="relative bg-white/5 backdrop-blur-xl border border-white/10 shadow-2xl rounded-3xl p-6 md:p-8 overflow-hidden">
+        {/* Subtle glowing decorative background circles */}
+        <div className="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-orange-500/10 blur-2xl"></div>
+        
+        <div className="flex flex-col md:flex-row-reverse md:items-center md:justify-between gap-4">
+          <div>
+            <h2 className="text-sm font-semibold text-orange-400">مرحباً بك، ولي الأمر</h2>
+            <h3 className="text-3xl font-black text-white mt-1">{familyData.father.name}</h3>
+          </div>
+          <div className="flex flex-col items-end md:items-start text-right md:text-left mt-4 md:mt-0">
+            <span className="text-xs text-slate-400">إجمالي مدخرات الأبناء</span>
+            <span className="text-4xl font-extrabold text-white mt-1">
+              {totalBalance} <span className="text-lg font-bold text-orange-400">ريال</span>
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Kids Summary Section */}
+      <div className="space-y-4">
+        <h3 className="text-xs font-bold uppercase tracking-wider text-orange-400">
+          ملخص حسابات الأبناء
+        </h3>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Kid 1 - Khalid */}
+          <div className="bg-white/5 backdrop-blur-xl border border-white/10 shadow-2xl rounded-3xl p-5 space-y-4">
+            <div className="flex items-center justify-between">
+              <span className="rounded-full bg-rose-500/10 border border-rose-500/20 px-2.5 py-0.5 text-xs font-semibold text-rose-400">
+                يحتاج اهتمام ⚠️
+              </span>
+              <h4 className="text-xl font-bold text-white">خالد</h4>
+            </div>
+            <div className="space-y-2 text-sm text-slate-300">
+              <div className="flex justify-between">
+                <span>20%</span>
+                <span>نسبة الادخار:</span>
+              </div>
+              <div className="flex justify-between">
+                <span>100 ريال</span>
+                <span>المدخرات الحالية:</span>
+              </div>
+              <div className="flex justify-between">
+                <span>500 ريال</span>
+                <span>المصروف الأسبوعي:</span>
+              </div>
+            </div>
+            <div className="h-1.5 w-full rounded-full bg-slate-800/50">
+              <div className="h-1.5 rounded-full bg-rose-500" style={{ width: '20%' }}></div>
+            </div>
+          </div>
+
+          {/* Kid 2 - Salem */}
+          <div className="bg-white/5 backdrop-blur-xl border border-white/10 shadow-2xl rounded-3xl p-5 space-y-4">
+            <div className="flex items-center justify-between">
+              <span className="rounded-full bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-0.5 text-xs font-semibold text-emerald-400">
+                أداء ممتاز 🌟
+              </span>
+              <h4 className="text-xl font-bold text-white">سالم</h4>
+            </div>
+            <div className="space-y-2 text-sm text-slate-300">
+              <div className="flex justify-between">
+                <span>60%</span>
+                <span>نسبة الادخار:</span>
+              </div>
+              <div className="flex justify-between">
+                <span>60 ريال</span>
+                <span>المدخرات الحالية:</span>
+              </div>
+              <div className="flex justify-between">
+                <span>100 ريال</span>
+                <span>المصروف الأسبوعي:</span>
+              </div>
+            </div>
+            <div className="h-1.5 w-full rounded-full bg-slate-800/50">
+              <div className="h-1.5 rounded-full bg-emerald-500" style={{ width: '60%' }}></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* AI Coach Panel */}
+      <div className="bg-white/5 backdrop-blur-xl border border-orange-500/50 shadow-lg shadow-orange-500/10 rounded-3xl p-6 space-y-6">
+        <div className="flex items-center justify-end gap-2 border-b border-white/5 pb-4">
+          <h3 className="text-xl font-bold text-white">المستشار المالي الذكي 🤖</h3>
+        </div>
+
+        <p className="text-slate-200 text-base leading-relaxed">
+          تحليل السلوك: لاحظنا أن خالد قام بصرف معظم ميزانيته على الألعاب. نقترح تكليفه بمهمة (المساعدة في أعمال المنزل) بمكافأة 20 ريال لتحسين سلوكه المالي.
+        </p>
+
+        <div className="flex flex-row-reverse gap-4 pt-2">
+          <button className="flex-1 bg-orange-500 hover:bg-orange-600 active:scale-[0.98] text-white font-bold py-3 px-6 rounded-2xl transition-all duration-200 shadow-lg shadow-orange-500/20 text-center">
+            اعتماد المهمة ✅
+          </button>
+          <button className="flex-1 border border-white/20 hover:bg-white/10 active:scale-[0.98] text-white font-semibold py-3 px-6 rounded-2xl transition-all duration-200 text-center">
+            رفض ❌
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
