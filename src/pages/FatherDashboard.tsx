@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import type { FamilyData } from '../data/mockData';
 
 interface FatherDashboardProps {
@@ -7,6 +8,10 @@ interface FatherDashboardProps {
 export default function FatherDashboard({ familyData }: FatherDashboardProps) {
   // Calculate total family balance (sum of all kids' saved amounts)
   const totalBalance = familyData.kids.reduce((sum, kid) => sum + kid.saved, 0);
+
+  // States for reward customization
+  const [rewardAmount, setRewardAmount] = useState(20);
+  const [rewardType, setRewardType] = useState<'cash' | 'points'>('cash');
 
   return (
     <div className="mx-auto w-full max-w-3xl space-y-8 font-sans text-right">
@@ -99,14 +104,62 @@ export default function FatherDashboard({ familyData }: FatherDashboardProps) {
         </div>
 
         <p className="text-slate-200 text-base leading-relaxed">
-          تحليل السلوك: لاحظنا أن خالد قام بصرف معظم ميزانيته على الألعاب. نقترح تكليفه بمهمة (المساعدة في أعمال المنزل) بمكافأة 20 ريال لتحسين سلوكه المالي.
+          تحليل السلوك: لاحظنا أن خالد قام بصرف معظم ميزانيته على الألعاب. نقترح تكليفه بمهمة (المساعدة في أعمال المنزل) بالمكافأة التالية:
         </p>
 
+        {/* Reward Control Row */}
+        <div className="flex flex-row-reverse items-center justify-between gap-4 p-4 bg-white/5 border border-white/10 rounded-2xl">
+          <span className="text-sm font-semibold text-slate-300">المكافأة المقترحة:</span>
+          
+          <div className="flex items-center gap-3">
+            {/* Amount Input */}
+            <input
+              type="number"
+              value={rewardAmount}
+              onChange={(e) => setRewardAmount(Number(e.target.value))}
+              min="1"
+              className="w-20 bg-transparent border border-white/10 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 rounded-xl px-2 py-1.5 text-center text-white font-bold outline-none transition-all duration-200"
+            />
+            
+            {/* Segmented Control Type Toggle */}
+            <div className="flex bg-white/5 border border-white/10 p-1 rounded-xl">
+              <button
+                type="button"
+                onClick={() => setRewardType('points')}
+                className={`px-3 py-1 text-xs font-bold rounded-lg transition-all duration-200 ${
+                  rewardType === 'points'
+                    ? 'bg-orange-500 text-white shadow-md shadow-orange-500/10'
+                    : 'text-slate-300 hover:text-white hover:bg-white/5'
+                }`}
+              >
+                نقطة
+              </button>
+              <button
+                type="button"
+                onClick={() => setRewardType('cash')}
+                className={`px-3 py-1 text-xs font-bold rounded-lg transition-all duration-200 ${
+                  rewardType === 'cash'
+                    ? 'bg-orange-500 text-white shadow-md shadow-orange-500/10'
+                    : 'text-slate-300 hover:text-white hover:bg-white/5'
+                }`}
+              >
+                ريال
+              </button>
+            </div>
+          </div>
+        </div>
+
         <div className="flex flex-row-reverse gap-4 pt-2">
-          <button className="flex-1 bg-orange-500 hover:bg-orange-600 active:scale-[0.98] text-white font-bold py-3 px-6 rounded-2xl transition-all duration-200 shadow-lg shadow-orange-500/20 text-center">
+          <button 
+            type="button"
+            className="flex-1 bg-orange-500 hover:bg-orange-600 active:scale-[0.98] text-white font-bold py-3 px-6 rounded-2xl transition-all duration-200 shadow-lg shadow-orange-500/20 text-center"
+          >
             اعتماد المهمة ✅
           </button>
-          <button className="flex-1 border border-white/20 hover:bg-white/10 active:scale-[0.98] text-white font-semibold py-3 px-6 rounded-2xl transition-all duration-200 text-center">
+          <button 
+            type="button"
+            className="flex-1 border border-white/20 hover:bg-white/10 active:scale-[0.98] text-white font-semibold py-3 px-6 rounded-2xl transition-all duration-200 text-center"
+          >
             رفض ❌
           </button>
         </div>
