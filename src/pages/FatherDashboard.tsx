@@ -11,7 +11,8 @@ export default function FatherDashboard({ familyData }: FatherDashboardProps) {
 
   // States for reward customization
   const [rewardAmount, setRewardAmount] = useState(20);
-  const [rewardType, setRewardType] = useState<'cash' | 'points'>('cash');
+  const [rewardType, setRewardType] = useState<'cash' | 'points' | 'custom'>('cash');
+  const [customRewardText, setCustomRewardText] = useState('');
 
   return (
     <div className="mx-auto w-full max-w-3xl space-y-8 font-sans text-right">
@@ -108,25 +109,46 @@ export default function FatherDashboard({ familyData }: FatherDashboardProps) {
         </p>
 
         {/* Reward Control Row */}
-        <div className="flex flex-row-reverse items-center justify-between gap-4 p-4 bg-white/5 border border-white/10 rounded-2xl">
+        <div className="flex flex-col sm:flex-row-reverse sm:items-center justify-between gap-4 p-4 bg-white/5 border border-white/10 rounded-2xl">
           <span className="text-sm font-semibold text-slate-300">المكافأة المقترحة:</span>
           
-          <div className="flex items-center gap-3">
-            {/* Amount Input */}
-            <input
-              type="number"
-              value={rewardAmount}
-              onChange={(e) => setRewardAmount(Number(e.target.value))}
-              min="1"
-              className="w-20 bg-transparent border border-white/10 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 rounded-xl px-2 py-1.5 text-center text-white font-bold outline-none transition-all duration-200"
-            />
+          <div className="flex flex-1 sm:flex-initial items-center gap-3 justify-end w-full sm:w-auto">
+            {/* Conditional Input Rendering */}
+            {rewardType === 'custom' ? (
+              <input
+                type="text"
+                value={customRewardText}
+                onChange={(e) => setCustomRewardText(e.target.value)}
+                placeholder="مثال: ساعتين لعب إضافية بالسوني..."
+                className="flex-1 sm:w-64 bg-transparent border border-white/10 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 rounded-xl px-3 py-1.5 text-right text-white font-semibold outline-none transition-all duration-200 text-sm"
+              />
+            ) : (
+              <input
+                type="number"
+                value={rewardAmount}
+                onChange={(e) => setRewardAmount(Number(e.target.value))}
+                min="1"
+                className="w-20 bg-transparent border border-white/10 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 rounded-xl px-2 py-1.5 text-center text-white font-bold outline-none transition-all duration-200"
+              />
+            )}
             
             {/* Segmented Control Type Toggle */}
-            <div className="flex bg-white/5 border border-white/10 p-1 rounded-xl">
+            <div className="grid grid-cols-3 gap-1 bg-white/5 border border-white/10 p-1 rounded-xl w-56 shrink-0">
+              <button
+                type="button"
+                onClick={() => setRewardType('custom')}
+                className={`px-2 py-1 text-[11px] font-bold rounded-lg transition-all duration-200 ${
+                  rewardType === 'custom'
+                    ? 'bg-orange-500 text-white shadow-md shadow-orange-500/10'
+                    : 'text-slate-300 hover:text-white hover:bg-white/5'
+                }`}
+              >
+                مخصصة
+              </button>
               <button
                 type="button"
                 onClick={() => setRewardType('points')}
-                className={`px-3 py-1 text-xs font-bold rounded-lg transition-all duration-200 ${
+                className={`px-2 py-1 text-[11px] font-bold rounded-lg transition-all duration-200 ${
                   rewardType === 'points'
                     ? 'bg-orange-500 text-white shadow-md shadow-orange-500/10'
                     : 'text-slate-300 hover:text-white hover:bg-white/5'
@@ -137,7 +159,7 @@ export default function FatherDashboard({ familyData }: FatherDashboardProps) {
               <button
                 type="button"
                 onClick={() => setRewardType('cash')}
-                className={`px-3 py-1 text-xs font-bold rounded-lg transition-all duration-200 ${
+                className={`px-2 py-1 text-[11px] font-bold rounded-lg transition-all duration-200 ${
                   rewardType === 'cash'
                     ? 'bg-orange-500 text-white shadow-md shadow-orange-500/10'
                     : 'text-slate-300 hover:text-white hover:bg-white/5'
