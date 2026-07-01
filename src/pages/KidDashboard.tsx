@@ -46,10 +46,10 @@ export default function KidDashboard({ kid }: KidDashboardProps) {
 
       {/* Content Section */}
       <div className="p-6 space-y-6">
-        {/* Virtual Village Section */}
+        {/* Virtual Castle Section */}
         <div className="space-y-3">
           <h3 className="text-right text-xs font-bold uppercase tracking-wider text-slate-400">
-            القرية الافتراضية الخاصة بك
+            القلعة الافتراضية الخاصة بك
           </h3>
 
           {isThriving ? (
@@ -63,10 +63,10 @@ export default function KidDashboard({ kid }: KidDashboardProps) {
                 </div>
                 <div className="space-y-1">
                   <h4 className="text-lg font-bold text-emerald-300 flex items-center justify-end gap-1">
-                    <span>Thriving Village 🏰✨</span>
+                    <span>Thriving Castle 🏰✨</span>
                   </h4>
                   <p className="text-xs text-emerald-400">
-                    عمل رائع! ادخارك تخطى 50% وقريتك الآن في أبهى صورها وتنبض بالحياة!
+                    عمل رائع! ادخارك تخطى 50% وقلعتك الآن في أبهى صورها وتنبض بالحياة!
                   </p>
                 </div>
               </div>
@@ -85,10 +85,10 @@ export default function KidDashboard({ kid }: KidDashboardProps) {
                 </div>
                 <div className="space-y-1">
                   <h4 className="text-lg font-bold text-amber-400 flex items-center justify-end gap-1">
-                    <span>Basic Village 🛖</span>
+                    <span>Basic Castle 🛖</span>
                   </h4>
                   <p className="text-xs text-amber-500">
-                    ادخر المزيد من مصروفك لتطوير قريتك وتحويلها إلى قلعة ذهبية مزدهرة!
+                    ادخر المزيد من مصروفك لتطوير قلعتك وتحويلها إلى قلعة ذهبية مزدهرة!
                   </p>
                 </div>
               </div>
