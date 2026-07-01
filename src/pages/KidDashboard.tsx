@@ -9,15 +9,15 @@ export default function KidDashboard({ kid }: KidDashboardProps) {
   const isThriving = savingPercentage >= 50;
 
   return (
-    <div className="mx-auto w-full max-w-md overflow-hidden bg-white/5 backdrop-blur-xl border border-white/10 shadow-2xl rounded-3xl text-slate-100 transition-all duration-300 hover:shadow-orange-950/10">
+    <div className="mx-auto w-full max-w-md overflow-hidden bg-[#111C2E]/60 backdrop-blur-2xl border border-white/10 shadow-2xl rounded-3xl text-white transition-all duration-300 hover:shadow-orange-950/10">
       {/* Header Section */}
-      <div className="relative bg-gradient-to-br from-orange-500/90 to-amber-600/90 px-6 py-8 text-right font-sans border-b border-white/10">
+      <div className="relative bg-gradient-to-br from-orange-500 to-amber-600 px-6 py-8 text-right font-sans border-b border-white/10">
         {/* Subtle decorative background shapes */}
         <div className="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-orange-400 opacity-20 blur-xl"></div>
         <div className="absolute -left-10 -bottom-10 h-32 w-32 rounded-full bg-amber-400 opacity-20 blur-xl"></div>
 
         <div className="flex items-center justify-between">
-          <span className="rounded-full bg-white/20 px-3 py-1 text-xs font-semibold backdrop-blur-md">
+          <span className="rounded-full bg-white/20 px-3 py-1 text-xs font-semibold backdrop-blur-md text-white">
             العمر: {kid.age} سنوات
           </span>
           <h2 className="text-2xl font-black tracking-wide text-white">
@@ -48,12 +48,12 @@ export default function KidDashboard({ kid }: KidDashboardProps) {
       <div className="p-6 space-y-6">
         {/* Virtual Castle Section */}
         <div className="space-y-3">
-          <h3 className="text-right text-xs font-bold uppercase tracking-wider text-slate-455 text-slate-400">
+          <h3 className="text-right text-xs font-bold uppercase tracking-wider text-orange-400">
             القلعة الافتراضية الخاصة بك
           </h3>
 
           {isThriving ? (
-            <div className="relative overflow-hidden bg-white/5 backdrop-blur-xl border border-white/10 shadow-2xl rounded-3xl p-5 text-right transition-transform hover:scale-[1.02] duration-300">
+            <div className="relative overflow-hidden bg-[#111C2E]/60 backdrop-blur-2xl border border-white/10 shadow-2xl rounded-3xl p-5 text-right transition-transform hover:scale-[1.02] duration-300">
               <div className="absolute -left-4 -top-4 text-6xl opacity-25">🏰</div>
               {/* Thriving subtle glow background */}
               <div className="absolute right-0 top-0 -z-10 h-full w-24 bg-emerald-500/10 blur-xl"></div>
@@ -68,7 +68,7 @@ export default function KidDashboard({ kid }: KidDashboardProps) {
                   <h4 className="text-lg font-bold text-emerald-400 flex items-center justify-end gap-1">
                     <span>Thriving Castle 🏰✨</span>
                   </h4>
-                  <p className="text-xs text-slate-300">
+                  <p className="text-xs text-slate-200">
                     عمل رائع! ادخارك تخطى 50% وقلعتك الآن في أبهى صورها وتنبض بالحياة!
                   </p>
                 </div>
@@ -78,7 +78,7 @@ export default function KidDashboard({ kid }: KidDashboardProps) {
               </div>
             </div>
           ) : (
-            <div className="relative overflow-hidden bg-white/5 backdrop-blur-xl border border-white/10 shadow-2xl rounded-3xl p-5 text-right transition-transform hover:scale-[1.02] duration-300">
+            <div className="relative overflow-hidden bg-[#111C2E]/60 backdrop-blur-2xl border border-white/10 shadow-2xl rounded-3xl p-5 text-right transition-transform hover:scale-[1.02] duration-300">
               <div className="absolute -left-4 -top-4 text-6xl opacity-20">🛖</div>
               {/* Basic subtle orange glow background */}
               <div className="absolute right-0 top-0 -z-10 h-full w-24 bg-amber-500/10 blur-xl"></div>
@@ -90,16 +90,16 @@ export default function KidDashboard({ kid }: KidDashboardProps) {
                   </span>
                 </div>
                 <div className="space-y-1">
-                  <h4 className="text-lg font-bold text-amber-455 text-amber-400 flex items-center justify-end gap-1">
+                  <h4 className="text-lg font-bold text-orange-400 flex items-center justify-end gap-1">
                     <span>Basic Castle 🛖</span>
                   </h4>
-                  <p className="text-xs text-slate-300">
+                  <p className="text-xs text-slate-200">
                     ادخر المزيد من مصروفك لتطوير قلعتك وتحويلها إلى قلعة ذهبية مزدهرة!
                   </p>
                 </div>
               </div>
               <div className="mt-4 h-2 w-full rounded-full bg-slate-800/50">
-                <div className="h-2 rounded-full bg-gradient-to-r from-amber-600 to-amber-455 to-amber-400 transition-all duration-500" style={{ width: `${savingPercentage}%` }}></div>
+                <div className="h-2 rounded-full bg-gradient-to-r from-amber-600 to-amber-450 to-amber-400 transition-all duration-500" style={{ width: `${savingPercentage}%` }}></div>
               </div>
             </div>
           )}
@@ -107,22 +107,22 @@ export default function KidDashboard({ kid }: KidDashboardProps) {
 
         {/* Transactions Section */}
         <div className="space-y-3">
-          <h3 className="text-right text-xs font-bold uppercase tracking-wider text-slate-400">
+          <h3 className="text-right text-xs font-bold uppercase tracking-wider text-orange-400">
             المعاملات الأخيرة
           </h3>
 
-          <div className="divide-y divide-white/5 overflow-hidden bg-white/5 backdrop-blur-xl border border-white/10 shadow-2xl rounded-3xl">
+          <div className="divide-y divide-white/5 overflow-hidden bg-[#111C2E]/60 backdrop-blur-2xl border border-white/10 shadow-2xl rounded-3xl">
             {kid.transactions.map((tx) => (
               <div key={tx.id} className="flex items-center justify-between p-4 transition-colors hover:bg-white/5">
                 <div className="text-left">
                   <span className={`font-mono text-base font-bold ${tx.type === 'deposit' ? 'text-emerald-400' : 'text-rose-400'}`}>
                     {tx.type === 'deposit' ? '+' : '-'}{tx.amount} ريال
                   </span>
-                  <span className="block text-[10px] text-slate-455 text-slate-400 mt-0.5">{tx.date}</span>
+                  <span className="block text-[10px] text-slate-400 mt-0.5">{tx.date}</span>
                 </div>
                 <div className="text-right">
                   <span className="font-semibold text-sm text-white">{tx.title}</span>
-                  <span className="block text-[10px] text-slate-400 mt-0.5">
+                  <span className="block text-[10px] text-slate-300 mt-0.5">
                     {tx.type === 'deposit' ? 'إيداع 💸' : 'سحب 💳'}
                   </span>
                 </div>
