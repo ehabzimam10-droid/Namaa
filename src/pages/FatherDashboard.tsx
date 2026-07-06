@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import type { FamilyData } from '../data/mockData';
+import type { FamilyData, FamilyProject } from '../data/mockData';
 
 interface FatherDashboardProps {
   familyData: FamilyData;
@@ -11,10 +11,40 @@ export default function FatherDashboard({ familyData }: FatherDashboardProps) {
   // Calculate total family balance (sum of all kids' saved amounts)
   const totalBalance = familyData.kids.reduce((sum, kid) => sum + kid.saved, 0);
 
+  // States for projects
+  const [projects, setProjects] = useState<FamilyProject[]>(familyData.projects || []);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [newProjTitle, setNewProjTitle] = useState('');
+  const [newProjRoi, setNewProjRoi] = useState<number>(10);
+  const [newProjRequired, setNewProjRequired] = useState<number>(1000);
+  const [newProjInvested, setNewProjInvested] = useState<number>(0);
+
   // States for reward customization
   const [rewardAmount, setRewardAmount] = useState(20);
   const [rewardType, setRewardType] = useState<'cash' | 'points' | 'custom'>('cash');
   const [customRewardText, setCustomRewardText] = useState('');
+
+  const handleAddProject = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newProjTitle.trim()) return;
+
+    const newProject: FamilyProject = {
+      id: `project_${Date.now()}`,
+      title: newProjTitle,
+      totalRequired: newProjRequired,
+      currentInvested: newProjInvested,
+      roiPercentage: newProjRoi,
+    };
+
+    setProjects([newProject, ...projects]);
+    
+    // Reset Form
+    setNewProjTitle('');
+    setNewProjRoi(10);
+    setNewProjRequired(1000);
+    setNewProjInvested(0);
+    setShowAddForm(false);
+  };
 
   return (
     <div className="mx-auto w-full max-w-3xl space-y-8 font-sans text-right">
@@ -194,6 +224,134 @@ export default function FatherDashboard({ familyData }: FatherDashboardProps) {
           >
             رفض ❌
           </button>
+        </div>
+      </div>
+
+      {/* Family Investments Section */}
+      <div className="bg-white/5 backdrop-blur-xl border border-white/10 shadow-2xl rounded-3xl p-6 space-y-6">
+        <div className="flex flex-row-reverse items-center justify-between border-b border-white/5 pb-4">
+          <h3 className="text-xl font-bold text-white">مشاريع العائلة الاستثمارية 📈</h3>
+          <button
+            onClick={() => setShowAddForm(!showAddForm)}
+            className="bg-gradient-to-r from-[#8c7355] to-[#009639] hover:from-[#9c8466] hover:to-[#00a840] text-white text-xs font-bold px-4 py-2 rounded-xl transition-all duration-300 transform active:scale-95 shadow-md flex items-center gap-1"
+          >
+            إضافة مشروع جديد ➕
+          </button>
+        </div>
+
+        {/* Add Project Form (Interactive & Sleek) */}
+        {showAddForm && (
+          <form onSubmit={handleAddProject} className="bg-white/5 border border-white/10 p-5 rounded-2xl space-y-4">
+            <h4 className="text-sm font-bold text-orange-400 text-right">إنشاء مشروع استثماري جديد</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-right">
+              <div className="space-y-1">
+                <label className="block text-xs text-slate-400">اسم المشروع</label>
+                <input
+                  type="text"
+                  required
+                  value={newProjTitle}
+                  onChange={(e) => setNewProjTitle(e.target.value)}
+                  placeholder="مثال: مشروع آلة قهوة ☕"
+                  className="w-full bg-[#111C2E]/60 border border-white/10 focus:border-[#8c7355] focus:ring-1 focus:ring-[#8c7355] rounded-xl px-3 py-2 text-right text-white text-sm outline-none transition-all"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="block text-xs text-slate-400">العائد المتوقع (ROI %)</label>
+                <input
+                  type="number"
+                  required
+                  min="0"
+                  max="100"
+                  value={newProjRoi}
+                  onChange={(e) => setNewProjRoi(Number(e.target.value))}
+                  placeholder="10"
+                  className="w-full bg-[#111C2E]/60 border border-white/10 focus:border-[#8c7355] focus:ring-1 focus:ring-[#8c7355] rounded-xl px-3 py-2 text-right text-white text-sm outline-none transition-all"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="block text-xs text-slate-400">المبلغ المطلوب (ريال)</label>
+                <input
+                  type="number"
+                  required
+                  min="1"
+                  value={newProjRequired}
+                  onChange={(e) => setNewProjRequired(Number(e.target.value))}
+                  placeholder="1000"
+                  className="w-full bg-[#111C2E]/60 border border-white/10 focus:border-[#8c7355] focus:ring-1 focus:ring-[#8c7355] rounded-xl px-3 py-2 text-right text-white text-sm outline-none transition-all"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="block text-xs text-slate-400">المبلغ المستثمر حالياً (ريال)</label>
+                <input
+                  type="number"
+                  required
+                  min="0"
+                  max={newProjRequired}
+                  value={newProjInvested}
+                  onChange={(e) => setNewProjInvested(Number(e.target.value))}
+                  placeholder="200"
+                  className="w-full bg-[#111C2E]/60 border border-white/10 focus:border-[#8c7355] focus:ring-1 focus:ring-[#8c7355] rounded-xl px-3 py-2 text-right text-white text-sm outline-none transition-all"
+                />
+              </div>
+            </div>
+            <div className="flex gap-3 justify-end pt-2">
+              <button
+                type="submit"
+                className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-5 py-2 rounded-xl text-xs transition-all active:scale-95"
+              >
+                حفظ المشروع 💾
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowAddForm(false)}
+                className="border border-white/20 hover:bg-white/5 text-slate-300 px-5 py-2 rounded-xl text-xs transition-all"
+              >
+                إلغاء ❌
+              </button>
+            </div>
+          </form>
+        )}
+
+        {/* Projects List */}
+        <div className="space-y-4">
+          {projects.map((project) => {
+            const percentage = Math.min(Math.round((project.currentInvested / project.totalRequired) * 100), 100);
+            return (
+              <div
+                key={project.id}
+                className="relative overflow-hidden bg-white/5 border border-white/10 rounded-2xl p-5 text-right transition-all hover:scale-[1.01] duration-300 flex flex-col md:flex-row-reverse justify-between items-start md:items-center gap-4"
+              >
+                {/* Visual copper glow */}
+                <div className="absolute right-0 top-0 -z-10 h-full w-24 bg-[#8c7355]/5 blur-xl"></div>
+                
+                <div className="space-y-2 flex-1 w-full">
+                  <div className="flex flex-row-reverse items-center justify-between">
+                    <h4 className="text-lg font-bold text-white">{project.title}</h4>
+                    <span className="rounded-full bg-[#8c7355]/20 border border-[#8c7355]/30 px-3 py-1 text-xs font-bold text-orange-300">
+                      العائد المتوقع (ROI): {project.roiPercentage}%
+                    </span>
+                  </div>
+
+                  {/* Progress Info */}
+                  <div className="flex justify-between items-center text-xs text-slate-300 font-sans mt-2">
+                    <span className="font-bold text-orange-400">{percentage}% من الميزانية</span>
+                    <div>
+                      <span className="font-bold text-white">{project.currentInvested}</span>
+                      <span className="text-slate-400"> / {project.totalRequired} ريال</span>
+                    </div>
+                  </div>
+
+                  {/* Progress Bar */}
+                  <div className="h-2 w-full rounded-full bg-slate-800/60 overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-gradient-to-l from-[#8c7355] to-[#009639] transition-all duration-500"
+                      style={{ width: `${percentage}%` }}
+                    ></div>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>

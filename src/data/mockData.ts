@@ -20,9 +20,18 @@ export interface Father {
   name: string;
 }
 
+export interface FamilyProject {
+  id: string;
+  title: string;
+  totalRequired: number;
+  currentInvested: number;
+  roiPercentage: number;
+}
+
 export interface FamilyData {
   father: Father;
   kids: Kid[];
+  projects: FamilyProject[];
 }
 
 export const mockFamilyData: FamilyData = {
@@ -106,5 +115,14 @@ export const mockFamilyData: FamilyData = {
         },
       ],
     },
+  ],
+  projects: [
+    {
+      id: "project_coffee",
+      title: "مشروع آلة القهوة المنزلية ☕",
+      totalRequired: 1000,
+      currentInvested: 200,
+      roiPercentage: 10,
+    }
   ],
 };
