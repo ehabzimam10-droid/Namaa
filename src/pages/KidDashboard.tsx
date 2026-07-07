@@ -3,7 +3,7 @@ import { useApp } from '../context/AppContext';
 
 export default function KidDashboard() {
   const navigate = useNavigate();
-  const { kids, addDonation, profile } = useApp();
+  const { kids, addDonation, profile, projects } = useApp();
 
   const kid = kids.find(k => k.name === profile?.name) || kids.find(k => k.id === 'kid_salem') || kids[1];
   const savingPercentage = Math.round((kid.saved / kid.allowance) * 100);
@@ -149,6 +149,67 @@ export default function KidDashboard() {
             >
               <span>تبرع بـ 10 ريال 🤲</span>
             </button>
+          </div>
+        </div>
+
+        {/* Family Projects Contribution Section */}
+        <div className="space-y-3">
+          <h3 className="text-right text-xs font-bold uppercase tracking-wider text-orange-400">
+            المساهمة في مشاريع العائلة 📈
+          </h3>
+          
+          <div className="space-y-4">
+            {projects && projects.length > 0 ? (
+              projects.map((project) => {
+                const percentage = Math.min(Math.round((project.currentInvested / project.totalRequired) * 100), 100);
+                return (
+                  <div
+                    key={project.id}
+                    className="relative overflow-hidden bg-[#111C2E]/60 backdrop-blur-2xl border border-white/10 rounded-3xl p-5 text-right transition-all hover:scale-[1.02] duration-300"
+                  >
+                    <div className="absolute right-0 top-0 -z-10 h-full w-24 bg-[#8c7355]/10 blur-xl"></div>
+                    
+                    <div className="flex flex-row-reverse items-center justify-between gap-4">
+                      <div>
+                        <h4 className="font-bold text-sm text-white">{project.title}</h4>
+                        <span className="text-[10px] text-orange-300 block font-sans mt-1">
+                          العائد الاستثماري المتوقع: {project.roiPercentage}%
+                        </span>
+                      </div>
+                      
+                      <button
+                        type="button"
+                        onClick={() => {
+                          console.log('Invested');
+                          alert(`شكراً لمساهمتك بـ 50 ريال في ${project.title}! 💰✨`);
+                        }}
+                        className="bg-gradient-to-r from-[#8c7355] to-[#009639] hover:from-[#9c8466] hover:to-[#00a840] text-white text-[11px] font-extrabold px-3 py-2 rounded-xl transition-all duration-300 transform active:scale-95 shadow-md shrink-0"
+                      >
+                        ساهم بـ 50 ريال 💰
+                      </button>
+                    </div>
+
+                    {/* Progress Bar for Kids to see how close the project is to completion */}
+                    <div className="mt-4">
+                      <div className="flex justify-between items-center text-[10px] text-slate-400 font-sans mb-1">
+                        <span>{percentage}% مكتمل</span>
+                        <span>{project.currentInvested} / {project.totalRequired} ريال</span>
+                      </div>
+                      <div className="h-1.5 w-full rounded-full bg-slate-800/60 overflow-hidden">
+                        <div
+                          className="h-full rounded-full bg-gradient-to-l from-[#8c7355] to-[#009639] transition-all duration-500"
+                          style={{ width: `${percentage}%` }}
+                        ></div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            ) : (
+              <div className="bg-[#111C2E]/60 backdrop-blur-2xl border border-white/10 rounded-3xl p-5 text-center text-xs text-slate-400">
+                لا توجد مشاريع استثمارية عائلية نشطة حالياً.
+              </div>
+            )}
           </div>
         </div>
 

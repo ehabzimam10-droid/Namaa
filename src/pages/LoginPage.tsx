@@ -158,7 +158,7 @@ export default function LoginPage() {
       {/* Quick Login Section (Dev Mode Bypass) */}
       <div className="mt-6 pt-4 border-t border-white/5 space-y-3">
         <p className="text-center text-xs text-slate-400 font-sans mb-1">الدخول التجريبي السريع (تجاوز المصادقة) ⚡</p>
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-2 gap-2">
           <button
             type="button"
             onClick={() => {
@@ -167,7 +167,7 @@ export default function LoginPage() {
             }}
             className="bg-[#8c7355]/10 border border-[#8c7355]/20 hover:border-[#8c7355]/50 text-orange-300 text-[11px] font-bold py-2.5 rounded-xl transition-all active:scale-95 text-center focus:outline-none"
           >
-            دخول كولي أمر 👤
+            دخول كولي أمر (أبو خالد) 👤
           </button>
           
           <button
@@ -178,7 +178,18 @@ export default function LoginPage() {
             }}
             className="bg-emerald-500/10 border border-emerald-500/20 hover:border-emerald-500/50 text-emerald-300 text-[11px] font-bold py-2.5 rounded-xl transition-all active:scale-95 text-center focus:outline-none"
           >
-            دخول كابن 👦
+            دخول كابن (سالم) 👦
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setProfile({ name: 'خالد', role: 'kid' });
+              navigate('/kid');
+            }}
+            className="bg-rose-500/10 border border-rose-500/20 hover:border-rose-500/50 text-rose-300 text-[11px] font-bold py-2.5 rounded-xl transition-all active:scale-95 text-center focus:outline-none"
+          >
+            دخول كابن (خالد) 👦
           </button>
 
           <button

@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../utils/supabaseClient';
+import { useApp } from '../context/AppContext';
 
 export default function DeveloperDashboard() {
   const navigate = useNavigate();
+  const { setProfile } = useApp();
   const [loginLoading, setLoginLoading] = useState<string | null>(null);
   const [flags, setFlags] = useState({
     enableAIAssistant: true,
@@ -27,6 +29,10 @@ export default function DeveloperDashboard() {
         email,
         password: 'password123',
       });
+      
+      const name = email === 'father@namaa.com' ? 'أبو خالد' : email === 'salem@namaa.com' ? 'سالم' : 'خالد';
+      setProfile({ name, role });
+
       if (email === 'father@namaa.com') {
         navigate('/father');
       } else {
@@ -34,6 +40,9 @@ export default function DeveloperDashboard() {
       }
     } catch (err) {
       console.error(err);
+      const name = email === 'father@namaa.com' ? 'أبو خالد' : email === 'salem@namaa.com' ? 'سالم' : 'خالد';
+      setProfile({ name, role });
+
       if (email === 'father@namaa.com') {
         navigate('/father');
       } else {
