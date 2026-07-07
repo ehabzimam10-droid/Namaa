@@ -3,7 +3,7 @@ import { useApp } from '../context/AppContext';
 
 export default function KidDashboard() {
   const navigate = useNavigate();
-  const { kids, addDonation, profile, projects } = useApp();
+  const { kids, addDonation, profile, projects, investInProject } = useApp();
 
   const kid = kids.find(k => k.name === profile?.name) || kids.find(k => k.id === 'kid_salem') || kids[1];
   const savingPercentage = Math.round((kid.saved / kid.allowance) * 100);
@@ -179,11 +179,14 @@ export default function KidDashboard() {
                       
                       <button
                         type="button"
+                        disabled={kid.saved < 50}
                         onClick={() => {
-                          console.log('Invested');
+                          investInProject(profile?.name || '', project.id, 50);
                           alert(`شكراً لمساهمتك بـ 50 ريال في ${project.title}! 💰✨`);
                         }}
-                        className="bg-gradient-to-r from-[#8c7355] to-[#009639] hover:from-[#9c8466] hover:to-[#00a840] text-white text-[11px] font-extrabold px-3 py-2 rounded-xl transition-all duration-300 transform active:scale-95 shadow-md shrink-0"
+                        className={`bg-gradient-to-r from-[#8c7355] to-[#009639] hover:from-[#9c8466] hover:to-[#00a840] text-white text-[11px] font-extrabold px-3 py-2 rounded-xl transition-all duration-300 transform active:scale-95 shadow-md shrink-0 ${
+                          kid.saved < 50 ? 'opacity-40 cursor-not-allowed active:scale-100' : ''
+                        }`}
                       >
                         ساهم بـ 50 ريال 💰
                       </button>
