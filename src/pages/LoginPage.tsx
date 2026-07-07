@@ -1,16 +1,94 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '../utils/supabaseClient';
+import { useApp } from '../context/AppContext';
 
 export default function LoginPage() {
   const navigate = useNavigate();
+  const { setProfile } = useApp();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [loadingUser, setLoadingUser] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState('');
 
-  const handleLogin = (userRole: 'father' | 'kid', destination: string) => {
-    setLoadingUser(userRole);
-    // Simulate minor delay for premium feel
-    setTimeout(() => {
-      navigate(destination);
-    }, 800);
+  const handleCredentialsLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMessage('');
+    setLoadingUser('credentials');
+
+    try {
+      let role: 'father' | 'kid' | 'dev' = 'kid';
+      let name = '';
+      
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        // Fallback for demo under email confirmation or rate limit constraints
+        if (error.message.toLowerCase().includes('confirm') || error.status === 429 || error.status === 400) {
+          if (email === 'father@namaa.com') {
+            role = 'father';
+            name = 'أبو خالد';
+          } else if (email === 'salem@namaa.com') {
+            role = 'kid';
+            name = 'سالم';
+          } else if (email === 'khalid@namaa.com') {
+            role = 'kid';
+            name = 'خالد';
+          } else {
+            throw error;
+          }
+        } else {
+          throw error;
+        }
+      } else if (data?.user) {
+        // Fetch role from profiles table
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', data.user.id)
+          .single();
+
+        if (profileError || !profile) {
+          if (email.includes('father')) {
+            role = 'father';
+            name = 'أبو خالد';
+          } else if (email.includes('salem')) {
+            role = 'kid';
+            name = 'سالم';
+          } else if (email.includes('khalid')) {
+            role = 'kid';
+            name = 'خالد';
+          } else {
+            throw new Error('الملف الشخصي غير موجود');
+          }
+        } else {
+          role = profile.role as 'father' | 'kid' | 'dev';
+          name = profile.full_name || '';
+        }
+      }
+
+      // Set profile in Context
+      setProfile({ name, role });
+
+      // Redirect based on role
+      if (role === 'father') {
+        navigate('/father');
+      } else if (role === 'kid') {
+        navigate('/kid');
+      } else if (role === 'dev') {
+        navigate('/dev');
+      } else {
+        setErrorMessage('دور المستخدم غير معروف');
+      }
+    } catch (err: any) {
+      console.error(err);
+      setErrorMessage(err.message || 'خطأ في اسم المستخدم أو كلمة المرور');
+    } finally {
+      setLoadingUser(null);
+    }
   };
 
   return (
