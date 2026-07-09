@@ -1,23 +1,12 @@
-import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 
 export default function KidDashboard() {
-  const { kids, addDonation, profile, projects, investInProject } = useApp();
-  const [investAmounts, setInvestAmounts] = useState<Record<string, number>>({});
+  const { kids, addDonation, profile, projects } = useApp();
 
   const kid = kids.find(k => k.name === profile?.name) || kids.find(k => k.id === 'kid_salem') || kids[1];
   const savingPercentage = Math.round((kid.saved / kid.allowance) * 100);
   const isThriving = savingPercentage >= 50;
-
-  const handleInvestClick = async (projectId: string) => {
-    const customAmount = investAmounts[projectId] || 0;
-    if (customAmount <= 0 || customAmount > kid.saved) return;
-
-    await investInProject(kid.name, projectId, customAmount);
-    alert(`شكراً لمساهمتك بـ ${customAmount} ريال في المشروع! 💰✨`);
-    setInvestAmounts(prev => ({ ...prev, [projectId]: 0 }));
-  };
 
   return (
     <div className="w-full space-y-8 text-right font-sans">
@@ -98,58 +87,24 @@ export default function KidDashboard() {
         </Link>
 
         {/* Card 3: الاستثمار العائلي */}
-        <div className="relative overflow-hidden bg-white/5 backdrop-blur-xl border border-white/10 shadow-2xl rounded-3xl p-5 flex flex-col justify-between transition-all hover:scale-[1.01] duration-300">
+        <Link to="/kid/investments" className="block relative overflow-hidden bg-white/5 backdrop-blur-xl border border-white/10 shadow-2xl rounded-3xl p-5 flex flex-col justify-between transition-all hover:scale-[1.02] hover:border-orange-500/30 duration-300">
           <div className="absolute -left-6 -top-6 text-6xl opacity-15">📈</div>
-          <div className="space-y-3 w-full">
+          <div className="space-y-3">
             <div className="flex items-center justify-end gap-2 border-b border-white/5 pb-2">
               <h4 className="text-sm font-bold text-white">الاستثمار العائلي</h4>
               <span className="text-base">📈</span>
             </div>
 
             <p className="text-xs text-slate-300 leading-relaxed">
-              ساهم في تمويل مشاريع العائلة واربح عوائد استثمارية إضافية!
+              ساهم في تمويل مشاريع العائلة واربح عوائد استثمارية إضافية! ادخل هنا للمشاركة بمدخراتك.
             </p>
 
-            <div className="space-y-3 pt-1">
-              {projects.map((project) => {
-                const customAmount = investAmounts[project.id] || 0;
-                return (
-                  <div key={project.id} className="bg-white/5 p-3 rounded-xl border border-white/5 space-y-2">
-                    <div className="flex justify-between items-center text-xs">
-                      <span className="text-orange-400 font-bold">ROI: {project.roiPercentage}%</span>
-                      <span className="font-bold text-white text-[11px]">{project.title}</span>
-                    </div>
-
-                    <div className="flex gap-2 items-center">
-                      <button
-                        type="button"
-                        disabled={customAmount <= 0 || customAmount > kid.saved}
-                        onClick={() => handleInvestClick(project.id)}
-                        className={`bg-gradient-to-r from-[#8c7355] to-[#009639] hover:from-[#9c8466] hover:to-[#00a840] text-white text-[10px] font-bold px-3 py-1.5 rounded-lg transition-all ${
-                          customAmount <= 0 || customAmount > kid.saved ? 'opacity-40 cursor-not-allowed' : ''
-                        }`}
-                      >
-                        ساهم 💰
-                      </button>
-                      <input
-                        type="number"
-                        min="1"
-                        max={kid.saved}
-                        value={investAmounts[project.id] !== undefined ? (investAmounts[project.id] === 0 ? '' : investAmounts[project.id]) : ''}
-                        onChange={(e) => {
-                          const val = e.target.value === '' ? 0 : Number(e.target.value);
-                          setInvestAmounts(prev => ({ ...prev, [project.id]: val }));
-                        }}
-                        placeholder="المبلغ بالريال..."
-                        className="flex-1 bg-[#111C2E]/60 border border-white/10 rounded-lg px-2 py-1 text-left text-white text-[10px] outline-none"
-                      />
-                    </div>
-                  </div>
-                );
-              })}
+            <div className="bg-white/5 p-3 rounded-xl border border-white/5 flex justify-between items-center text-xs">
+              <span className="font-extrabold text-orange-400">{projects.length} مشاريع</span>
+              <span className="text-slate-400">المشاريع النشطة:</span>
             </div>
           </div>
-        </div>
+        </Link>
 
         {/* Card 4: التبرع */}
         <div className="relative overflow-hidden bg-white/5 backdrop-blur-xl border border-white/10 shadow-2xl rounded-3xl p-5 flex flex-col justify-between transition-all hover:scale-[1.01] duration-300">

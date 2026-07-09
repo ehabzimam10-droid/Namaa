@@ -5,6 +5,7 @@ import FatherDashboard from './pages/FatherDashboard';
 import DeveloperDashboard from './pages/DeveloperDashboard';
 import KidSavingsPage from './pages/KidSavingsPage';
 import KidTasksPage from './pages/KidTasksPage';
+import KidInvestmentsPage from './pages/KidInvestmentsPage';
 import DashboardLayout from './components/layout/DashboardLayout';
 
 function AuthLayout() {
@@ -55,6 +56,7 @@ function App() {
           <Route path="/kid" element={<KidDashboard />} />
           <Route path="/kid/savings" element={<KidSavingsPage />} />
           <Route path="/kid/tasks" element={<KidTasksPage />} />
+          <Route path="/kid/investments" element={<KidInvestmentsPage />} />
         </Route>
       </Routes>
     </BrowserRouter>
