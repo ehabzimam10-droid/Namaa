@@ -1,9 +1,7 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 
 export default function KidDashboard() {
-  const navigate = useNavigate();
   const { kids, addDonation, profile, projects, investInProject } = useApp();
   const [investAmounts, setInvestAmounts] = useState<Record<string, number>>({});
 
@@ -11,293 +9,228 @@ export default function KidDashboard() {
   const savingPercentage = Math.round((kid.saved / kid.allowance) * 100);
   const isThriving = savingPercentage >= 50;
 
+  const handleInvestClick = async (projectId: string) => {
+    const customAmount = investAmounts[projectId] || 0;
+    if (customAmount <= 0 || customAmount > kid.saved) return;
+
+    await investInProject(kid.name, projectId, customAmount);
+    alert(`شكراً لمساهمتك بـ ${customAmount} ريال في المشروع! 💰✨`);
+    setInvestAmounts(prev => ({ ...prev, [projectId]: 0 }));
+  };
+
   return (
-    <div className="mx-auto w-full max-w-md overflow-hidden bg-[#111C2E]/60 backdrop-blur-2xl border border-white/10 shadow-2xl rounded-3xl text-white transition-all duration-300 hover:shadow-orange-950/10">
-      {/* Header Section */}
-      <div className="relative bg-gradient-to-br from-orange-500 to-amber-600 px-6 py-8 text-right font-sans border-b border-white/10">
-        {/* Subtle decorative background shapes */}
-        <div className="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-orange-400 opacity-20 blur-xl"></div>
-        <div className="absolute -left-10 -bottom-10 h-32 w-32 rounded-full bg-amber-400 opacity-20 blur-xl"></div>
-
-        <div className="flex items-center justify-between">
-          <button
-            onClick={() => navigate('/')}
-            className="rounded-xl bg-white/10 hover:bg-white/20 px-2.5 py-1 text-xs font-bold backdrop-blur-md text-white transition-all border border-white/5"
-          >
-            تسجيل الخروج ➜
-          </button>
-          <div className="flex items-center gap-2">
-            <span className="rounded-full bg-white/20 px-2.5 py-1 text-xs font-semibold backdrop-blur-md text-white">
-              العمر: {kid.age} سنوات
-            </span>
-            <h2 className="text-xl font-black tracking-wide text-white">
-              لوحة تحكم {kid.name}
-            </h2>
-          </div>
-        </div>
-
-        <div className="mt-6 flex flex-col items-end">
-          <p className="text-sm font-medium text-orange-100">إجمالي المدخرات</p>
-          <p className="text-4xl font-extrabold tracking-tight text-white mt-1">
-            {kid.saved} <span className="text-lg font-bold">ريال</span>
-          </p>
-        </div>
-
-        <div className="mt-4 grid grid-cols-2 gap-4 rounded-2xl bg-white/10 p-3 text-sm backdrop-blur-md">
-          <div className="text-left">
-            <span className="block text-xs text-orange-200">نسبة الادخار</span>
-            <span className="font-bold text-white text-base">{savingPercentage}%</span>
-          </div>
-          <div className="text-right">
-            <span className="block text-xs text-orange-200">المصروف الأسبوعي</span>
-            <span className="font-bold text-white text-base">{kid.allowance} ريال</span>
-          </div>
+    <div className="w-full space-y-8 text-right font-sans">
+      {/* Header Profile Summary */}
+      <div className="relative overflow-hidden bg-gradient-to-br from-orange-500 to-amber-600 px-6 py-6 rounded-3xl border border-white/10 shadow-2xl text-white">
+        <div className="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-orange-450 opacity-20 blur-xl"></div>
+        <div className="flex justify-between items-center">
+          <span className="rounded-full bg-white/20 px-2.5 py-1 text-xs font-semibold backdrop-blur-md text-white">
+            العمر: {kid.age} سنوات
+          </span>
+          <h2 className="text-xl font-black text-white">لوحة تحكم {kid.name} 👦</h2>
         </div>
       </div>
 
-      {/* Content Section */}
-      <div className="p-6 space-y-6">
-        {/* Virtual Castle Section */}
-        <div className="space-y-3">
-          <h3 className="text-right text-xs font-bold uppercase tracking-wider text-orange-400">
-            القلعة الافتراضية الخاصة بك
-          </h3>
+      {/* Grid of 6 Glassmorphism Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 
-          {isThriving ? (
-            <div className="relative overflow-hidden bg-[#111C2E]/60 backdrop-blur-2xl border border-white/10 shadow-2xl rounded-3xl p-5 text-right transition-transform hover:scale-[1.02] duration-300">
-              <div className="absolute -left-4 -top-4 text-6xl opacity-25">🏰</div>
-              {/* Thriving subtle glow background */}
-              <div className="absolute right-0 top-0 -z-10 h-full w-24 bg-emerald-500/10 blur-xl"></div>
-              
-              <div className="flex items-start justify-between">
-                <div className="text-left">
-                  <span className="inline-flex items-center rounded-full bg-emerald-500/20 px-2.5 py-0.5 text-xs font-semibold text-emerald-400">
-                    مزدهرة ✨
-                  </span>
-                </div>
-                <div className="space-y-1">
-                  <h4 className="text-lg font-bold text-emerald-400 flex items-center justify-end gap-1">
-                    <span>Thriving Castle 🏰✨</span>
-                  </h4>
-                  <p className="text-xs text-slate-200">
-                    عمل رائع! ادخارك تخطى 50% وقلعتك الآن في أبهى صورها وتنبض بالحياة!
-                  </p>
-                </div>
-              </div>
-              <div className="mt-4 h-2 w-full rounded-full bg-slate-800/50">
-                <div className="h-2 rounded-full bg-gradient-to-r from-emerald-500 to-teal-400 transition-all duration-500" style={{ width: `${savingPercentage}%` }}></div>
-              </div>
+        {/* Card 1: القرية (Preview Castle) */}
+        <div className="relative overflow-hidden bg-white/5 backdrop-blur-xl border border-white/10 shadow-2xl rounded-3xl p-5 flex flex-col justify-between transition-all hover:scale-[1.01] duration-300">
+          <div className="absolute -left-6 -top-6 text-6xl opacity-15">🏰</div>
+          <div className="space-y-3">
+            <div className="flex items-center justify-end gap-2 border-b border-white/5 pb-2">
+              <h4 className="text-sm font-bold text-white">قلعتك الافتراضية</h4>
+              <span className="text-base">🏰</span>
             </div>
-          ) : (
-            <div className="relative overflow-hidden bg-[#111C2E]/60 backdrop-blur-2xl border border-white/10 shadow-2xl rounded-3xl p-5 text-right transition-transform hover:scale-[1.02] duration-300">
-              <div className="absolute -left-4 -top-4 text-6xl opacity-20">🛖</div>
-              {/* Basic subtle orange glow background */}
-              <div className="absolute right-0 top-0 -z-10 h-full w-24 bg-amber-500/10 blur-xl"></div>
-
-              <div className="flex items-start justify-between">
-                <div className="text-left">
-                  <span className="inline-flex items-center rounded-full bg-amber-500/10 px-2.5 py-0.5 text-xs font-semibold text-amber-400">
-                    بسيطة 🛖
-                  </span>
-                </div>
-                <div className="space-y-1">
-                  <h4 className="text-lg font-bold text-orange-400 flex items-center justify-end gap-1">
-                    <span>Basic Castle 🛖</span>
-                  </h4>
-                  <p className="text-xs text-slate-200">
-                    ادخر المزيد من مصروفك لتطوير قلعتك وتحويلها إلى قلعة ذهبية مزدهرة!
-                  </p>
-                </div>
-              </div>
-              <div className="mt-4 h-2 w-full rounded-full bg-slate-800/50">
-                <div className="h-2 rounded-full bg-gradient-to-r from-amber-600 to-amber-450 to-amber-400 transition-all duration-500" style={{ width: `${savingPercentage}%` }}></div>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* CSR / Donations Card */}
-        <div className="space-y-3">
-          <h3 className="text-right text-xs font-bold uppercase tracking-wider text-orange-400">
-            المسؤولية المجتمعية 💚
-          </h3>
-          <div className="relative overflow-hidden bg-[#111C2E]/60 backdrop-blur-2xl border border-white/10 shadow-2xl rounded-3xl p-5 text-right transition-all hover:scale-[1.02] duration-300">
-            <div className="absolute -left-4 -top-4 text-6xl opacity-20">🤲</div>
-            <div className="absolute right-0 top-0 -z-10 h-full w-24 bg-emerald-500/10 blur-xl"></div>
             
-            <div className="flex items-center justify-between">
-              <span className="inline-flex items-center rounded-full bg-emerald-500/20 px-2.5 py-0.5 text-xs font-semibold text-emerald-400">
-                مستمر 🌟
+            <div className="flex items-center justify-between text-xs">
+              <span className={`px-2.5 py-0.5 rounded-full font-bold ${isThriving ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'}`}>
+                {isThriving ? 'مزدهرة ✨' : 'بسيطة 🛖'}
               </span>
-              <h4 className="text-lg font-bold text-emerald-400 flex items-center justify-end gap-1">
-                <span>المسؤولية المجتمعية 💚</span>
-              </h4>
+              <span className="font-extrabold text-white">{isThriving ? 'Thriving Castle 🏰' : 'Basic Castle 🛖'}</span>
             </div>
 
-            <div className="mt-4 flex justify-between items-center bg-white/5 rounded-2xl p-4 border border-white/5">
-              <div className="text-left">
-                <span className="text-2xl font-extrabold text-white">{kid.donationPoints}</span>
-                <span className="text-xs text-emerald-400 font-medium block">ريال متبرع به</span>
-              </div>
-              <div className="text-right">
-                <span className="text-xs text-slate-400 block">مساهماتك الخيرية</span>
-                <span className="text-sm font-semibold text-slate-200">النقاط الحالية</span>
-              </div>
-            </div>
+            <p className="text-xs text-slate-300 leading-relaxed">
+              {isThriving
+                ? 'قلعتك مزدهرة وتنبض بالحياة لأنك ادخرت أكثر من 50% من مصروفك!'
+                : 'قلعتك بحاجة لادخار المزيد من مصروفك لتنمو وتتحول إلى قلعة ذهبية!'}
+            </p>
+          </div>
 
-            <button
-              onClick={() => addDonation(kid.id, 10)}
-              className="w-full mt-4 bg-gradient-to-r from-[#8c7355] to-[#009639] hover:from-[#9c8466] hover:to-[#00a840] text-white font-extrabold py-3 px-4 rounded-2xl shadow-lg hover:shadow-emerald-500/10 transition-all duration-300 transform active:scale-95 text-center flex items-center justify-center gap-2"
-            >
-              <span>تبرع بـ 10 ريال 🤲</span>
-            </button>
+          <div className="mt-4">
+            <div className="h-2 w-full rounded-full bg-slate-800/60 overflow-hidden">
+              <div
+                className={`h-full rounded-full bg-gradient-to-r ${isThriving ? 'from-emerald-500 to-teal-400' : 'from-amber-600 to-amber-450'}`}
+                style={{ width: `${savingPercentage}%` }}
+              ></div>
+            </div>
           </div>
         </div>
 
-        {/* Family Projects Contribution Section */}
-        <div className="space-y-3">
-          <h3 className="text-right text-xs font-bold uppercase tracking-wider text-orange-400">
-            المساهمة في مشاريع العائلة 📈
-          </h3>
-          
-          <div className="space-y-4">
-            {projects && projects.length > 0 ? (
-              projects.map((project) => {
-                    const customAmount = investAmounts[project.id] || 0;
-                    const percentage = Math.min(Math.round((project.currentInvested / project.totalRequired) * 100), 100);
-                    return (
-                      <div
-                        key={project.id}
-                        className="relative overflow-hidden bg-[#111C2E]/60 backdrop-blur-2xl border border-white/10 rounded-3xl p-5 text-right transition-all hover:scale-[1.02] duration-300"
+        {/* Card 2: الحصالة (Savings) */}
+        <div className="relative overflow-hidden bg-white/5 backdrop-blur-xl border border-white/10 shadow-2xl rounded-3xl p-5 flex flex-col justify-between transition-all hover:scale-[1.01] duration-300">
+          <div className="absolute -left-6 -top-6 text-6xl opacity-15">💰</div>
+          <div className="space-y-3">
+            <div className="flex items-center justify-end gap-2 border-b border-white/5 pb-2">
+              <h4 className="text-sm font-bold text-white">الحصالة الذكية</h4>
+              <span className="text-base">💰</span>
+            </div>
+
+            <div className="text-right">
+              <span className="text-[10px] text-slate-400 block">مدخراتك الحالية</span>
+              <span className="text-3xl font-extrabold text-white block mt-0.5">
+                {kid.saved} <span className="text-sm font-bold text-orange-400">ريال</span>
+              </span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 text-center text-[10px] pt-1">
+              <div className="bg-white/5 p-2 rounded-xl border border-white/5">
+                <span className="text-slate-400 block">المصروف الأسبوعي</span>
+                <span className="font-bold text-white mt-1 block">{kid.allowance} ريال</span>
+              </div>
+              <div className="bg-white/5 p-2 rounded-xl border border-white/5">
+                <span className="text-slate-400 block">نسبة الادخار</span>
+                <span className="font-bold text-white mt-1 block">{savingPercentage}%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Card 3: الاستثمار العائلي */}
+        <div className="relative overflow-hidden bg-white/5 backdrop-blur-xl border border-white/10 shadow-2xl rounded-3xl p-5 flex flex-col justify-between transition-all hover:scale-[1.01] duration-300">
+          <div className="absolute -left-6 -top-6 text-6xl opacity-15">📈</div>
+          <div className="space-y-3 w-full">
+            <div className="flex items-center justify-end gap-2 border-b border-white/5 pb-2">
+              <h4 className="text-sm font-bold text-white">الاستثمار العائلي</h4>
+              <span className="text-base">📈</span>
+            </div>
+
+            <p className="text-xs text-slate-300 leading-relaxed">
+              ساهم في تمويل مشاريع العائلة واربح عوائد استثمارية إضافية!
+            </p>
+
+            <div className="space-y-3 pt-1">
+              {projects.map((project) => {
+                const customAmount = investAmounts[project.id] || 0;
+                return (
+                  <div key={project.id} className="bg-white/5 p-3 rounded-xl border border-white/5 space-y-2">
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="text-orange-400 font-bold">ROI: {project.roiPercentage}%</span>
+                      <span className="font-bold text-white text-[11px]">{project.title}</span>
+                    </div>
+
+                    <div className="flex gap-2 items-center">
+                      <button
+                        type="button"
+                        disabled={customAmount <= 0 || customAmount > kid.saved}
+                        onClick={() => handleInvestClick(project.id)}
+                        className={`bg-gradient-to-r from-[#8c7355] to-[#009639] hover:from-[#9c8466] hover:to-[#00a840] text-white text-[10px] font-bold px-3 py-1.5 rounded-lg transition-all ${
+                          customAmount <= 0 || customAmount > kid.saved ? 'opacity-40 cursor-not-allowed' : ''
+                        }`}
                       >
-                        <div className="absolute right-0 top-0 -z-10 h-full w-24 bg-[#8c7355]/10 blur-xl"></div>
-                        
-                        <div className="flex flex-col gap-3">
-                          <div className="flex flex-row-reverse items-center justify-between gap-4">
-                            <div>
-                              <h4 className="font-bold text-sm text-white">{project.title}</h4>
-                              <span className="text-[10px] text-orange-300 block font-sans mt-1">
-                                العائد الاستثماري المتوقع: {project.roiPercentage}%
-                              </span>
-                            </div>
-                          </div>
-
-                          <div className="flex items-center gap-2 mt-1">
-                            <button
-                              type="button"
-                              disabled={customAmount <= 0 || customAmount > kid.saved}
-                              onClick={() => {
-                                investInProject(profile?.name || '', project.id, customAmount);
-                                alert(`شكراً لمساهمتك بـ ${customAmount} ريال في ${project.title}! 💰✨`);
-                                setInvestAmounts(prev => ({ ...prev, [project.id]: 0 }));
-                              }}
-                              className={`bg-gradient-to-r from-[#8c7355] to-[#009639] hover:from-[#9c8466] hover:to-[#00a840] text-white text-xs font-extrabold px-4 py-2.5 rounded-xl transition-all duration-300 transform active:scale-95 shadow-md shrink-0 ${
-                                (customAmount <= 0 || customAmount > kid.saved)
-                                  ? 'opacity-40 cursor-not-allowed active:scale-100'
-                                  : ''
-                              }`}
-                            >
-                              ساهم 💰
-                            </button>
-
-                            <div className="relative flex-1">
-                              <input
-                                type="number"
-                                min="1"
-                                max={kid.saved}
-                                value={investAmounts[project.id] !== undefined ? (investAmounts[project.id] === 0 ? '' : investAmounts[project.id]) : ''}
-                                onChange={(e) => {
-                                  const val = e.target.value === '' ? 0 : Number(e.target.value);
-                                  setInvestAmounts(prev => ({
-                                    ...prev,
-                                    [project.id]: val,
-                                  }));
-                                }}
-                                placeholder="المبلغ بالريال..."
-                                className="w-full bg-[#111C2E]/80 border border-white/10 focus:border-[#8c7355] focus:ring-1 focus:ring-[#8c7355] rounded-xl px-3 py-2 text-left text-white text-xs outline-none transition-all placeholder:text-slate-600 font-sans"
-                              />
-                            </div>
-                          </div>
-                        </div>
-
-                    {/* Progress Bar for Kids to see how close the project is to completion */}
-                    <div className="mt-4">
-                      <div className="flex justify-between items-center text-[10px] text-slate-400 font-sans mb-1">
-                        <span>{percentage}% مكتمل</span>
-                        <span>{project.currentInvested} / {project.totalRequired} ريال</span>
-                      </div>
-                      <div className="h-1.5 w-full rounded-full bg-slate-800/60 overflow-hidden">
-                        <div
-                          className="h-full rounded-full bg-gradient-to-l from-[#8c7355] to-[#009639] transition-all duration-500"
-                          style={{ width: `${percentage}%` }}
-                        ></div>
-                      </div>
+                        ساهم 💰
+                      </button>
+                      <input
+                        type="number"
+                        min="1"
+                        max={kid.saved}
+                        value={investAmounts[project.id] !== undefined ? (investAmounts[project.id] === 0 ? '' : investAmounts[project.id]) : ''}
+                        onChange={(e) => {
+                          const val = e.target.value === '' ? 0 : Number(e.target.value);
+                          setInvestAmounts(prev => ({ ...prev, [project.id]: val }));
+                        }}
+                        placeholder="المبلغ بالريال..."
+                        className="flex-1 bg-[#111C2E]/60 border border-white/10 rounded-lg px-2 py-1 text-left text-white text-[10px] outline-none"
+                      />
                     </div>
                   </div>
                 );
-              })
-            ) : (
-              <div className="bg-[#111C2E]/60 backdrop-blur-2xl border border-white/10 rounded-3xl p-5 text-center text-xs text-slate-400">
-                لا توجد مشاريع استثمارية عائلية نشطة حالياً.
-              </div>
-            )}
+              })}
+            </div>
           </div>
         </div>
 
-        {/* Tasks Section */}
-        <div className="space-y-3">
-          <h3 className="text-right text-xs font-bold uppercase tracking-wider text-orange-400">
-            المهام والمسؤوليات الحالية 🧹📅
-          </h3>
+        {/* Card 4: التبرع */}
+        <div className="relative overflow-hidden bg-white/5 backdrop-blur-xl border border-white/10 shadow-2xl rounded-3xl p-5 flex flex-col justify-between transition-all hover:scale-[1.01] duration-300">
+          <div className="absolute -left-6 -top-6 text-6xl opacity-15">🤲</div>
+          <div className="space-y-3">
+            <div className="flex items-center justify-end gap-2 border-b border-white/5 pb-2">
+              <h4 className="text-sm font-bold text-emerald-400">التبرع والمسؤولية</h4>
+              <span className="text-base">💚</span>
+            </div>
 
-          <div className="overflow-hidden bg-[#111C2E]/60 backdrop-blur-2xl border border-white/10 shadow-2xl rounded-3xl p-5 space-y-3 text-right">
-            {kid.tasks && kid.tasks.length > 0 ? (
-              <div className="space-y-3">
-                {kid.tasks.map((task) => (
-                  <div key={task.id} className="p-4 bg-white/5 border border-white/5 rounded-2xl flex flex-row-reverse items-center justify-between gap-4">
-                    <div>
-                      <h4 className="font-bold text-sm text-white">{task.title}</h4>
-                      <span className="text-[10px] text-orange-300 block font-sans mt-1">
-                        المكافأة: {task.rewardType === 'custom' ? task.customReward : `${task.rewardAmount} ${task.rewardType === 'cash' ? 'ريال' : 'نقطة'}`}
-                      </span>
-                    </div>
-                    <span className="inline-flex items-center rounded-full bg-orange-500/20 px-2.5 py-0.5 text-[10px] font-bold text-orange-300">
-                      قيد التنفيذ ⏳
-                    </span>
+            <p className="text-xs text-slate-300 leading-relaxed">
+              اكتسب نقاط تبرع مجتمعية وشارك في تمويل المشاريع الخيرية المعتمدة لعائلتك.
+            </p>
+
+            <div className="bg-white/5 p-3 rounded-xl border border-white/5 flex justify-between items-center text-xs">
+              <div className="text-left">
+                <span className="font-extrabold text-white text-lg">{kid.donationPoints}</span>
+                <span className="text-[10px] text-emerald-400 block">ريال متبرع به</span>
+              </div>
+              <span className="text-slate-400 font-bold text-[11px]">مساهماتك الخيرية:</span>
+            </div>
+          </div>
+
+          <button
+            onClick={() => {
+              if (kid.saved < 10) {
+                alert('عذراً، رصيدك غير كافي للتبرع! 😔');
+                return;
+              }
+              addDonation(kid.id, 10);
+              alert('شكراً لتبرعك بـ 10 ريال لخدمة المجتمع! 💚🤲');
+            }}
+            className="w-full mt-4 bg-gradient-to-r from-[#8c7355] to-[#009639] hover:from-[#9c8466] hover:to-[#00a840] text-white font-extrabold py-2.5 rounded-xl text-xs shadow-lg transition-all transform active:scale-95 text-center flex items-center justify-center gap-1"
+          >
+            <span>تبرع بـ 10 ريال 🤲</span>
+          </button>
+        </div>
+
+        {/* Card 5: نقاط دوري العائلة (Hidden/Blind state) */}
+        <div className="relative overflow-hidden bg-white/5 backdrop-blur-xl border border-white/10 shadow-2xl rounded-3xl p-5 flex flex-col justify-between transition-all hover:scale-[1.01] duration-300 group">
+          {/* Blurred Locked Overlay to act as blind/hidden state */}
+          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-[2px] z-20 flex flex-col items-center justify-center text-center p-4">
+            <span className="text-2xl mb-1">🔒</span>
+            <span className="text-xs font-bold text-white">قريباً: دوري نماء العائلي</span>
+            <span className="text-[9px] text-slate-400 mt-1">قارن تقدمك ونقاط التوفير مع عائلتك وأصدقائك!</span>
+          </div>
+
+          <div className="space-y-3 opacity-30 select-none pointer-events-none">
+            <div className="flex items-center justify-end gap-2 border-b border-white/5 pb-2">
+              <h4 className="text-sm font-bold text-white">نقاط دوري العائلة</h4>
+              <span className="text-base">🏆</span>
+            </div>
+            <p className="text-xs leading-relaxed">
+              ترتيبك الحالي ونقاط المنافسة مع بقية عوائل نماء.
+            </p>
+          </div>
+        </div>
+
+        {/* Card 6: المهام */}
+        <div className="relative overflow-hidden bg-white/5 backdrop-blur-xl border border-white/10 shadow-2xl rounded-3xl p-5 flex flex-col justify-between transition-all hover:scale-[1.01] duration-300">
+          <div className="absolute -left-6 -top-6 text-6xl opacity-15">🧹</div>
+          <div className="space-y-3 w-full">
+            <div className="flex items-center justify-end gap-2 border-b border-white/5 pb-2">
+              <h4 className="text-sm font-bold text-white">المهام والمسؤوليات</h4>
+              <span className="text-base">🧹</span>
+            </div>
+
+            <div className="space-y-2 max-h-40 overflow-y-auto pt-1 text-xs">
+              {kid.tasks && kid.tasks.length > 0 ? (
+                kid.tasks.map((task) => (
+                  <div key={task.id} className="p-2 bg-white/5 border border-white/5 rounded-xl flex justify-between items-center text-[10px]">
+                    <span className="bg-orange-500/20 text-orange-400 px-2 py-0.5 rounded-md font-bold">قيد التنفيذ</span>
+                    <span className="font-bold text-white">{task.title}</span>
                   </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-xs text-slate-400 py-2">لا توجد مهام معلقة حالياً. حافظ على نشاطك! ✨</p>
-            )}
+                ))
+              ) : (
+                <p className="text-[10px] text-slate-400 text-center py-4">لا توجد مهام نشطة حالياً. حافظ على نشاطك! ✨</p>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* Transactions Section */}
-        <div className="space-y-3">
-          <h3 className="text-right text-xs font-bold uppercase tracking-wider text-orange-400">
-            المعاملات الأخيرة
-          </h3>
-
-          <div className="divide-y divide-white/5 overflow-hidden bg-[#111C2E]/60 backdrop-blur-2xl border border-white/10 shadow-2xl rounded-3xl">
-            {kid.transactions.map((tx) => (
-              <div key={tx.id} className="flex items-center justify-between p-4 transition-colors hover:bg-white/5">
-                <div className="text-left">
-                  <span className={`font-mono text-base font-bold ${tx.type === 'deposit' ? 'text-emerald-400' : 'text-rose-400'}`}>
-                    {tx.type === 'deposit' ? '+' : '-'}{tx.amount} ريال
-                  </span>
-                  <span className="block text-[10px] text-slate-400 mt-0.5">{tx.date}</span>
-                </div>
-                <div className="text-right">
-                  <span className="font-semibold text-sm text-white">{tx.title}</span>
-                  <span className="block text-[10px] text-slate-300 mt-0.5">
-                    {tx.type === 'deposit' ? 'إيداع 💸' : 'سحب 💳'}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
       </div>
     </div>
   );
