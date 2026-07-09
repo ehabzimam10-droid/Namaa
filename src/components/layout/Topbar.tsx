@@ -5,9 +5,14 @@ interface TopbarProps {
 }
 
 export default function Topbar({ onMenuToggle }: TopbarProps) {
-  const { profile } = useApp();
+  const { profile, kids } = useApp();
 
   const isFather = profile?.role === 'father';
+  const isKid = profile?.role === 'kid';
+  
+  // Find current active kid if role is kid
+  const kid = isKid ? (kids.find((k) => k.name === profile?.name) || kids.find((k) => k.id === 'kid_salem') || kids[1]) : null;
+  const balance = kid ? kid.balance : 0;
 
   return (
     <header className="w-full h-16 px-6 bg-[#111C2E]/60 backdrop-blur-md border-b border-white/10 flex items-center justify-between text-white relative z-30">
@@ -28,8 +33,18 @@ export default function Topbar({ onMenuToggle }: TopbarProps) {
         </svg>
       </button>
 
-      {/* User Info (on Top Right) */}
+      {/* User Info & Balance (on Top Right) */}
       <div className="flex items-center gap-3 text-right">
+        {/* Sleek Glassmorphism Balance Badge for Kids */}
+        {isKid && kid && (
+          <div className="bg-white/5 border border-white/10 rounded-2xl px-3 py-1.5 flex items-center gap-1.5 backdrop-blur-xl shadow-lg">
+            <span className="text-[10px] text-slate-300 font-bold">الرصيد المتاح:</span>
+            <span className={`text-xs font-black font-sans ${balance > 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+              {balance} ريال 💳
+            </span>
+          </div>
+        )}
+
         <div className="space-y-0.5">
           <span className="font-extrabold text-sm block">{profile?.name || 'مستخدم نماء'}</span>
           <span className="text-[10px] text-orange-400 font-bold block">

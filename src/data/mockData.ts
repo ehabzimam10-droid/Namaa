@@ -29,6 +29,7 @@ export interface Kid {
   age: number;
   allowance: number;
   saved: number;
+  balance: number;
   donationPoints: number;
   transactions: Transaction[];
   tasks: Task[];
@@ -64,6 +65,7 @@ export const mockFamilyData: FamilyData = {
       age: 15,
       allowance: 500,
       saved: 100,
+      balance: 0,
       donationPoints: 0,
       transactions: [
         {
@@ -104,6 +106,7 @@ export const mockFamilyData: FamilyData = {
       age: 10,
       allowance: 100,
       saved: 60,
+      balance: 300,
       donationPoints: 0,
       transactions: [
         {

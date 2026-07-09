@@ -15,7 +15,7 @@ export default function KidInvestmentsPage() {
 
   const handleInvestClick = (projectId: string, projectTitle: string) => {
     const amount = investAmounts[projectId] || 0;
-    if (amount <= 0 || amount > kid.saved) return;
+    if (amount <= 0 || amount > kid.balance) return;
 
     setInvestLoading((prev) => ({ ...prev, [projectId]: true }));
 
@@ -51,9 +51,9 @@ export default function KidInvestmentsPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Available Savings Display */}
         <div className="bg-white/5 backdrop-blur-xl border border-white/10 p-5 rounded-3xl text-right flex flex-col justify-between">
-          <span className="text-xs text-slate-400">مدخراتك المتاحة للاستثمار</span>
+          <span className="text-xs text-slate-400">الرصيد المتاح للاستثمار</span>
           <span className="text-2xl font-extrabold text-white mt-2">
-            {kid.saved} <span className="text-sm font-bold text-orange-400">ريال</span>
+            {kid.balance} <span className="text-sm font-bold text-orange-400">ريال</span>
           </span>
         </div>
 
@@ -120,16 +120,22 @@ export default function KidInvestmentsPage() {
                       <div className="flex items-center gap-2">
                         <button
                           type="button"
-                          disabled={customAmount <= 0 || customAmount > kid.saved || isLoading}
-                          onClick={() => handleInvestClick(project.id, project.title)}
-                          className={`bg-gradient-to-r from-[#8c7355] to-[#009639] hover:from-[#9c8466] hover:to-[#00a840] text-white text-xs font-bold px-4 py-2 rounded-xl transition-all ${
-                            customAmount <= 0 || customAmount > kid.saved || isLoading ? 'opacity-40 cursor-not-allowed' : ''
+                          disabled={customAmount <= 0 || customAmount > kid.balance || isLoading || kid.balance === 0}
+                          className={`text-white text-xs font-bold px-4 py-2 rounded-xl transition-all ${
+                            kid.balance === 0
+                              ? 'bg-slate-600 opacity-40 cursor-not-allowed active:scale-100'
+                              : customAmount <= 0 || customAmount > kid.balance || isLoading
+                                ? 'bg-gradient-to-r from-[#8c7355] to-[#009639] opacity-40 cursor-not-allowed active:scale-100'
+                                : 'bg-gradient-to-r from-[#8c7355] to-[#009639] hover:from-[#9c8466] hover:to-[#00a840] transform active:scale-95 shadow-md shrink-0'
                           }`}
+                          onClick={() => handleInvestClick(project.id, project.title)}
                         >
                           {isLoading ? (
                             <span className="flex items-center gap-1">
                               <span className="animate-spin">⏳</span> جاري الاستثمار...
                             </span>
+                          ) : kid.balance === 0 ? (
+                            <span>الرصيد غير كافٍ 🚫</span>
                           ) : (
                             <span>ساهم 💰</span>
                           )}
@@ -137,14 +143,17 @@ export default function KidInvestmentsPage() {
                         <input
                           type="number"
                           min="1"
-                          max={kid.saved}
+                          max={kid.balance}
+                          disabled={kid.balance === 0}
                           value={customAmount === 0 ? '' : customAmount}
                           onChange={(e) => {
                             const val = e.target.value === '' ? 0 : Number(e.target.value);
                             setInvestAmounts((prev) => ({ ...prev, [project.id]: val }));
                           }}
-                          placeholder="المبلغ بالريال..."
-                          className="flex-1 bg-[#111C2E]/80 border border-white/10 rounded-xl px-3 py-1.5 text-left text-white text-xs outline-none placeholder:text-slate-700"
+                          placeholder={kid.balance === 0 ? 'رصيدك فارغ 🚫' : 'المبلغ بالريال...'}
+                          className={`flex-1 bg-[#111C2E]/80 border border-white/10 rounded-xl px-3 py-1.5 text-left text-white text-xs outline-none placeholder:text-slate-700 transition-all ${
+                            kid.balance === 0 ? 'opacity-40 cursor-not-allowed' : 'focus:border-[#8c7355]'
+                          }`}
                         />
                       </div>
                     )}

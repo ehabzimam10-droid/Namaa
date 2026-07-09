@@ -34,12 +34,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   });
 
   const [kids, setKids] = useState<Kid[]>(() => {
-    const savedKids = localStorage.getItem('namaa_kids_v10');
+    const savedKids = localStorage.getItem('namaa_kids_v13');
     return savedKids ? JSON.parse(savedKids) : mockFamilyData.kids;
   });
   
   const [projects, setProjects] = useState<FamilyProject[]>(() => {
-    const savedProjects = localStorage.getItem('namaa_projects_v10');
+    const savedProjects = localStorage.getItem('namaa_projects_v13');
     return savedProjects ? JSON.parse(savedProjects) : mockFamilyData.projects;
   });
 
@@ -48,11 +48,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [profile]);
 
   useEffect(() => {
-    localStorage.setItem('namaa_kids_v10', JSON.stringify(kids));
+    localStorage.setItem('namaa_kids_v13', JSON.stringify(kids));
   }, [kids]);
 
   useEffect(() => {
-    localStorage.setItem('namaa_projects_v10', JSON.stringify(projects));
+    localStorage.setItem('namaa_projects_v13', JSON.stringify(projects));
   }, [projects]);
 
   // Fetch data on mount
@@ -123,7 +123,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setKids((prevKids) =>
       prevKids.map((kid) => {
         if (kid.id === kidId) {
-          const updatedSaved = Math.max(0, kid.saved - amount);
+          const updatedBalance = Math.max(0, kid.balance - amount);
           const newTx: Transaction = {
             id: `tx_${Date.now()}`,
             title: `تبرع للمسؤولية المجتمعية 💚`,
@@ -133,7 +133,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           };
           return {
             ...kid,
-            saved: updatedSaved,
+            balance: updatedBalance,
             donationPoints: kid.donationPoints + amount,
             transactions: [newTx, ...kid.transactions],
           };
@@ -227,11 +227,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       })
     );
 
-    // c. Update the specific kid's local state (subtract amount from saved balance)
+    // c. Update the specific kid's local state (subtract amount from balance)
     setKids((prevKids) =>
       prevKids.map((kid) => {
         if (kid.name === kidName) {
-          const updatedSaved = Math.max(0, kid.saved - amount);
+          const updatedBalance = Math.max(0, kid.balance - amount);
           const newTx: Transaction = {
             id: `tx_invest_${Date.now()}`,
             title: `مساهمة استثمارية عائلية 📈`,
@@ -241,7 +241,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           };
           return {
             ...kid,
-            saved: updatedSaved,
+            balance: updatedBalance,
             transactions: [newTx, ...(kid.transactions || [])],
           };
         }
@@ -285,7 +285,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setKids((prevKids) =>
       prevKids.map((kid) => {
         if (kid.name === kidName) {
-          if (kid.saved < amount) return kid;
+          if (kid.balance < amount) return kid;
 
           const newTx: Transaction = {
             id: `tx_goal_${Date.now()}`,
@@ -309,7 +309,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
           return {
             ...kid,
-            saved: Math.max(0, kid.saved - amount),
+            balance: Math.max(0, kid.balance - amount),
             savingsGoals: updatedGoals,
             transactions: [newTx, ...(kid.transactions || [])],
           };
@@ -340,7 +340,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
           return {
             ...kid,
-            saved: kid.saved + amountToWithdraw,
+            balance: kid.balance + amountToWithdraw,
             savingsGoals: updatedGoals,
             transactions: [newTx, ...(kid.transactions || [])],
           };

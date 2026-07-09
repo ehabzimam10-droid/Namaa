@@ -129,17 +129,22 @@ export default function KidDashboard() {
           </div>
 
           <button
+            disabled={kid.balance === 0}
             onClick={() => {
-              if (kid.saved < 10) {
+              if (kid.balance < 10) {
                 alert('عذراً، رصيدك غير كافي للتبرع! 😔');
                 return;
               }
               addDonation(kid.id, 10);
               alert('شكراً لتبرعك بـ 10 ريال لخدمة المجتمع! 💚🤲');
             }}
-            className="w-full mt-4 bg-gradient-to-r from-[#8c7355] to-[#009639] hover:from-[#9c8466] hover:to-[#00a840] text-white font-extrabold py-2.5 rounded-xl text-xs shadow-lg transition-all transform active:scale-95 text-center flex items-center justify-center gap-1"
+            className={`w-full mt-4 bg-gradient-to-r text-white font-extrabold py-2.5 rounded-xl text-xs shadow-lg transition-all transform flex items-center justify-center gap-1 ${
+              kid.balance === 0
+                ? 'from-slate-600 to-slate-700 opacity-40 cursor-not-allowed active:scale-100'
+                : 'from-[#8c7355] to-[#009639] hover:from-[#9c8466] hover:to-[#00a840] active:scale-95'
+            }`}
           >
-            <span>تبرع بـ 10 ريال 🤲</span>
+            <span>{kid.balance === 0 ? 'الرصيد غير كافٍ 🚫' : 'تبرع بـ 10 ريال 🤲'}</span>
           </button>
         </div>
 

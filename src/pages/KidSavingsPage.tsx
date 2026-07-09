@@ -30,8 +30,8 @@ export default function KidSavingsPage() {
     const amount = addAmounts[goalId] || 0;
     if (amount <= 0) return;
 
-    if (kid.saved < amount) {
-      alert('عذراً، رصيد الحصالة الذكية غير كافٍ! 😔');
+    if (kid.balance < amount) {
+      alert('عذراً، الرصيد المتاح غير كافٍ! 😔');
       return;
     }
 
@@ -42,7 +42,7 @@ export default function KidSavingsPage() {
 
   const handleWithdraw = (goalId: string, goalTitle: string) => {
     withdrawGoal(kid.name, goalId);
-    alert(`تهانينا! 🎉 تم سحب كامل مبلغ حصالة "${goalTitle}" وإضافته إلى حصالتك الذكية بنجاح! 🔓💰`);
+    alert(`تهانينا! 🎉 تم سحب كامل مبلغ حصالة "${goalTitle}" وإضافته إلى رصيدك المتاح بنجاح! 🔓💰`);
   };
 
   return (
@@ -169,25 +169,32 @@ export default function KidSavingsPage() {
                       <div className="flex items-center gap-2">
                         <button
                           type="button"
-                          disabled={customAddAmount <= 0 || customAddAmount > kid.saved}
-                          onClick={() => handleAddMoney(goal.id)}
-                          className={`bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold px-4 py-2 rounded-xl transition-all ${
-                            customAddAmount <= 0 || customAddAmount > kid.saved ? 'opacity-40 cursor-not-allowed' : ''
+                          disabled={customAddAmount <= 0 || customAddAmount > kid.balance || kid.balance === 0}
+                          className={`text-white text-xs font-bold px-4 py-2 rounded-xl transition-all ${
+                            kid.balance === 0
+                              ? 'bg-slate-600 opacity-40 cursor-not-allowed active:scale-100'
+                              : customAddAmount <= 0 || customAddAmount > kid.balance
+                                ? 'bg-orange-500 opacity-40 cursor-not-allowed active:scale-100'
+                                : 'bg-orange-500 hover:bg-orange-600 active:scale-95'
                           }`}
+                          onClick={() => handleAddMoney(goal.id)}
                         >
-                          إيداع ➕
+                          {kid.balance === 0 ? 'الرصيد فارغ 🚫' : 'إيداع ➕'}
                         </button>
                         <input
                           type="number"
                           min="1"
-                          max={kid.saved}
+                          max={kid.balance}
+                          disabled={kid.balance === 0}
                           value={customAddAmount === 0 ? '' : customAddAmount}
                           onChange={(e) => {
                             const val = e.target.value === '' ? 0 : Number(e.target.value);
                             setAddAmounts((prev) => ({ ...prev, [goal.id]: val }));
                           }}
-                          placeholder="ادخر ريال..."
-                          className="flex-1 bg-[#111C2E]/80 border border-white/10 rounded-xl px-3 py-1.5 text-left text-white text-xs outline-none placeholder:text-slate-700"
+                          placeholder={kid.balance === 0 ? 'رصيدك فارغ 🚫' : 'ادخر ريال...'}
+                          className={`flex-1 bg-[#111C2E]/80 border border-white/10 rounded-xl px-3 py-1.5 text-left text-white text-xs outline-none placeholder:text-slate-700 transition-all ${
+                            kid.balance === 0 ? 'opacity-40 cursor-not-allowed' : ''
+                          }`}
                         />
                       </div>
                     )}
