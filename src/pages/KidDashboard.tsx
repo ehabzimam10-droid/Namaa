@@ -209,7 +209,7 @@ export default function KidDashboard() {
         </div>
 
         {/* Card 6: المهام */}
-        <div className="relative overflow-hidden bg-white/5 backdrop-blur-xl border border-white/10 shadow-2xl rounded-3xl p-5 flex flex-col justify-between transition-all hover:scale-[1.01] duration-300">
+        <Link to="/kid/tasks" className="block relative overflow-hidden bg-white/5 backdrop-blur-xl border border-white/10 shadow-2xl rounded-3xl p-5 flex flex-col justify-between transition-all hover:scale-[1.02] hover:border-orange-500/30 duration-300">
           <div className="absolute -left-6 -top-6 text-6xl opacity-15">🧹</div>
           <div className="space-y-3 w-full">
             <div className="flex items-center justify-end gap-2 border-b border-white/5 pb-2">
@@ -230,7 +230,7 @@ export default function KidDashboard() {
               )}
             </div>
           </div>
-        </div>
+        </Link>
 
       </div>
     </div>

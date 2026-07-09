@@ -21,6 +21,7 @@ interface AppContextType {
   addSavingsGoal: (kidName: string, title: string, targetAmount: number) => void;
   addToGoal: (kidName: string, goalId: string, amount: number) => void;
   withdrawGoal: (kidName: string, goalId: string) => void;
+  submitTaskProof: (taskId: string) => Promise<void>;
   logout: () => void;
 }
 
@@ -106,7 +107,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       rewardAmount: t.reward_amount,
       rewardType: t.reward_type,
       customReward: t.reward_type === 'custom' ? t.title : undefined,
-      status: t.status || 'pending',
+      status: (t.status as 'pending' | 'under_review' | 'completed' | 'approved') || 'pending',
     }));
   };
 
@@ -349,6 +350,37 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     );
   };
 
+  const submitTaskProof = async (taskId: string) => {
+    // Optimistic local state update
+    setKids((prevKids) =>
+      prevKids.map((kid) => {
+        const updatedTasks = (kid.tasks || []).map((t) => {
+          if (t.id === taskId) {
+            return {
+              ...t,
+              status: 'under_review' as const,
+            };
+          }
+          return t;
+        });
+        return {
+          ...kid,
+          tasks: updatedTasks,
+        };
+      })
+    );
+
+    try {
+      const dbId = isNaN(Number(taskId)) ? taskId : Number(taskId);
+      await supabase
+        .from('kid_tasks')
+        .update({ status: 'under_review' })
+        .eq('id', dbId);
+    } catch (err) {
+      console.error('Failed to update task status in Supabase:', err);
+    }
+  };
+
   return (
     <AppContext.Provider
       value={{
@@ -363,6 +395,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         addSavingsGoal,
         addToGoal,
         withdrawGoal,
+        submitTaskProof,
         logout,
       }}
     >

@@ -20,7 +20,7 @@ export interface Task {
   rewardAmount: number;
   rewardType: 'cash' | 'points' | 'custom';
   customReward?: string;
-  status: 'pending' | 'completed' | 'approved';
+  status: 'pending' | 'under_review' | 'completed' | 'approved';
 }
 
 export interface Kid {
