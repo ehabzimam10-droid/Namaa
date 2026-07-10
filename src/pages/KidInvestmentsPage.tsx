@@ -7,7 +7,7 @@ export default function KidInvestmentsPage() {
   const { kids, profile, projects, investInProject } = useApp();
   
   // Find current active kid
-  const kid = kids.find((k) => k.name === profile?.name) || kids.find((k) => k.id === 'kid_salem') || kids[1];
+  const kid = kids.find((k) => k.name === profile?.name) || kids.find((k) => k.name === 'سالم') || kids[0];
 
   // States for custom investment inputs and loading status per project
   const [investAmounts, setInvestAmounts] = useState<Record<string, number>>({});

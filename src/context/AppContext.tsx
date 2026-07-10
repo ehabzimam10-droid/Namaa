@@ -18,7 +18,7 @@ interface AppContextType {
   approveTask: (kidId: string, taskTitle: string, rewardAmount: number, rewardType: 'cash' | 'points' | 'custom', customReward?: string) => Promise<void>;
   addProject: (title: string, totalRequired: number, roiPercentage: number) => Promise<void>;
   investInProject: (kidName: string, projectId: string, amount: number) => Promise<void>;
-  addSavingsGoal: (kidName: string, title: string, targetAmount: number, deadlineDate?: string) => void;
+  addSavingsGoal: (kidName: string, title: string, targetAmount: number, deadlineDate?: string) => Promise<void>;
   addToGoal: (kidName: string, goalId: string, amount: number) => Promise<void>;
   withdrawGoal: (kidName: string, goalId: string) => Promise<void>;
   submitTaskProof: (taskId: string) => Promise<void>;
@@ -60,33 +60,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // 1. Fetch kids profiles from Supabase first
-        const { data: dbKids, error: kidsError } = await supabase
-          .from('kids_profiles')
-          .select('*');
-
-        if (!kidsError && dbKids && dbKids.length > 0) {
-          setKids((prevKids) =>
-            dbKids.map((k: any) => {
-              const prevKid = prevKids.find(pk => pk.id === k.id) || mockFamilyData.kids.find(lk => lk.id === k.id) || mockFamilyData.kids[0];
-              return {
-                ...prevKid,
-                id: k.id,
-                name: k.name,
-                age: k.age || prevKid.age,
-                saved: k.saved || 0,
-                balance: k.balance || 0,
-                donationPoints: k.donation_points || 0,
-                allowance: k.allowance || prevKid.allowance || 0,
-              };
-            })
-          );
-        }
-
-        // 2. Fetch family projects from Supabase
-        const { data: dbProjects, error: projError } = await supabase
-          .from('family_projects')
-          .select('*');
+        const [
+          { data: dbKids, error: kidsError },
+          { data: dbProjects, error: projError },
+          { data: dbTasks },
+          { data: dbGoals },
+          { data: dbTx }
+        ] = await Promise.all([
+          supabase.from('kids_profiles').select('*'),
+          supabase.from('family_projects').select('*'),
+          supabase.from('kid_tasks').select('*'),
+          supabase.from('savings_goals').select('*'),
+          supabase.from('transactions').select('*')
+        ]);
 
         if (!projError && dbProjects && dbProjects.length > 0) {
           const mappedProjects: FamilyProject[] = dbProjects.map((p: any) => ({
@@ -99,19 +85,48 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           setProjects(mappedProjects);
         }
 
-        // 3. Fetch kid tasks from Supabase
-        const { data: dbTasks, error: taskError } = await supabase
-          .from('kid_tasks')
-          .select('*');
-
-        if (!taskError && dbTasks) {
+        if (!kidsError && dbKids && dbKids.length > 0) {
           setKids((prevKids) =>
-            prevKids.map((kid) => {
-              const kidDbTasks = dbTasks.filter((t: any) => t.kid_name === kid.name);
-              const mappedTasks: Task[] = mappedTasksFromDb(kidDbTasks);
+            dbKids.map((k: any) => {
+              // Fix Khalid Bug: find kid in local state/mock by name since database ID is a UUID
+              const prevKid = prevKids.find(pk => pk.name === k.name) || mockFamilyData.kids.find(lk => lk.name === k.name) || mockFamilyData.kids[0];
+              
+              // Map tasks
+              const kidDbTasks = dbTasks ? dbTasks.filter((t: any) => t.kid_name === k.name) : [];
+              const mappedTasks = mappedTasksFromDb(kidDbTasks);
+
+              // Map goals
+              const kidGoals = dbGoals ? dbGoals.filter((g: any) => g.kid_name === k.name) : [];
+              const mappedGoals: SavingsGoal[] = kidGoals.map((g: any) => ({
+                id: g.id?.toString(),
+                title: g.title,
+                targetAmount: g.target_amount,
+                currentAmount: g.current_amount,
+                isLocked: g.is_locked,
+                deadlineDate: g.deadline_date || undefined
+              }));
+
+              // Map transactions
+              const kidTx = dbTx ? dbTx.filter((t: any) => t.kid_name === k.name) : [];
+              const mappedTx: Transaction[] = kidTx.map((t: any) => ({
+                id: t.id?.toString(),
+                title: t.title,
+                amount: t.amount,
+                type: t.type as 'deposit' | 'withdrawal',
+                date: t.date || new Date().toISOString().split('T')[0]
+              })).sort((a, b) => b.id.localeCompare(a.id));
+
               return {
-                ...kid,
+                ...prevKid,
+                id: k.id,
+                name: k.name,
+                age: k.age || prevKid.age,
+                balance: k.balance || 0,
+                donationPoints: k.donation_points || 0,
+                allowance: k.allowance || prevKid.allowance || 0,
                 tasks: mappedTasks,
+                savingsGoals: mappedGoals,
+                transactions: mappedTx
               };
             })
           );
@@ -143,6 +158,42 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setProfileState(null);
   };
 
+  const logTransaction = async (kidName: string, title: string, amount: number, type: 'deposit' | 'withdrawal') => {
+    const newTx: Transaction = {
+      id: `tx_${Date.now()}_${Math.random()}`,
+      title,
+      amount,
+      type,
+      date: new Date().toISOString().split('T')[0],
+    };
+
+    setKids((prevKids) =>
+      prevKids.map((kid) => {
+        if (kid.name === kidName) {
+          return {
+            ...kid,
+            transactions: [newTx, ...(kid.transactions || [])],
+          };
+        }
+        return kid;
+      })
+    );
+
+    try {
+      await supabase
+        .from('transactions')
+        .insert({
+          title,
+          amount,
+          type,
+          kid_name: kidName,
+          date: new Date().toISOString().split('T')[0]
+        });
+    } catch (err) {
+      console.error('Failed to log transaction to Supabase:', err);
+    }
+  };
+
   const addDonation = async (kidId: string, amount: number) => {
     const targetKid = kids.find((k) => k.id === kidId);
     if (!targetKid) return;
@@ -154,30 +205,25 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setKids((prevKids) =>
       prevKids.map((kid) => {
         if (kid.id === kidId) {
-          const newTx: Transaction = {
-            id: `tx_${Date.now()}`,
-            title: `تبرع للمسؤولية المجتمعية 💚`,
-            amount: amount,
-            type: 'withdrawal',
-            date: new Date().toISOString().split('T')[0],
-          };
           return {
             ...kid,
             balance: updatedBalance,
             donationPoints: newPoints,
-            transactions: [newTx, ...kid.transactions],
           };
         }
         return kid;
       })
     );
 
-    // Supabase Update
+    // Supabase Update & Log Transaction
     try {
-      await supabase
-        .from('kids_profiles')
-        .update({ balance: updatedBalance, donation_points: newPoints })
-        .eq('id', kidId);
+      await Promise.all([
+        supabase
+          .from('kids_profiles')
+          .update({ balance: updatedBalance, donation_points: newPoints })
+          .eq('id', kidId),
+        logTransaction(targetKid.name, `تبرع للمسؤولية المجتمعية 💚`, amount, 'withdrawal')
+      ]);
     } catch (err) {
       console.error('Failed to sync donation to Supabase:', err);
     }
@@ -277,24 +323,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setKids((prevKids) =>
       prevKids.map((kid) => {
         if (kid.name === kidName) {
-          const newTx: Transaction = {
-            id: `tx_invest_${Date.now()}`,
-            title: `مساهمة استثمارية عائلية 📈`,
-            amount: amount,
-            type: 'withdrawal',
-            date: new Date().toISOString().split('T')[0],
-          };
           return {
             ...kid,
             balance: updatedBalance,
-            transactions: [newTx, ...(kid.transactions || [])],
           };
         }
         return kid;
       })
     );
 
-    // b. Supabase Call
+    // b. Supabase Call & Log Transaction
     try {
       await Promise.all([
         supabase
@@ -304,25 +342,28 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         supabase
           .from('kids_profiles')
           .update({ balance: updatedBalance })
-          .eq('id', kidId)
+          .eq('id', kidId),
+        logTransaction(kidName, `مساهمة استثمارية عائلية 📈`, amount, 'withdrawal')
       ]);
     } catch (err) {
       console.error('Failed to update project investment in Supabase:', err);
     }
   };
 
-  const addSavingsGoal = (kidName: string, title: string, targetAmount: number, deadlineDate?: string) => {
+  const addSavingsGoal = async (kidName: string, title: string, targetAmount: number, deadlineDate?: string) => {
+    const tempId = `goal_${Date.now()}`;
+    const newGoal: SavingsGoal = {
+      id: tempId,
+      title,
+      targetAmount,
+      currentAmount: 0,
+      isLocked: true,
+      deadlineDate: deadlineDate || undefined,
+    };
+
     setKids((prevKids) =>
       prevKids.map((kid) => {
         if (kid.name === kidName) {
-          const newGoal: SavingsGoal = {
-            id: `goal_${Date.now()}`,
-            title,
-            targetAmount,
-            currentAmount: 0,
-            isLocked: true,
-            deadlineDate,
-          };
           return {
             ...kid,
             savingsGoals: [...(kid.savingsGoals || []), newGoal],
@@ -331,6 +372,49 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         return kid;
       })
     );
+
+    // Supabase Insert
+    try {
+      const { data, error } = await supabase
+        .from('savings_goals')
+        .insert({
+          title,
+          target_amount: targetAmount,
+          current_amount: 0,
+          is_locked: true,
+          deadline_date: deadlineDate || null,
+          kid_name: kidName
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      if (data) {
+        setKids((prevKids) =>
+          prevKids.map((kid) => {
+            if (kid.name === kidName) {
+              const updatedGoals = (kid.savingsGoals || []).map((g) => {
+                if (g.id === tempId) {
+                  return {
+                    ...g,
+                    id: data.id.toString(),
+                  };
+                }
+                return g;
+              });
+              return {
+                ...kid,
+                savingsGoals: updatedGoals,
+              };
+            }
+            return kid;
+          })
+        );
+      }
+    } catch (err) {
+      console.error('Failed to sync added goal to Supabase:', err);
+    }
   };
 
   const addToGoal = async (kidName: string, goalId: string, amount: number) => {
@@ -344,14 +428,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setKids((prevKids) =>
       prevKids.map((kid) => {
         if (kid.name === kidName) {
-          const newTx: Transaction = {
-            id: `tx_goal_${Date.now()}`,
-            title: `إيداع في حصالة الادخار 🔒`,
-            amount,
-            type: 'withdrawal',
-            date: new Date().toISOString().split('T')[0],
-          };
-
           const updatedGoals = (kid.savingsGoals || []).map((goal) => {
             if (goal.id === goalId) {
               const newCurrent = goal.currentAmount + amount;
@@ -368,7 +444,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             ...kid,
             balance: updatedBalance,
             savingsGoals: updatedGoals,
-            transactions: [newTx, ...(kid.transactions || [])],
           };
         }
         return kid;
@@ -384,10 +459,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         return sum + goal.currentAmount;
       }, 0);
 
-      await supabase
-        .from('kids_profiles')
-        .update({ balance: updatedBalance, saved: computedSaved })
-        .eq('id', kidId);
+      const dbGoalId = isNaN(Number(goalId)) ? goalId : Number(goalId);
+      const targetGoal = (targetKid.savingsGoals || []).find(g => g.id === goalId);
+      const newCurrent = targetGoal ? targetGoal.currentAmount + amount : amount;
+      const isLocked = targetGoal ? newCurrent < targetGoal.targetAmount : true;
+
+      await Promise.all([
+        supabase
+          .from('savings_goals')
+          .update({ current_amount: newCurrent, is_locked: isLocked })
+          .eq('id', dbGoalId),
+        supabase
+          .from('kids_profiles')
+          .update({ balance: updatedBalance, saved: computedSaved })
+          .eq('id', kidId),
+        logTransaction(kidName, `إيداع في حصالة الادخار 🔒`, amount, 'withdrawal')
+      ]);
     } catch (err) {
       console.error('Failed to update kid balance and savings in Supabase:', err);
     }
@@ -407,21 +494,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setKids((prevKids) =>
       prevKids.map((kid) => {
         if (kid.name === kidName) {
-          const newTx: Transaction = {
-            id: `tx_withdraw_goal_${Date.now()}`,
-            title: `سحب مدخرات حصالة: ${goal.title} 🔓🎉`,
-            amount: amountToWithdraw,
-            type: 'deposit',
-            date: new Date().toISOString().split('T')[0],
-          };
-
           const updatedGoals = (kid.savingsGoals || []).filter((g) => g.id !== goalId);
 
           return {
             ...kid,
             balance: updatedBalance,
             savingsGoals: updatedGoals,
-            transactions: [newTx, ...(kid.transactions || [])],
           };
         }
         return kid;
@@ -431,10 +509,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     // Supabase Update
     try {
       const computedSaved = (targetKid.savingsGoals || []).filter(g => g.id !== goalId).reduce((sum, goal) => sum + goal.currentAmount, 0);
-      await supabase
-        .from('kids_profiles')
-        .update({ balance: updatedBalance, saved: computedSaved })
-        .eq('id', kidId);
+      const dbGoalId = isNaN(Number(goalId)) ? goalId : Number(goalId);
+
+      await Promise.all([
+        supabase
+          .from('savings_goals')
+          .delete()
+          .eq('id', dbGoalId),
+        supabase
+          .from('kids_profiles')
+          .update({ balance: updatedBalance, saved: computedSaved })
+          .eq('id', kidId),
+        logTransaction(kidName, `سحب مدخرات حصالة: ${goal.title} 🔓🎉`, amountToWithdraw, 'deposit')
+      ]);
     } catch (err) {
       console.error('Failed to update kid balance and savings in Supabase:', err);
     }
@@ -530,38 +617,34 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const transferAllowance = async (kidId: string, amount: number) => {
-    let newBalance = 0;
-    let newAllowance = 0;
+    const targetKid = kids.find(k => k.id === kidId);
+    if (!targetKid) return;
+
+    const newBalance = targetKid.balance + amount;
+    const newAllowance = targetKid.allowance + amount;
 
     setKids((prevKids) =>
       prevKids.map((kid) => {
         if (kid.id === kidId) {
-          newBalance = kid.balance + amount;
-          newAllowance = kid.allowance + amount;
-          const newTx: Transaction = {
-            id: `tx_allowance_${Date.now()}`,
-            title: `تحويل مصروف من ولي الأمر 💸`,
-            amount: amount,
-            type: 'deposit',
-            date: new Date().toISOString().split('T')[0],
-          };
           return {
             ...kid,
             balance: newBalance,
             allowance: newAllowance,
-            transactions: [newTx, ...(kid.transactions || [])],
           };
         }
         return kid;
       })
     );
 
-    // Supabase Update
+    // Supabase Update & Log Transaction
     try {
-      await supabase
-        .from('kids_profiles')
-        .update({ balance: newBalance, allowance: newAllowance })
-        .eq('id', kidId);
+      await Promise.all([
+        supabase
+          .from('kids_profiles')
+          .update({ balance: newBalance, allowance: newAllowance })
+          .eq('id', kidId),
+        logTransaction(targetKid.name, `تحويل مصروف من ولي الأمر 💸`, amount, 'deposit')
+      ]);
     } catch (err) {
       console.error('Failed to sync allowance transfer to Supabase:', err);
     }

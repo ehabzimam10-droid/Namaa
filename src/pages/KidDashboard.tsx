@@ -4,7 +4,7 @@ import { useApp } from '../context/AppContext';
 export default function KidDashboard() {
   const { kids, addDonation, profile, projects } = useApp();
 
-  const kid = kids.find(k => k.name === profile?.name) || kids.find(k => k.id === 'kid_salem') || kids[1];
+  const kid = kids.find(k => k.name === profile?.name) || kids.find(k => k.name === 'سالم') || kids[0];
   const savingPercentage = Math.round((kid.saved / kid.allowance) * 100);
   const isThriving = savingPercentage >= 50;
 

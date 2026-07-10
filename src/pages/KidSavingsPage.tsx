@@ -7,7 +7,7 @@ export default function KidSavingsPage() {
   const { kids, profile, addSavingsGoal, addToGoal, withdrawGoal } = useApp();
   
   // Find current active kid
-  const kid = kids.find((k) => k.name === profile?.name) || kids.find((k) => k.id === 'kid_salem') || kids[1];
+  const kid = kids.find((k) => k.name === profile?.name) || kids.find((k) => k.name === 'سالم') || kids[0];
 
   // States for creating new goal
   const [newTitle, setNewTitle] = useState('');
