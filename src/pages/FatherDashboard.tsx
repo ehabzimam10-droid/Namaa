@@ -109,7 +109,7 @@ export default function FatherDashboard() {
             </p>
             
             <div className="p-3 bg-orange-500/10 border border-orange-500/20 rounded-xl text-xs text-orange-200">
-              💡 <strong>توصية:</strong> خالد صرف 80% من مصروفه، نقترح تكليفه بمهمة منزلية.
+              💡 <strong>توصية:</strong> خالد صرف 80% من رصيده المتاح، نقترح تكليفه بمهمة منزلية لزيادة كسبه.
             </div>
           </div>
           <button className="w-full mt-4 bg-orange-500/10 hover:bg-orange-500/20 text-orange-300 font-bold py-2 rounded-xl text-xs border border-orange-500/20 transition-all">
@@ -131,32 +131,19 @@ export default function FatherDashboard() {
             
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {kids.map((kid) => {
-                const savePercent = kid.allowance > 0 ? Math.round((kid.saved / kid.allowance) * 100) : 0;
                 const isTransferLoading = allowanceLoading[kid.id] || false;
 
                 return (
                   <div key={kid.id} className="bg-white/5 border border-white/5 p-4 rounded-2xl space-y-3 flex flex-col justify-between">
                     <div>
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-center justify-between border-b border-white/5 pb-2">
                         <span className="text-xs font-bold text-slate-400">عمر {kid.age} سنة</span>
                         <span className="font-extrabold text-sm text-white">{kid.name}</span>
                       </div>
                       
-                      <div className="flex justify-between text-[11px] text-slate-300 font-sans mt-2">
+                      <div className="flex justify-between items-center text-xs text-slate-300 font-sans mt-3">
+                        <span>المدخرات: {kid.saved} ريال</span>
                         <span>الرصيد المتاح: {kid.balance} ريال</span>
-                        <span>نسبة الادخار: {savePercent}%</span>
-                      </div>
-                      
-                      <div className="flex justify-between text-[10px] text-slate-400 font-sans mt-1">
-                        <span>الحصالات المقفلة: {kid.saved} ريال</span>
-                        <span>المصروف التراكمي: {kid.allowance} ريال</span>
-                      </div>
-
-                      <div className="h-1.5 w-full rounded-full bg-slate-800/60 overflow-hidden mt-2">
-                        <div
-                          className={`h-full rounded-full ${savePercent < 50 ? 'bg-rose-500' : 'bg-emerald-500'}`}
-                          style={{ width: `${Math.min(savePercent, 100)}%` }}
-                        ></div>
                       </div>
                     </div>
 

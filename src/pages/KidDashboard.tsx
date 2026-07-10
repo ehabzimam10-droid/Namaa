@@ -5,8 +5,9 @@ export default function KidDashboard() {
   const { kids, addDonation, profile, projects } = useApp();
 
   const kid = kids.find(k => k.name === profile?.name) || kids.find(k => k.name === 'سالم') || kids[0];
-  const savingPercentage = Math.round((kid.saved / kid.allowance) * 100);
-  const isThriving = savingPercentage >= 50;
+  const totalTarget = (kid.savingsGoals || []).reduce((sum, g) => sum + g.targetAmount, 0);
+  const progressPercentage = totalTarget > 0 ? Math.min(100, Math.round((kid.saved / totalTarget) * 100)) : 0;
+  const isThriving = kid.saved > 0;
 
   return (
     <div className="w-full space-y-8 text-right font-sans">
@@ -42,8 +43,8 @@ export default function KidDashboard() {
 
             <p className="text-xs text-slate-300 leading-relaxed">
               {isThriving
-                ? 'قلعتك مزدهرة وتنبض بالحياة لأنك ادخرت أكثر من 50% من مصروفك!'
-                : 'قلعتك بحاجة لادخار المزيد من مصروفك لتنمو وتتحول إلى قلعة ذهبية!'}
+                ? 'قلعتك مزدهرة وتنبض بالحياة لأنك قمت بادخار مبالغ رائعة في حصالتك! ✨'
+                : 'قلعتك بحاجة لادخار المزيد من المبالغ في حصالتك لتنمو وتتحول إلى قلعة ذهبية! 🏰'}
             </p>
           </div>
 
@@ -51,7 +52,7 @@ export default function KidDashboard() {
             <div className="h-2 w-full rounded-full bg-slate-800/60 overflow-hidden">
               <div
                 className={`h-full rounded-full bg-gradient-to-r ${isThriving ? 'from-emerald-500 to-teal-400' : 'from-amber-600 to-amber-450'}`}
-                style={{ width: `${savingPercentage}%` }}
+                style={{ width: `${progressPercentage || (kid.saved > 0 ? 100 : 0)}%` }}
               ></div>
             </div>
           </div>
@@ -66,22 +67,11 @@ export default function KidDashboard() {
               <span className="text-base">💰</span>
             </div>
 
-            <div className="text-right">
-              <span className="text-[10px] text-slate-400 block">مدخراتك الحالية</span>
+            <div className="text-right pb-2">
+              <span className="text-[10px] text-slate-400 block">إجمالي المدخرات الحالية</span>
               <span className="text-3xl font-extrabold text-white block mt-0.5">
                 {kid.saved} <span className="text-sm font-bold text-orange-400">ريال</span>
               </span>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2 text-center text-[10px] pt-1">
-              <div className="bg-white/5 p-2 rounded-xl border border-white/5">
-                <span className="text-slate-400 block">المصروف الأسبوعي</span>
-                <span className="font-bold text-white mt-1 block">{kid.allowance} ريال</span>
-              </div>
-              <div className="bg-white/5 p-2 rounded-xl border border-white/5">
-                <span className="text-slate-400 block">نسبة الادخار</span>
-                <span className="font-bold text-white mt-1 block">{savingPercentage}%</span>
-              </div>
             </div>
           </div>
         </Link>

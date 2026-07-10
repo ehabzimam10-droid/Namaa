@@ -621,7 +621,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (!targetKid) return;
 
     const newBalance = targetKid.balance + amount;
-    const newAllowance = targetKid.allowance + amount;
 
     setKids((prevKids) =>
       prevKids.map((kid) => {
@@ -629,7 +628,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           return {
             ...kid,
             balance: newBalance,
-            allowance: newAllowance,
           };
         }
         return kid;
@@ -641,7 +639,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       await Promise.all([
         supabase
           .from('kids_profiles')
-          .update({ balance: newBalance, allowance: newAllowance })
+          .update({ balance: newBalance })
           .eq('id', kidId),
         logTransaction(targetKid.name, `تحويل مصروف من ولي الأمر 💸`, amount, 'deposit')
       ]);
