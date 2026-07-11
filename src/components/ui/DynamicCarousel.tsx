@@ -72,11 +72,10 @@ export default function DynamicCarousel<T>({
         {items.map((item, idx) => (
           <div
             key={idx}
-            className={`w-full transition-all duration-500 transform absolute inset-0 flex items-center justify-center ${
-              idx === activeIndex
+            className={`w-full transition-all duration-500 transform absolute inset-0 flex items-center justify-center ${idx === activeIndex
                 ? 'opacity-100 translate-x-0 pointer-events-auto relative'
                 : 'opacity-0 translate-x-4 pointer-events-none'
-            }`}
+              }`}
           >
             {renderItem(item, idx)}
           </div>
@@ -131,11 +130,10 @@ export default function DynamicCarousel<T>({
                 key={idx}
                 type="button"
                 onClick={(e) => handleDotClick(e, idx)}
-                className={`h-1.5 rounded-full transition-all duration-300 ${
-                  idx === activeIndex
-                    ? 'w-4 bg-orange-450'
+                className={`h-1.5 rounded-full transition-all duration-300 ${idx === activeIndex
+                    ? 'w-4 bg-orange-500' // تم تعديلها إلى 500 بدلاً من 450
                     : 'w-1.5 bg-white/20 hover:bg-white/40'
-                }`}
+                  }`}
                 aria-label={`Go to slide ${idx + 1}`}
               />
             ))}
