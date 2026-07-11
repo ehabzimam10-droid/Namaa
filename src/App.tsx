@@ -8,6 +8,7 @@ import KidTasksPage from './pages/KidTasksPage';
 import KidInvestmentsPage from './pages/KidInvestmentsPage';
 import KidDonationsPage from './pages/KidDonationsPage';
 import FatherProjectsPage from './pages/FatherProjectsPage';
+import FatherKidsPage from './pages/FatherKidsPage';
 import DashboardLayout from './components/layout/DashboardLayout';
 
 function AuthLayout() {
@@ -56,6 +57,7 @@ function App() {
         <Route element={<DashboardLayout />}>
           <Route path="/father" element={<FatherDashboard />} />
           <Route path="/father/projects" element={<FatherProjectsPage />} />
+          <Route path="/father/kids" element={<FatherKidsPage />} />
           <Route path="/kid" element={<KidDashboard />} />
           <Route path="/kid/savings" element={<KidSavingsPage />} />
           <Route path="/kid/tasks" element={<KidTasksPage />} />

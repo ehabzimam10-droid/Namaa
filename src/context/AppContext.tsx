@@ -22,7 +22,7 @@ interface AppContextType {
   addToGoal: (kidName: string, goalId: string, amount: number) => Promise<void>;
   withdrawGoal: (kidName: string, goalId: string) => Promise<void>;
   submitTaskProof: (taskId: string) => Promise<void>;
-  transferAllowance: (kidId: string, amount: number) => Promise<void>;
+  transferMoney: (kidId: string, amount: number, reason: string) => Promise<void>;
   logout: () => void;
 }
 
@@ -616,7 +616,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     });
   };
 
-  const transferAllowance = async (kidId: string, amount: number) => {
+  const transferMoney = async (kidId: string, amount: number, reason: string) => {
     const targetKid = kids.find(k => k.id === kidId);
     if (!targetKid) return;
 
@@ -641,10 +641,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           .from('kids_profiles')
           .update({ balance: newBalance })
           .eq('id', kidId),
-        logTransaction(targetKid.name, `تحويل مصروف من ولي الأمر 💸`, amount, 'deposit')
+        logTransaction(targetKid.name, `تحويل مالي: ${reason} 💸`, amount, 'deposit')
       ]);
     } catch (err) {
-      console.error('Failed to sync allowance transfer to Supabase:', err);
+      console.error('Failed to sync money transfer to Supabase:', err);
     }
   };
 
@@ -677,7 +677,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         addToGoal,
         withdrawGoal,
         submitTaskProof,
-        transferAllowance,
+        transferMoney,
         logout,
       }}
     >

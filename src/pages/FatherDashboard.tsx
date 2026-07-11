@@ -1,32 +1,12 @@
-import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import DynamicCarousel from '../components/ui/DynamicCarousel';
 
 export default function FatherDashboard() {
-  const { kids, projects, transferAllowance } = useApp();
+  const { kids, projects } = useApp();
 
   // Calculate total family balance (sum of all kids' saved amounts)
   const totalBalance = kids.reduce((sum, kid) => sum + kid.saved, 0);
-
-  // States for allowance transfer
-  const [allowanceAmounts, setAllowanceAmounts] = useState<Record<string, number>>({});
-  const [allowanceLoading, setAllowanceLoading] = useState<Record<string, boolean>>({});
-
-  const handleTransferAllowance = async (kidId: string) => {
-    const amount = allowanceAmounts[kidId] || 0;
-    if (amount <= 0) return;
-
-    setAllowanceLoading((prev) => ({ ...prev, [kidId]: true }));
-    
-    // Simulate 800ms premium loading delay
-    setTimeout(async () => {
-      await transferAllowance(kidId, amount);
-      setAllowanceLoading((prev) => ({ ...prev, [kidId]: false }));
-      setAllowanceAmounts((prev) => ({ ...prev, [kidId]: 0 }));
-      alert('تم إرسال المصروف للابن بنجاح سحابياً ومحلياً! 💸✨');
-    }, 800);
-  };
 
   return (
     <div className="w-full space-y-8 text-right font-sans">
@@ -100,9 +80,9 @@ export default function FatherDashboard() {
         </div>
 
         {/* Card 3: معلومات الأبناء */}
-        <div className="md:col-span-2 relative overflow-hidden bg-white/5 backdrop-blur-xl border border-white/10 shadow-2xl rounded-3xl p-6 transition-all hover:scale-[1.005] duration-300">
+        <Link to="/father/kids" className="md:col-span-2 block relative overflow-hidden bg-white/5 backdrop-blur-xl border border-white/10 shadow-2xl rounded-3xl p-6 transition-all hover:scale-[1.01] hover:border-orange-500/30 duration-300">
           <div className="absolute -left-6 -top-6 text-6xl opacity-10">👦</div>
-          <div className="space-y-4">
+          <div className="space-y-4 w-full">
             <div className="flex items-center justify-between border-b border-white/5 pb-3">
               <span className="text-xs text-slate-400 font-sans">{kids.length} أبناء مسجلين</span>
               <div className="flex items-center gap-2">
@@ -112,55 +92,22 @@ export default function FatherDashboard() {
             </div>
             
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {kids.map((kid) => {
-                const isTransferLoading = allowanceLoading[kid.id] || false;
-
-                return (
-                  <div key={kid.id} className="bg-white/5 border border-white/5 p-4 rounded-2xl space-y-3 flex flex-col justify-between">
-                    <div>
-                      <div className="flex items-center justify-between border-b border-white/5 pb-2">
-                        <span className="text-xs font-bold text-slate-400">عمر {kid.age} سنة</span>
-                        <span className="font-extrabold text-sm text-white">{kid.name}</span>
-                      </div>
-                      
-                      <div className="flex justify-between items-center text-xs text-slate-300 font-sans mt-3">
-                        <span>المدخرات: {kid.saved} ريال</span>
-                        <span>الرصيد المتاح: {kid.balance} ريال</span>
-                      </div>
-                    </div>
-
-                    {/* Allowance Transfer Form */}
-                    <div className="flex items-center gap-2 pt-2 border-t border-white/5">
-                      <button
-                        type="button"
-                        disabled={isTransferLoading || (allowanceAmounts[kid.id] || 0) <= 0}
-                        onClick={() => handleTransferAllowance(kid.id)}
-                        className={`text-white text-[10px] font-extrabold px-3 py-2 rounded-xl transition-all ${
-                          isTransferLoading || (allowanceAmounts[kid.id] || 0) <= 0
-                            ? 'bg-orange-500/40 cursor-not-allowed opacity-50'
-                            : 'bg-gradient-to-r from-orange-500 to-[#8c7355] hover:from-orange-600 hover:to-[#9c8466] transform active:scale-95 shadow-md'
-                        }`}
-                      >
-                        {isTransferLoading ? 'جاري الصرف... ⏳' : 'صرف 💸'}
-                      </button>
-                      <input
-                        type="number"
-                        min="1"
-                        value={allowanceAmounts[kid.id] !== undefined ? (allowanceAmounts[kid.id] === 0 ? '' : allowanceAmounts[kid.id]) : ''}
-                        onChange={(e) => {
-                          const val = e.target.value === '' ? 0 : Number(e.target.value);
-                          setAllowanceAmounts((prev) => ({ ...prev, [kid.id]: val }));
-                        }}
-                        placeholder="المصروف بالريال..."
-                        className="flex-1 bg-[#111C2E]/80 border border-white/10 rounded-xl px-2.5 py-1.5 text-left text-white text-[10px] outline-none placeholder:text-slate-600 font-sans"
-                      />
-                    </div>
+              {kids.map((kid) => (
+                <div key={kid.id} className="bg-white/5 border border-white/5 p-4 rounded-2xl flex flex-col justify-between hover:bg-white/10 transition-all duration-300">
+                  <div className="flex items-center justify-between border-b border-white/5 pb-2">
+                    <span className="text-xs font-bold text-slate-400">عمر {kid.age} سنة</span>
+                    <span className="font-extrabold text-sm text-white">{kid.name}</span>
                   </div>
-                );
-              })}
+                  
+                  <div className="flex justify-between items-center text-xs text-slate-300 font-sans mt-3">
+                    <span>المدخرات: {kid.saved} ريال</span>
+                    <span>الرصيد المتاح: {kid.balance} ريال</span>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
-        </div>
+        </Link>
 
         {/* Card 4: المشاريع الاستثمارية العائلية */}
         <Link to="/father/projects" className="block relative overflow-hidden bg-white/5 backdrop-blur-xl border border-white/10 shadow-2xl rounded-3xl p-6 flex flex-col justify-between transition-all hover:scale-[1.02] hover:border-orange-500/30 duration-300">
