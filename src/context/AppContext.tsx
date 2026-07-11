@@ -81,6 +81,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             totalRequired: p.total_required,
             currentInvested: p.current_invested || 0,
             roiPercentage: p.roi_percentage,
+            contributors: p.contributors || {},
           }));
           setProjects(mappedProjects);
         }
@@ -281,6 +282,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       totalRequired,
       currentInvested: 0,
       roiPercentage,
+      contributors: {},
     };
     setProjects((prevProj) => [newProj, ...prevProj]);
 
@@ -289,7 +291,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         title,
         total_required: totalRequired,
         current_invested: 0,
-        roi_percentage: roiPercentage
+        roi_percentage: roiPercentage,
+        contributors: {}
       });
     } catch (err) {
       console.error('Failed to sync added project to Supabase:', err);
@@ -306,6 +309,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     // a. Find target project and add amount locally
     const targetProj = projects.find(p => p.id === projectId);
     const newInvestedAmount = targetProj ? targetProj.currentInvested + amount : amount;
+    const projectContributors = targetProj?.contributors || {};
+    const newContributors = {
+      ...projectContributors,
+      [kidName]: (projectContributors[kidName] || 0) + amount,
+    };
 
     setProjects((prevProj) =>
       prevProj.map((proj) => {
@@ -313,6 +321,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           return {
             ...proj,
             currentInvested: newInvestedAmount,
+            contributors: newContributors,
           };
         }
         return proj;
@@ -337,7 +346,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       await Promise.all([
         supabase
           .from('family_projects')
-          .update({ current_invested: newInvestedAmount })
+          .update({ current_invested: newInvestedAmount, contributors: newContributors })
           .eq('id', projectId),
         supabase
           .from('kids_profiles')

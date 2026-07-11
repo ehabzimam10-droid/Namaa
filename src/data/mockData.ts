@@ -47,6 +47,7 @@ export interface FamilyProject {
   totalRequired: number;
   currentInvested: number;
   roiPercentage: number;
+  contributors: Record<string, number>;
 }
 
 export interface FamilyData {
@@ -150,6 +151,7 @@ export const mockFamilyData: FamilyData = {
       totalRequired: 1000,
       currentInvested: 200,
       roiPercentage: 10,
+      contributors: { "سالم": 200 }
     }
   ],
 };

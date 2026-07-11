@@ -152,6 +152,25 @@ export default function FatherProjectsPage() {
                       ></div>
                     </div>
                   </div>
+
+                  {/* Contributors Section */}
+                  <div className="pt-2 border-t border-white/5 space-y-1.5">
+                    <span className="text-[10px] font-bold text-slate-400 block">المساهمون:</span>
+                    {proj.contributors && Object.keys(proj.contributors).length > 0 ? (
+                      <div className="flex flex-wrap gap-1.5 justify-start md:justify-end">
+                        {Object.entries(proj.contributors).map(([name, amount]) => (
+                          <span
+                            key={name}
+                            className="text-[9px] font-bold px-2 py-0.5 rounded-lg bg-white/5 border border-white/5 text-orange-300 font-sans"
+                          >
+                            {name}: {amount} ريال
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <span className="text-[9px] text-slate-500 block">لا يوجد مساهمون بعد.</span>
+                    )}
+                  </div>
                 </div>
               );
             })}

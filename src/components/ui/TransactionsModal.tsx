@@ -13,7 +13,10 @@ export default function TransactionsModal({ isOpen, onClose }: TransactionsModal
   // Find current active kid
   const kid = kids.find((k) => k.name === profile?.name) || kids.find((k) => k.name === 'سالم') || kids[0];
 
-  const transactions = kid.transactions || [];
+  // Sort transactions Descending by Date
+  const transactions = [...(kid.transactions || [])].sort((a, b) => {
+    return new Date(b.date).getTime() - new Date(a.date).getTime();
+  });
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-md animate-fade-in">
@@ -24,6 +27,7 @@ export default function TransactionsModal({ isOpen, onClose }: TransactionsModal
         {/* Modal Header */}
         <div className="flex justify-between items-center border-b border-white/5 pb-4 mb-4">
           <button
+            type="button"
             onClick={onClose}
             className="text-slate-400 hover:text-white text-lg font-bold transition-colors p-1"
           >
@@ -50,7 +54,9 @@ export default function TransactionsModal({ isOpen, onClose }: TransactionsModal
                   {/* Details (Right side in RTL context) */}
                   <div className="space-y-1 text-right">
                     <h5 className="font-bold text-xs text-white">{tx.title}</h5>
-                    <span className="text-[9px] text-slate-500 font-sans block">{tx.date}</span>
+                    <span className="text-[9px] text-slate-500 font-sans block">
+                      {new Date(tx.date).toLocaleString('ar-SA', { dateStyle: 'medium', timeStyle: 'medium' })}
+                    </span>
                   </div>
                 </div>
               );
