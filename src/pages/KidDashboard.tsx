@@ -1,8 +1,10 @@
 import { Link } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
+import DynamicCarousel from '../components/ui/DynamicCarousel';
+import { donationCauses } from '../data/mockData';
 
 export default function KidDashboard() {
-  const { kids, addDonation, profile, projects } = useApp();
+  const { kids, profile, projects } = useApp();
 
   const kid = kids.find(k => k.name === profile?.name) || kids.find(k => k.name === 'سالم') || kids[0];
   const totalTarget = (kid.savingsGoals || []).reduce((sum, g) => sum + g.targetAmount, 0);
@@ -79,64 +81,56 @@ export default function KidDashboard() {
         {/* Card 3: الاستثمار العائلي */}
         <Link to="/kid/investments" className="block relative overflow-hidden bg-white/5 backdrop-blur-xl border border-white/10 shadow-2xl rounded-3xl p-5 flex flex-col justify-between transition-all hover:scale-[1.02] hover:border-orange-500/30 duration-300">
           <div className="absolute -left-6 -top-6 text-6xl opacity-15">📈</div>
-          <div className="space-y-3">
+          <div className="space-y-3 w-full">
             <div className="flex items-center justify-end gap-2 border-b border-white/5 pb-2">
               <h4 className="text-sm font-bold text-white">الاستثمار العائلي</h4>
               <span className="text-base">📈</span>
             </div>
 
-            <p className="text-xs text-slate-300 leading-relaxed">
-              ساهم في تمويل مشاريع العائلة واربح عوائد استثمارية إضافية! ادخل هنا للمشاركة بمدخراتك.
-            </p>
-
-            <div className="bg-white/5 p-3 rounded-xl border border-white/5 flex justify-between items-center text-xs">
-              <span className="font-extrabold text-orange-400">{projects.length} مشاريع</span>
-              <span className="text-slate-400">المشاريع النشطة:</span>
-            </div>
+            <DynamicCarousel
+              items={projects}
+              renderItem={(project) => {
+                const percentage = Math.min(Math.round((project.currentInvested / project.totalRequired) * 100), 100);
+                return (
+                  <div className="w-full text-right space-y-2 px-1">
+                    <h5 className="font-bold text-xs text-white">{project.title}</h5>
+                    <div className="flex justify-between items-center text-[10px] text-slate-400 font-sans">
+                      <span>{percentage}% مكتمل</span>
+                      <span>ROI: {project.roiPercentage}%</span>
+                    </div>
+                    <div className="h-1.5 w-full rounded-full bg-slate-800/60 overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-gradient-to-l from-[#8c7355] to-[#009639]"
+                        style={{ width: `${percentage}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                );
+              }}
+            />
           </div>
         </Link>
 
         {/* Card 4: التبرع */}
-        <div className="relative overflow-hidden bg-white/5 backdrop-blur-xl border border-white/10 shadow-2xl rounded-3xl p-5 flex flex-col justify-between transition-all hover:scale-[1.01] duration-300">
+        <Link to="/kid/donations" className="block relative overflow-hidden bg-white/5 backdrop-blur-xl border border-white/10 shadow-2xl rounded-3xl p-5 flex flex-col justify-between transition-all hover:scale-[1.02] hover:border-orange-500/30 duration-300">
           <div className="absolute -left-6 -top-6 text-6xl opacity-15">🤲</div>
-          <div className="space-y-3">
+          <div className="space-y-3 w-full">
             <div className="flex items-center justify-end gap-2 border-b border-white/5 pb-2">
               <h4 className="text-sm font-bold text-emerald-400">التبرع والمسؤولية</h4>
               <span className="text-base">💚</span>
             </div>
 
-            <p className="text-xs text-slate-300 leading-relaxed">
-              اكتسب نقاط تبرع مجتمعية وشارك في تمويل المشاريع الخيرية المعتمدة لعائلتك.
-            </p>
-
-            <div className="bg-white/5 p-3 rounded-xl border border-white/5 flex justify-between items-center text-xs">
-              <div className="text-left">
-                <span className="font-extrabold text-white text-lg">{kid.donationPoints}</span>
-                <span className="text-[10px] text-emerald-400 block">ريال متبرع به</span>
-              </div>
-              <span className="text-slate-400 font-bold text-[11px]">مساهماتك الخيرية:</span>
-            </div>
+            <DynamicCarousel
+              items={donationCauses}
+              renderItem={(cause) => (
+                <div className="w-full text-center py-2 space-y-1">
+                  <h5 className="font-bold text-xs text-white">{cause.title}</h5>
+                  <p className="text-[10px] text-slate-400">اضغط للمساهمة والتبرع 🤲</p>
+                </div>
+              )}
+            />
           </div>
-
-          <button
-            disabled={kid.balance < 10}
-            onClick={() => {
-              if (kid.balance < 10) {
-                alert('عذراً، رصيدك غير كافي للتبرع! 😔');
-                return;
-              }
-              addDonation(kid.id, 10);
-              alert('شكراً لتبرعك بـ 10 ريال لخدمة المجتمع! 💚🤲');
-            }}
-            className={`w-full mt-4 bg-gradient-to-r text-white font-extrabold py-2.5 rounded-xl text-xs shadow-lg transition-all transform flex items-center justify-center gap-1 ${
-              kid.balance < 10
-                ? 'from-slate-600 to-slate-700 opacity-40 cursor-not-allowed active:scale-100'
-                : 'from-[#8c7355] to-[#009639] hover:from-[#9c8466] hover:to-[#00a840] active:scale-95'
-            }`}
-          >
-            <span>{kid.balance < 10 ? 'الرصيد غير كافٍ 🚫' : 'تبرع بـ 10 ريال 🤲'}</span>
-          </button>
-        </div>
+        </Link>
 
         {/* Card 5: نقاط دوري العائلة (Hidden/Blind state) */}
         <div className="relative overflow-hidden bg-white/5 backdrop-blur-xl border border-white/10 shadow-2xl rounded-3xl p-5 flex flex-col justify-between transition-all hover:scale-[1.01] duration-300 group">
@@ -167,18 +161,23 @@ export default function KidDashboard() {
               <span className="text-base">🧹</span>
             </div>
 
-            <div className="space-y-2 max-h-40 overflow-y-auto pt-1 text-xs">
-              {kid.tasks && kid.tasks.length > 0 ? (
-                kid.tasks.map((task) => (
-                  <div key={task.id} className="p-2 bg-white/5 border border-white/5 rounded-xl flex justify-between items-center text-[10px]">
-                    <span className="bg-orange-500/20 text-orange-400 px-2 py-0.5 rounded-md font-bold">قيد التنفيذ</span>
-                    <span className="font-bold text-white">{task.title}</span>
-                  </div>
-                ))
-              ) : (
-                <p className="text-[10px] text-slate-400 text-center py-4">لا توجد مهام نشطة حالياً. حافظ على نشاطك! ✨</p>
+            <DynamicCarousel
+              items={kid.tasks || []}
+              renderItem={(task) => (
+                <div className="w-full text-right px-1 flex justify-between items-center text-xs">
+                  <span className={`text-[9px] px-2 py-0.5 rounded-md ${
+                    task.status === 'approved'
+                      ? 'bg-emerald-500/20 text-emerald-400'
+                      : task.status === 'under_review'
+                        ? 'bg-amber-500/20 text-amber-400'
+                        : 'bg-orange-500/20 text-orange-400'
+                  }`}>
+                    {task.status === 'approved' ? 'مكتملة ✅' : task.status === 'under_review' ? 'قيد المراجعة ⏳' : 'قيد التنفيذ 🧹'}
+                  </span>
+                  <span className="font-bold text-white text-[11px]">{task.title}</span>
+                </div>
               )}
-            </div>
+            />
           </div>
         </Link>
 

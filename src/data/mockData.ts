@@ -153,3 +153,9 @@ export const mockFamilyData: FamilyData = {
     }
   ],
 };
+
+export const donationCauses = [
+  { id: 1, title: 'سقيا ماء 💧' },
+  { id: 2, title: 'كفالة يتيم 👨👩👦' },
+  { id: 3, title: 'كسوة شتاء 🧥' }
+];
