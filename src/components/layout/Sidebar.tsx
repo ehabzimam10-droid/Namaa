@@ -1,5 +1,5 @@
 import { useApp } from '../../context/AppContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, NavLink } from 'react-router-dom';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -20,20 +20,16 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const menuItems = isFather
     ? [
         { title: 'الرئيسية 🏠', path: '/father' },
-        { title: 'القرية الافتراضية 🏰', path: '#' },
-        { title: 'المستشار المالي الذكي 🤖', path: '#' },
-        { title: 'معلومات الأبناء 👦👧', path: '#' },
-        { title: 'إضافة مشروع استثماري ➕', path: '#' },
-        { title: 'دوري العائلات 🏆', path: '#' },
+        { title: 'معلومات الأبناء 👦👧', path: '/father/kids' },
+        { title: 'مشاريع العائلة 📈', path: '/father/projects' },
+        { title: 'المستشار الذكي 🤖', path: '/father/ai' },
       ]
     : [
         { title: 'الرئيسية 🏠', path: '/kid' },
-        { title: 'القرية 🏰', path: '#' },
-        { title: 'الحصالة 💰', path: '#' },
-        { title: 'الاستثمار العائلي 📈', path: '#' },
-        { title: 'التبرع 🤲', path: '#' },
-        { title: 'دوري العائلة 🏆', path: '#' },
-        { title: 'المهام 🧹', path: '#' },
+        { title: 'الحصالة الذكية 💰', path: '/kid/savings' },
+        { title: 'المهام والمسؤوليات 🧹', path: '/kid/tasks' },
+        { title: 'الاستثمار العائلي 📈', path: '/kid/investments' },
+        { title: 'المسؤولية المجتمعية (التبرع) 🤲', path: '/kid/donations' },
       ];
 
   return (
@@ -80,18 +76,20 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           {/* Navigation Links */}
           <nav className="space-y-2">
             {menuItems.map((item, idx) => (
-              <button
+              <NavLink
                 key={idx}
-                onClick={() => {
-                  if (item.path !== '#') {
-                    navigate(item.path);
-                  }
-                  onClose();
-                }}
-                className="w-full text-right px-4 py-3 rounded-xl bg-white/0 hover:bg-white/5 text-slate-300 hover:text-white border border-transparent hover:border-white/5 text-xs font-bold transition-all flex items-center justify-end gap-2"
+                to={item.path}
+                onClick={onClose}
+                className={({ isActive }) =>
+                  `w-full text-right px-4 py-3 rounded-xl text-xs font-bold transition-all flex items-center justify-end gap-2 border ${
+                    isActive
+                      ? 'bg-white/10 text-white border-white/20'
+                      : 'bg-white/0 hover:bg-white/5 text-slate-300 hover:text-white border-transparent hover:border-white/5'
+                  }`
+                }
               >
                 <span>{item.title}</span>
-              </button>
+              </NavLink>
             ))}
           </nav>
         </div>
