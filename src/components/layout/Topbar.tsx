@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
 import TransactionsModal from '../ui/TransactionsModal';
 
@@ -7,8 +8,10 @@ interface TopbarProps {
 }
 
 export default function Topbar({ onMenuToggle }: TopbarProps) {
+  const navigate = useNavigate();
   const { profile, kids } = useApp();
   const [isTxModalOpen, setIsTxModalOpen] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
 
   const isFather = profile?.role === 'father';
   const isKid = profile?.role === 'kid';
@@ -17,9 +20,35 @@ export default function Topbar({ onMenuToggle }: TopbarProps) {
   const kid = isKid ? (kids.find((k) => k.name === profile?.name) || kids.find((k) => k.name === 'سالم') || kids[0]) : null;
   const balance = kid ? kid.balance : 0;
 
-  const underReviewCount = isFather
-    ? kids.reduce((sum, kid) => sum + (kid.tasks || []).filter((t) => t.status === 'under_review').length, 0)
-    : 0;
+  // Build dynamic notifications list
+  const notificationsList = isFather
+    ? kids.flatMap((k) =>
+        (k.tasks || [])
+          .filter((t) => t.status === 'under_review')
+          .map((t) => ({
+            id: t.id,
+            title: `مهمة معلقة: ${t.title} 🧹`,
+            description: `بانتظار موافقة الولي للابن ${k.name} بمكافأة ${t.rewardAmount} ${t.rewardType === 'cash' ? 'ريال' : 'نقطة'}`,
+            onClick: () => {
+              setShowNotifications(false);
+              navigate('/father/kids');
+            },
+          }))
+      )
+    : isKid && kid
+    ? (kid.tasks || [])
+        .filter((t) => t.status === 'approved')
+        .map((t) => ({
+          id: t.id,
+          title: `تم اعتماد المهمة: ${t.title} ✅`,
+          description: `حصلت على مكافأة: ${t.rewardType === 'custom' ? (t.customReward || 'هدية عائلية 🎁') : `${t.rewardAmount} ${t.rewardType === 'cash' ? 'ريال 💸' : 'نقطة 🌟'}`}`,
+          onClick: () => {
+            setShowNotifications(false);
+          },
+        }))
+    : [];
+
+  const notificationCount = notificationsList.length;
 
   return (
     <>
@@ -43,27 +72,71 @@ export default function Topbar({ onMenuToggle }: TopbarProps) {
             </svg>
           </button>
 
-          {/* Notification Bell (if father) */}
-          {isFather && (
-            <div className="relative p-2 rounded-xl bg-white/5 border border-white/10 text-slate-300 hover:text-white transition-all select-none">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth={2}
-                stroke="currentColor"
-                className="w-5 h-5"
+          {/* Notification Bell */}
+          {(isFather || isKid) && (
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setShowNotifications(!showNotifications)}
+                className="p-2 rounded-xl bg-white/5 border border-white/10 text-slate-300 hover:text-white transition-all select-none relative active:scale-95 flex items-center justify-center"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0"
-                />
-              </svg>
-              {underReviewCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-rose-500 text-white text-[10px] font-bold h-4 w-4 rounded-full flex items-center justify-center border border-[#111C2E] animate-pulse font-sans">
-                  {underReviewCount}
-                </span>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth={2}
+                  stroke="currentColor"
+                  className="w-5 h-5"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0"
+                  />
+                </svg>
+                {notificationCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-rose-500 text-white text-[10px] font-bold h-4 w-4 rounded-full flex items-center justify-center border border-[#111C2E] animate-pulse font-sans">
+                    {notificationCount}
+                  </span>
+                )}
+              </button>
+
+              {/* Notification Floating Glassmorphism Dropdown */}
+              {showNotifications && (
+                <div className="absolute left-0 mt-2 w-80 bg-[#0D1527]/95 border border-white/10 shadow-2xl rounded-2xl p-4 text-right font-sans z-50 backdrop-blur-md">
+                  <div className="flex justify-between items-center border-b border-white/5 pb-2 mb-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowNotifications(false)}
+                      className="text-slate-400 hover:text-white text-xs font-bold transition-colors"
+                    >
+                      ✕
+                    </button>
+                    <h4 className="text-xs font-black text-white flex items-center gap-1">
+                      <span>إشعارات نماء</span>
+                      <span>🔔</span>
+                    </h4>
+                  </div>
+
+                  <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+                    {notificationsList.length > 0 ? (
+                      notificationsList.map((notif, index) => (
+                        <div
+                          key={`${notif.id}_${index}`}
+                          onClick={notif.onClick}
+                          className="p-2.5 rounded-xl text-right cursor-pointer bg-white/5 hover:bg-white/10 border border-white/5 transition-all duration-200"
+                        >
+                          <div className="font-bold text-[11px] text-white leading-tight mb-1">{notif.title}</div>
+                          <div className="text-[9px] text-slate-400 leading-normal">{notif.description}</div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="py-8 text-center text-xs text-slate-500">
+                        لا توجد إشعارات جديدة 💤
+                      </div>
+                    )}
+                  </div>
+                </div>
               )}
             </div>
           )}

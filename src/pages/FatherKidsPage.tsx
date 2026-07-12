@@ -177,7 +177,7 @@ export default function FatherKidsPage() {
                             <div className="text-right space-y-0.5">
                               <h5 className="font-bold text-[11px] text-white leading-tight">{tx.title}</h5>
                               <span className="text-[9px] text-slate-500 font-sans block">
-                                {new Date(tx.date).toLocaleDateString('ar-SA', { dateStyle: 'medium' })}
+                                {new Date(tx.date).toLocaleString('ar-SA', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' })}
                               </span>
                             </div>
                           </div>

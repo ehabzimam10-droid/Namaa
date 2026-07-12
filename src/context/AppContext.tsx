@@ -166,7 +166,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       title,
       amount,
       type,
-      date: new Date().toISOString().split('T')[0],
+      date: new Date().toISOString(),
     };
 
     setKids((prevKids) =>
@@ -189,7 +189,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           amount,
           type,
           kid_name: kidName,
-          date: new Date().toISOString().split('T')[0]
+          date: new Date().toISOString()
         });
     } catch (err) {
       console.error('Failed to log transaction to Supabase:', err);
@@ -605,7 +605,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               title: `استحقاق حصالة: ${goal.title} 💰`,
               amount: goal.currentAmount,
               type: 'deposit',
-              date: new Date().toISOString().split('T')[0],
+              date: new Date().toISOString(),
             };
             newTransactions.push(autoTx);
             return false; // Deletes the goal

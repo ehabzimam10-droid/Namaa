@@ -55,7 +55,7 @@ export default function TransactionsModal({ isOpen, onClose }: TransactionsModal
                   <div className="space-y-1 text-right">
                     <h5 className="font-bold text-xs text-white">{tx.title}</h5>
                     <span className="text-[9px] text-slate-500 font-sans block">
-                      {new Date(tx.date).toLocaleString('ar-SA', { dateStyle: 'medium', timeStyle: 'medium' })}
+                      {new Date(tx.date).toLocaleString('ar-SA', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' })}
                     </span>
                   </div>
                 </div>
