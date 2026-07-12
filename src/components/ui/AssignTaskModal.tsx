@@ -62,7 +62,7 @@ export default function AssignTaskModal({ isOpen, onClose, kidName }: AssignTask
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-md animate-fade-in">
       <div className="relative w-full max-w-md bg-[#0D1527]/90 border border-white/10 shadow-2xl rounded-3xl p-6 text-right font-sans overflow-hidden">
         {/* Decorative background glow */}
-        <div className="absolute -left-10 -top-10 h-28 w-28 rounded-full bg-blue-500/10 blur-2xl"></div>
+        <div className="absolute -left-10 -top-10 h-28 w-28 rounded-full bg-blue-500/10 blur-2xl pointer-events-none"></div>
 
         {/* Modal Header */}
         <div className="flex justify-between items-center border-b border-white/5 pb-4 mb-4">
