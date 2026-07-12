@@ -20,7 +20,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const menuItems = isFather
     ? [
         { title: 'الرئيسية 🏠', path: '/father' },
-        { title: 'معلومات الأبناء 👦👧', path: '/father/kids' },
+        { title: 'إدارة الأبناء 👥', path: '/father/kids' },
         { title: 'مشاريع العائلة 📈', path: '/father/projects' },
         { title: 'المستشار الذكي 🤖', path: '/father/ai' },
       ]

@@ -79,14 +79,14 @@ export default function FatherDashboard() {
           </button>
         </div>
 
-        {/* Card 3: معلومات الأبناء */}
+        {/* Card 3: إدارة الأبناء 👥 */}
         <Link to="/father/kids" className="md:col-span-2 block relative overflow-hidden bg-white/5 backdrop-blur-xl border border-white/10 shadow-2xl rounded-3xl p-6 transition-all hover:scale-[1.01] hover:border-orange-500/30 duration-300">
           <div className="absolute -left-6 -top-6 text-6xl opacity-10">👦</div>
           <div className="space-y-4 w-full">
             <div className="flex items-center justify-between border-b border-white/5 pb-3">
               <span className="text-xs text-slate-400 font-sans">{kids.length} أبناء مسجلين</span>
               <div className="flex items-center gap-2">
-                <h4 className="text-lg font-bold text-white">معلومات الأبناء</h4>
+                <h4 className="text-lg font-bold text-white">إدارة الأبناء 👥</h4>
                 <span className="text-xl">👦👧</span>
               </div>
             </div>

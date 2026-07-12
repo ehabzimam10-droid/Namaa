@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import TransferModal from '../components/ui/TransferModal';
+import AssignTaskModal from '../components/ui/AssignTaskModal';
 
 export default function FatherKidsPage() {
   const navigate = useNavigate();
@@ -11,9 +12,17 @@ export default function FatherKidsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedKid, setSelectedKid] = useState<{ id: string; name: string } | null>(null);
 
+  const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
+  const [selectedKidName, setSelectedKidName] = useState<string | null>(null);
+
   const openTransferModal = (id: string, name: string) => {
     setSelectedKid({ id, name });
     setIsModalOpen(true);
+  };
+
+  const openAssignTaskModal = (name: string) => {
+    setSelectedKidName(name);
+    setIsAssignModalOpen(true);
   };
 
   // Hardcoded badges & AI rating based on kids for detailed demonstration
@@ -100,13 +109,20 @@ export default function FatherKidsPage() {
               </div>
 
               {/* Smart Transfer Action */}
-              <div className="pt-2 border-t border-white/5">
+              <div className="pt-2 border-t border-white/5 space-y-2">
                 <button
                   type="button"
                   onClick={() => openTransferModal(kid.id, kid.name)}
                   className="w-full bg-gradient-to-r from-orange-500 to-[#8c7355] hover:from-orange-600 hover:to-[#9c8466] text-white font-extrabold py-2.5 rounded-xl text-xs transition-all duration-300 transform active:scale-95 shadow-md flex items-center justify-center gap-1"
                 >
                   <span>تحويل مالي ذكي 💸</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => openAssignTaskModal(kid.name)}
+                  className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-extrabold py-2.5 rounded-xl text-xs transition-all duration-300 transform active:scale-95 shadow-md flex items-center justify-center gap-1"
+                >
+                  <span>تخصيص مهمة 🎯</span>
                 </button>
               </div>
 
@@ -205,6 +221,18 @@ export default function FatherKidsPage() {
           }}
           kidId={selectedKid.id}
           kidName={selectedKid.name}
+        />
+      )}
+
+      {/* Render Assign Task Modal */}
+      {selectedKidName && (
+        <AssignTaskModal
+          isOpen={isAssignModalOpen}
+          onClose={() => {
+            setIsAssignModalOpen(false);
+            setSelectedKidName(null);
+          }}
+          kidName={selectedKidName}
         />
       )}
     </div>

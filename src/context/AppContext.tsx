@@ -25,6 +25,7 @@ interface AppContextType {
   transferMoney: (kidId: string, amount: number, reason: string) => Promise<void>;
   finalizeTaskApproval: (taskId: string) => Promise<void>;
   logout: () => void;
+  assignManualTask: (kidName: string, title: string, amount: number, type: 'cash' | 'points' | 'custom', customReward?: string) => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -739,6 +740,47 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
+  const assignManualTask = async (
+    kidName: string,
+    title: string,
+    amount: number,
+    type: 'cash' | 'points' | 'custom',
+    customReward?: string
+  ) => {
+    const newTask: Task = {
+      id: `task_${Date.now()}`,
+      title,
+      rewardAmount: amount,
+      rewardType: type,
+      customReward: type === 'custom' ? customReward : undefined,
+      status: 'pending',
+    };
+
+    setKids((prevKids) =>
+      prevKids.map((kid) => {
+        if (kid.name === kidName) {
+          return {
+            ...kid,
+            tasks: [...(kid.tasks || []), newTask],
+          };
+        }
+        return kid;
+      })
+    );
+
+    try {
+      await supabase.from('kid_tasks').insert({
+        title: type === 'custom' ? `${title} (المكافأة: ${customReward})` : title,
+        reward_amount: amount,
+        reward_type: type,
+        status: 'pending',
+        kid_name: kidName
+      });
+    } catch (err) {
+      console.error('Failed to sync manual task to Supabase:', err);
+    }
+  };
+
   useEffect(() => {
     checkSavingsStatus();
     const interval = setInterval(checkSavingsStatus, 10000);
@@ -771,6 +813,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         transferMoney,
         finalizeTaskApproval,
         logout,
+        assignManualTask,
       }}
     >
       {children}
