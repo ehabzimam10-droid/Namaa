@@ -12,10 +12,12 @@ export default function Topbar({ onMenuToggle }: TopbarProps) {
   const { profile, kids } = useApp();
   const [isTxModalOpen, setIsTxModalOpen] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [hasSeenNotifications, setHasSeenNotifications] = useState(false);
+
 
   const isFather = profile?.role === 'father';
   const isKid = profile?.role === 'kid';
-  
+
   // Find current active kid if role is kid
   const kid = isKid ? (kids.find((k) => k.name === profile?.name) || kids.find((k) => k.name === 'سالم') || kids[0]) : null;
   const balance = kid ? kid.balance : 0;
@@ -23,20 +25,21 @@ export default function Topbar({ onMenuToggle }: TopbarProps) {
   // Build dynamic notifications list
   const notificationsList = isFather
     ? kids.flatMap((k) =>
-        (k.tasks || [])
-          .filter((t) => t.status === 'under_review')
-          .map((t) => ({
-            id: t.id,
-            title: `مهمة معلقة: ${t.title} 🧹`,
-            description: `بانتظار موافقة الولي للابن ${k.name} بمكافأة ${t.rewardAmount} ${t.rewardType === 'cash' ? 'ريال' : 'نقطة'}`,
-            onClick: () => {
-              setShowNotifications(false);
-              navigate('/father/kids');
-            },
-          }))
-      )
+      (k.tasks || [])
+        .filter((t) => t.status === 'under_review')
+        .map((t) => ({
+          id: t.id,
+          title: `مهمة معلقة: ${t.title} 🧹`,
+          description: `بانتظار موافقة الولي للابن ${k.name} بمكافأة ${t.rewardAmount} ${t.rewardType === 'cash' ? 'ريال' : 'نقطة'}`,
+          onClick: () => {
+            setShowNotifications(false);
+            setHasSeenNotifications(true);
+            navigate('/father/kids');
+          },
+        }))
+    )
     : isKid && kid
-    ? (kid.tasks || [])
+      ? (kid.tasks || [])
         .filter((t) => t.status === 'approved')
         .map((t) => ({
           id: t.id,
@@ -44,11 +47,13 @@ export default function Topbar({ onMenuToggle }: TopbarProps) {
           description: `حصلت على مكافأة: ${t.rewardType === 'custom' ? (t.customReward || 'هدية عائلية 🎁') : `${t.rewardAmount} ${t.rewardType === 'cash' ? 'ريال 💸' : 'نقطة 🌟'}`}`,
           onClick: () => {
             setShowNotifications(false);
+            setHasSeenNotifications(true);
           },
-        }))
-    : [];
 
-  const notificationCount = notificationsList.length;
+        }))
+      : [];
+
+  const notificationCount = hasSeenNotifications ? 0 : notificationsList.length;
 
   return (
     <>
@@ -77,7 +82,13 @@ export default function Topbar({ onMenuToggle }: TopbarProps) {
             <div className="relative">
               <button
                 type="button"
-                onClick={() => setShowNotifications(!showNotifications)}
+                onClick={() => {
+                  if (showNotifications) {
+                    setHasSeenNotifications(true);
+                  }
+                  setShowNotifications(!showNotifications);
+                }}
+
                 className="p-2 rounded-xl bg-white/5 border border-white/10 text-slate-300 hover:text-white transition-all select-none relative active:scale-95 flex items-center justify-center"
               >
                 <svg
@@ -107,7 +118,10 @@ export default function Topbar({ onMenuToggle }: TopbarProps) {
                   <div className="flex justify-between items-center border-b border-white/5 pb-2 mb-2">
                     <button
                       type="button"
-                      onClick={() => setShowNotifications(false)}
+                      onClick={() => {
+                        setShowNotifications(false);
+                        setHasSeenNotifications(true);
+                      }}
                       className="text-slate-400 hover:text-white text-xs font-bold transition-colors"
                     >
                       ✕
