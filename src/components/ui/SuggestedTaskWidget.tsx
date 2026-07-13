@@ -5,7 +5,7 @@ interface SuggestedTaskWidgetProps {
   kidName: string;
   title: string;
   suggestedAmount: number;
-  type: 'cash' | 'points';
+  type: 'cash' | 'points' | 'custom';
   reasoning: string;
 }
 
@@ -21,16 +21,18 @@ export default function SuggestedTaskWidget({
 
   // Local state for editable task fields
   const [title, setTitle] = useState(initialTitle);
-  const [amount, setAmount] = useState<number>(initialAmount);
-  const [type, setType] = useState<'cash' | 'points'>(initialType);
+  const [amount, setAmount] = useState<number>(initialAmount || 0);
+  const [type, setType] = useState<'cash' | 'points' | 'custom'>(initialType || 'cash');
+  const [customReward, setCustomReward] = useState('');
 
   const handleApprove = async () => {
     try {
       await assignManualTask(
         kidName,
         title,
-        amount,
-        type
+        type === 'custom' ? 0 : amount,
+        type,
+        type === 'custom' ? customReward : undefined
       );
       setStatus('approved');
     } catch (err) {
@@ -67,24 +69,38 @@ export default function SuggestedTaskWidget({
             </div>
 
             <div className="grid grid-cols-2 gap-2">
-              <div>
-                <label className="text-[9px] text-slate-400 block mb-1">قيمة المكافأة</label>
-                <input
-                  type="number"
-                  value={amount}
-                  onChange={(e) => setAmount(Number(e.target.value))}
-                  className="w-full bg-[#111C2E]/60 border border-white/10 focus:border-[#8c7355] rounded-xl px-2.5 py-1.5 text-left text-white text-xs outline-none transition-all font-sans"
-                />
-              </div>
+              {type !== 'custom' ? (
+                <div>
+                  <label className="text-[9px] text-slate-400 block mb-1">قيمة المكافأة</label>
+                  <input
+                    type="number"
+                    value={amount === 0 ? '' : amount}
+                    onChange={(e) => setAmount(Number(e.target.value))}
+                    className="w-full bg-[#111C2E]/60 border border-white/10 focus:border-[#8c7355] rounded-xl px-2.5 py-1.5 text-left text-white text-xs outline-none transition-all font-sans"
+                  />
+                </div>
+              ) : (
+                <div>
+                  <label className="text-[9px] text-slate-400 block mb-1">المكافأة المخصصة</label>
+                  <input
+                    type="text"
+                    value={customReward}
+                    onChange={(e) => setCustomReward(e.target.value)}
+                    placeholder="مثال: ساعتين سوني 🎮"
+                    className="w-full bg-[#111C2E]/60 border border-white/10 focus:border-[#8c7355] rounded-xl px-2.5 py-1.5 text-right text-white text-xs outline-none transition-all"
+                  />
+                </div>
+              )}
               <div>
                 <label className="text-[9px] text-slate-400 block mb-1">نوع المكافأة</label>
                 <select
                   value={type}
-                  onChange={(e) => setType(e.target.value as 'cash' | 'points')}
+                  onChange={(e) => setType(e.target.value as 'cash' | 'points' | 'custom')}
                   className="w-full bg-[#111C2E]/60 border border-white/10 focus:border-[#8c7355] rounded-xl px-2.5 py-1.5 text-right text-white text-xs outline-none transition-all"
                 >
                   <option value="cash">ريال 💸</option>
                   <option value="points">نقاط 🌟</option>
+                  <option value="custom">مخصصة 🎁</option>
                 </select>
               </div>
             </div>
@@ -97,16 +113,12 @@ export default function SuggestedTaskWidget({
             </div>
 
             <div className="grid grid-cols-2 gap-2">
-              <div className="bg-white/5 p-2 rounded-xl border border-white/5">
+              <div className="bg-white/5 p-2 rounded-xl border border-white/5 col-span-2">
                 <span className="text-[9px] text-slate-400 block">المكافأة</span>
                 <span className="font-bold text-orange-400 font-sans">
-                  {amount} {type === 'cash' ? 'ريال 💸' : 'نقطة 🌟'}
-                </span>
-              </div>
-              <div className="bg-white/5 p-2 rounded-xl border border-white/5">
-                <span className="text-[9px] text-slate-400 block">النوع</span>
-                <span className="font-bold text-slate-200">
-                  {type === 'cash' ? 'نقدية 💵' : 'نقاط 🏆'}
+                  {type === 'custom'
+                    ? (customReward || 'هدية مخصصة 🎁')
+                    : `${amount} ${type === 'cash' ? 'ريال 💸' : 'نقطة 🌟'}`}
                 </span>
               </div>
             </div>

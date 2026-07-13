@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
 import TransactionsModal from '../ui/TransactionsModal';
@@ -9,51 +9,70 @@ interface TopbarProps {
 
 export default function Topbar({ onMenuToggle }: TopbarProps) {
   const navigate = useNavigate();
-  const { profile, kids } = useApp();
+  const { profile, kids, notifications, markNotificationAsRead } = useApp();
   const [isTxModalOpen, setIsTxModalOpen] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
-  const [hasSeenNotifications, setHasSeenNotifications] = useState(false);
-
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const isFather = profile?.role === 'father';
   const isKid = profile?.role === 'kid';
-
+  
   // Find current active kid if role is kid
   const kid = isKid ? (kids.find((k) => k.name === profile?.name) || kids.find((k) => k.name === 'سالم') || kids[0]) : null;
   const balance = kid ? kid.balance : 0;
 
-  // Build dynamic notifications list
-  const notificationsList = isFather
-    ? kids.flatMap((k) =>
-      (k.tasks || [])
-        .filter((t) => t.status === 'under_review')
-        .map((t) => ({
-          id: t.id,
-          title: `مهمة معلقة: ${t.title} 🧹`,
-          description: `بانتظار موافقة الولي للابن ${k.name} بمكافأة ${t.rewardAmount} ${t.rewardType === 'cash' ? 'ريال' : 'نقطة'}`,
-          onClick: () => {
-            setShowNotifications(false);
-            setHasSeenNotifications(true);
-            navigate('/father/kids');
-          },
-        }))
-    )
-    : isKid && kid
-      ? (kid.tasks || [])
-        .filter((t) => t.status === 'approved')
-        .map((t) => ({
-          id: t.id,
-          title: `تم اعتماد المهمة: ${t.title} ✅`,
-          description: `حصلت على مكافأة: ${t.rewardType === 'custom' ? (t.customReward || 'هدية عائلية 🎁') : `${t.rewardAmount} ${t.rewardType === 'cash' ? 'ريال 💸' : 'نقطة 🌟'}`}`,
-          onClick: () => {
-            setShowNotifications(false);
-            setHasSeenNotifications(true);
-          },
+  // Filter and sort notifications
+  const userNotifications = (notifications || [])
+    .filter((n) => {
+      if (isFather) {
+        return n.role === 'father';
+      } else if (isKid && kid) {
+        return n.role === 'kid' && n.userId === kid.id;
+      }
+      return false;
+    })
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
-        }))
-      : [];
+  const unreadCount = userNotifications.filter((n) => !n.isRead).length;
 
-  const notificationCount = hasSeenNotifications ? 0 : notificationsList.length;
+  // Click Outside to Close dropdown
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowNotifications(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  const handleToggleNotifications = () => {
+    setShowNotifications(!showNotifications);
+    if (!showNotifications) {
+      // Mark all filtered notifications as read
+      userNotifications.forEach((n) => {
+        if (!n.isRead) {
+          markNotificationAsRead(n.id);
+        }
+      });
+    }
+  };
+
+  const timeAgo = (dateStr: string) => {
+    const now = new Date();
+    const date = new Date(dateStr);
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMins / 60);
+    const diffDays = Math.floor(diffHours / 24);
+
+    if (diffMins < 1) return 'الآن';
+    if (diffMins < 60) return `قبل ${diffMins} دقيقة`;
+    if (diffHours < 24) return `قبل ${diffHours} ساعة`;
+    return `قبل ${diffDays} يوم`;
+  };
 
   return (
     <>
@@ -77,18 +96,12 @@ export default function Topbar({ onMenuToggle }: TopbarProps) {
             </svg>
           </button>
 
-          {/* Notification Bell */}
+          {/* Notification Bell Wrapper with click-outside ref */}
           {(isFather || isKid) && (
-            <div className="relative">
+            <div className="relative" ref={dropdownRef}>
               <button
                 type="button"
-                onClick={() => {
-                  if (showNotifications) {
-                    setHasSeenNotifications(true);
-                  }
-                  setShowNotifications(!showNotifications);
-                }}
-
+                onClick={handleToggleNotifications}
                 className="p-2 rounded-xl bg-white/5 border border-white/10 text-slate-300 hover:text-white transition-all select-none relative active:scale-95 flex items-center justify-center"
               >
                 <svg
@@ -105,23 +118,20 @@ export default function Topbar({ onMenuToggle }: TopbarProps) {
                     d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0"
                   />
                 </svg>
-                {notificationCount > 0 && (
+                {unreadCount > 0 && (
                   <span className="absolute -top-1 -right-1 bg-rose-500 text-white text-[10px] font-bold h-4 w-4 rounded-full flex items-center justify-center border border-[#111C2E] animate-pulse font-sans">
-                    {notificationCount}
+                    {unreadCount}
                   </span>
                 )}
               </button>
 
-              {/* Notification Floating Glassmorphism Dropdown */}
+              {/* Notification Floating Dropdown */}
               {showNotifications && (
                 <div className="absolute left-0 mt-2 w-80 bg-[#0D1527]/95 border border-white/10 shadow-2xl rounded-2xl p-4 text-right font-sans z-50 backdrop-blur-md">
                   <div className="flex justify-between items-center border-b border-white/5 pb-2 mb-2">
                     <button
                       type="button"
-                      onClick={() => {
-                        setShowNotifications(false);
-                        setHasSeenNotifications(true);
-                      }}
+                      onClick={() => setShowNotifications(false)}
                       className="text-slate-400 hover:text-white text-xs font-bold transition-colors"
                     >
                       ✕
@@ -133,15 +143,21 @@ export default function Topbar({ onMenuToggle }: TopbarProps) {
                   </div>
 
                   <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
-                    {notificationsList.length > 0 ? (
-                      notificationsList.map((notif, index) => (
+                    {userNotifications.length > 0 ? (
+                      userNotifications.map((notif) => (
                         <div
-                          key={`${notif.id}_${index}`}
-                          onClick={notif.onClick}
-                          className="p-2.5 rounded-xl text-right cursor-pointer bg-white/5 hover:bg-white/10 border border-white/5 transition-all duration-200"
+                          key={notif.id}
+                          className={`p-2.5 rounded-xl text-right border transition-all duration-200 ${
+                            notif.isRead
+                              ? 'bg-white/5 border-white/5 text-slate-300'
+                              : 'bg-orange-500/10 border-orange-500/20 text-white'
+                          }`}
                         >
-                          <div className="font-bold text-[11px] text-white leading-tight mb-1">{notif.title}</div>
-                          <div className="text-[9px] text-slate-400 leading-normal">{notif.description}</div>
+                          <div className="font-bold text-[11px] leading-tight mb-1 flex justify-between items-center">
+                            <span className="text-[8px] text-slate-500 font-sans">{timeAgo(notif.createdAt)}</span>
+                            <span>{notif.title}</span>
+                          </div>
+                          <div className="text-[9px] text-slate-400 leading-normal">{notif.message}</div>
                         </div>
                       ))
                     ) : (

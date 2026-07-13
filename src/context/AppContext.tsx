@@ -9,6 +9,16 @@ export interface UserProfile {
   email?: string;
 }
 
+export interface Notification {
+  id: string;
+  userId: string;
+  role: 'father' | 'kid';
+  title: string;
+  message: string;
+  createdAt: string;
+  isRead: boolean;
+}
+
 interface AppContextType {
   profile: UserProfile | null;
   kids: Kid[];
@@ -28,6 +38,9 @@ interface AppContextType {
   assignManualTask: (kidName: string, title: string, amount: number, type: 'cash' | 'points' | 'custom', customReward?: string) => Promise<void>;
   geminiApiKey: string;
   setGeminiApiKey: (key: string) => void;
+  notifications: Notification[];
+  addNotification: (userId: string, role: 'father' | 'kid', title: string, message: string) => void;
+  markNotificationAsRead: (id: string) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -55,6 +68,34 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const setGeminiApiKey = (key: string) => {
     setGeminiApiKeyState(key);
     localStorage.setItem('namaa_gemini_api_key', key);
+  };
+
+  const [notifications, setNotifications] = useState<Notification[]>(() => {
+    const saved = localStorage.getItem('namaa_notifications');
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  useEffect(() => {
+    localStorage.setItem('namaa_notifications', JSON.stringify(notifications));
+  }, [notifications]);
+
+  const addNotification = (userId: string, role: 'father' | 'kid', title: string, message: string) => {
+    const newNotif: Notification = {
+      id: `notif_${Date.now()}_${Math.random()}`,
+      userId,
+      role,
+      title,
+      message,
+      createdAt: new Date().toISOString(),
+      isRead: false,
+    };
+    setNotifications((prev) => [newNotif, ...prev]);
+  };
+
+  const markNotificationAsRead = (id: string) => {
+    setNotifications((prev) =>
+      prev.map((n) => (n.id === id ? { ...n, isRead: true } : n))
+    );
   };
 
   useEffect(() => {
@@ -299,6 +340,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
     setProjects((prevProj) => [newProj, ...prevProj]);
 
+    // Send notification to all kids
+    kids.forEach((k) => {
+      addNotification(k.id, 'kid', 'مشروع جديد', 'مشروع استثماري عائلي جديد متاح!');
+    });
+
     try {
       await supabase.from('family_projects').insert({
         title,
@@ -340,6 +386,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         return proj;
       })
     );
+
+    // Check project completion
+    if (targetProj && newInvestedAmount >= targetProj.totalRequired) {
+      addNotification('father', 'father', 'اكتمل المشروع', 'تم اكتمال تمويل المشروع بنجاح!');
+    }
 
     // c. Update the specific kid's local state (subtract amount from balance)
     setKids((prevKids) =>
@@ -550,6 +601,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const submitTaskProof = async (taskId: string) => {
+    // Add notification to father
+    addNotification('father', 'father', 'مراجعة مهمة', 'أنهى ابنك مهمة بانتظار الاعتماد');
+
     // Optimistic local state update
     setKids((prevKids) =>
       prevKids.map((kid) => {
@@ -758,6 +812,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     type: 'cash' | 'points' | 'custom',
     customReward?: string
   ) => {
+    // Add notification to kid
+    const targetKid = kids.find((k) => k.name === kidName);
+    const kidId = targetKid ? targetKid.id : 'kid_salem';
+    addNotification(kidId, 'kid', 'مهمة جديدة', 'قام والدك بتكليفك بمهمة جديدة');
+
     const newTask: Task = {
       id: `task_${Date.now()}`,
       title,
@@ -827,6 +886,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         assignManualTask,
         geminiApiKey,
         setGeminiApiKey,
+        notifications,
+        addNotification,
+        markNotificationAsRead,
       }}
     >
       {children}
