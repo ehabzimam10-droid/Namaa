@@ -11,21 +11,26 @@ interface SuggestedTaskWidgetProps {
 
 export default function SuggestedTaskWidget({
   kidName,
-  title,
-  suggestedAmount,
-  type,
+  title: initialTitle,
+  suggestedAmount: initialAmount,
+  type: initialType,
   reasoning
 }: SuggestedTaskWidgetProps) {
   const { assignManualTask } = useApp();
   const [status, setStatus] = useState<'idle' | 'approved' | 'rejected'>('idle');
+
+  // Local state for editable task fields
+  const [title, setTitle] = useState(initialTitle);
+  const [amount, setAmount] = useState<number>(initialAmount);
+  const [type, setType] = useState<'cash' | 'points'>(initialType);
 
   const handleApprove = async () => {
     try {
       await assignManualTask(
         kidName,
         title,
-        suggestedAmount,
-        type === 'cash' ? 'cash' : 'points'
+        amount,
+        type
       );
       setStatus('approved');
     } catch (err) {
@@ -42,32 +47,71 @@ export default function SuggestedTaskWidget({
       {/* Widget Header */}
       <div className="flex justify-between items-center border-b border-white/5 pb-2">
         <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-[#8c7355]/30 text-orange-300">
-          توصية ذكية 🤖
+          توصية ذكية 🤖 (قابلة للتعديل)
         </span>
         <h4 className="text-xs font-bold text-white">اقتراح مهمة لـ {kidName} 🎯</h4>
       </div>
 
-      {/* Task Content */}
-      <div className="space-y-2 text-xs">
-        <div>
-          <span className="text-[10px] text-slate-400 block">المهمة المقترحة</span>
-          <span className="font-extrabold text-white">{title}</span>
-        </div>
+      {/* Task Content (Editable Form) */}
+      <div className="space-y-2.5 text-xs text-right">
+        {status === 'idle' ? (
+          <>
+            <div>
+              <label className="text-[9px] text-slate-400 block mb-1">اسم المهمة</label>
+              <input
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                className="w-full bg-[#111C2E]/60 border border-white/10 focus:border-[#8c7355] rounded-xl px-2.5 py-1.5 text-right text-white text-xs outline-none transition-all"
+              />
+            </div>
 
-        <div className="grid grid-cols-2 gap-2">
-          <div className="bg-white/5 p-2 rounded-xl border border-white/5">
-            <span className="text-[9px] text-slate-400 block">المكافأة</span>
-            <span className="font-bold text-orange-400 font-sans">
-              {suggestedAmount} {type === 'cash' ? 'ريال 💸' : 'نقطة 🌟'}
-            </span>
-          </div>
-          <div className="bg-white/5 p-2 rounded-xl border border-white/5">
-            <span className="text-[9px] text-slate-400 block">النوع</span>
-            <span className="font-bold text-slate-200">
-              {type === 'cash' ? 'نقدية 💵' : 'نقاط تحفيزية 🏆'}
-            </span>
-          </div>
-        </div>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="text-[9px] text-slate-400 block mb-1">قيمة المكافأة</label>
+                <input
+                  type="number"
+                  value={amount}
+                  onChange={(e) => setAmount(Number(e.target.value))}
+                  className="w-full bg-[#111C2E]/60 border border-white/10 focus:border-[#8c7355] rounded-xl px-2.5 py-1.5 text-left text-white text-xs outline-none transition-all font-sans"
+                />
+              </div>
+              <div>
+                <label className="text-[9px] text-slate-400 block mb-1">نوع المكافأة</label>
+                <select
+                  value={type}
+                  onChange={(e) => setType(e.target.value as 'cash' | 'points')}
+                  className="w-full bg-[#111C2E]/60 border border-white/10 focus:border-[#8c7355] rounded-xl px-2.5 py-1.5 text-right text-white text-xs outline-none transition-all"
+                >
+                  <option value="cash">ريال 💸</option>
+                  <option value="points">نقاط 🌟</option>
+                </select>
+              </div>
+            </div>
+          </>
+        ) : (
+          <>
+            <div>
+              <span className="text-[9px] text-slate-400 block">اسم المهمة</span>
+              <span className="font-extrabold text-white">{title}</span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <div className="bg-white/5 p-2 rounded-xl border border-white/5">
+                <span className="text-[9px] text-slate-400 block">المكافأة</span>
+                <span className="font-bold text-orange-400 font-sans">
+                  {amount} {type === 'cash' ? 'ريال 💸' : 'نقطة 🌟'}
+                </span>
+              </div>
+              <div className="bg-white/5 p-2 rounded-xl border border-white/5">
+                <span className="text-[9px] text-slate-400 block">النوع</span>
+                <span className="font-bold text-slate-200">
+                  {type === 'cash' ? 'نقدية 💵' : 'نقاط 🏆'}
+                </span>
+              </div>
+            </div>
+          </>
+        )}
 
         <div className="bg-[#111C2E]/40 p-2.5 rounded-xl border border-white/5 text-[10px] leading-relaxed text-slate-300">
           <span className="font-bold text-orange-300 block mb-0.5">لماذا تم الاقتراح؟</span>
@@ -84,7 +128,7 @@ export default function SuggestedTaskWidget({
               onClick={handleReject}
               className="px-3 py-1.5 border border-rose-500/20 text-rose-400 hover:bg-rose-500/10 rounded-lg text-[10px] font-bold transition-all active:scale-95"
             >
-              تعديل/رفض ❌
+              رفض ❌
             </button>
             <button
               type="button"

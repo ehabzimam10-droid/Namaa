@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { suggestTaskForKid, sendGeneralChatMessage } from '../utils/aiService';
 import SuggestedTaskWidget from '../components/ui/SuggestedTaskWidget';
@@ -7,37 +7,61 @@ import AIActionMenu from '../components/ui/AIActionMenu';
 interface Message {
   id: string;
   sender: 'father' | 'ai';
-  content: React.ReactNode | string;
+  text?: string;
   isWidget?: boolean;
-  timestamp: Date;
+  widgetData?: any;
+  timestamp: string; // ISO string
 }
 
 export default function FatherAICoachPage() {
   const { kids, geminiApiKey, projects } = useApp();
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: 'msg_1',
-      sender: 'ai',
-      content: 'مرحباً بك يا أبو خالد في مركز الاستشارة الذكي 🤖. أنا مستشارك المالي المساعد، كيف يمكنني مساعدتك اليوم في إدارة ثقافة أبنائك المالية؟',
-      timestamp: new Date(Date.now() - 60000 * 5),
-    },
-    {
-      id: 'msg_2',
-      sender: 'father',
-      content: 'أهلاً بك، أريد بعض النصائح لتحسين مستوى ادخار ابني سالم، فهو ينفق مصروفه سريعاً.',
-      timestamp: new Date(Date.now() - 60000 * 4),
-    },
-    {
-      id: 'msg_3',
-      sender: 'ai',
-      content: 'بالتأكيد! بناءً على تحليل سلوك سالم المالي مؤخراً:\n\n1. 🎯 **حدد له هدفاً جذاباً:** مثل شراء دراجة جديدة وساعده في إعداد حصالة مقفلة لهذا الهدف.\n2. 🤝 **شجعه بمكافآت عينية:** يمكنك تخصيص مكافأة تشجيعية (مثل ساعة لعب إضافية) عند التزامه بالادخار الأسبوعي.\n3. 🧹 **عزز قيمة المسؤولية:** أسند إليه بعض المهام المنزلية البسيطة بمكافأة نقاط لتنمية تقديره لقيمة العمل والمال.\n\nهل ترغب في أن أقترح له مهمة محددة للبدء فوراً؟ 🎯',
-      timestamp: new Date(Date.now() - 60000 * 3),
-    }
-  ]);
-
+  const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isActionMenuOpen, setIsActionMenuOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Load chat history from localStorage on mount
+  useEffect(() => {
+    const savedHistory = localStorage.getItem('namaa_chat_history');
+    if (savedHistory) {
+      try {
+        setMessages(JSON.parse(savedHistory));
+      } catch (err) {
+        console.error('Failed to parse chat history:', err);
+      }
+    } else {
+      // Default initial messages if no history
+      const initial: Message[] = [
+        {
+          id: 'msg_1',
+          sender: 'ai',
+          text: 'مرحباً بك يا أبو خالد في مركز الاستشارة الذكي 🤖. أنا مستشارك المالي المساعد، كيف يمكنني مساعدتك اليوم في إدارة ثقافة أبنائك المالية؟',
+          timestamp: new Date(Date.now() - 60000 * 5).toISOString(),
+        },
+        {
+          id: 'msg_2',
+          sender: 'father',
+          text: 'أهلاً بك، أريد بعض النصائح لتحسين مستوى ادخار ابني سالم، فهو ينفق مصروفه سريعاً.',
+          timestamp: new Date(Date.now() - 60000 * 4).toISOString(),
+        },
+        {
+          id: 'msg_3',
+          sender: 'ai',
+          text: 'بالتأكيد! بناءً على تحليل سلوك سالم المالي مؤخراً:\n\n1. 🎯 **حدد له هدفاً جذاباً:** مثل شراء دراجة جديدة وساعده في إعداد حصالة مقفلة لهذا الهدف.\n2. 🤝 **شجعه بمكافآت عينية:** يمكنك تخصيص مكافأة تشجيعية (مثل ساعة لعب إضافية) عند التزامه بالادخار الأسبوعي.\n3. 🧹 **عزز قيمة المسؤولية:** أسند إليه بعض المهام المنزلية البسيطة بمكافأة نقاط لتنمية تقديره لقيمة العمل والمال.\n\nهل ترغب في أن أقترح له مهمة محددة للبدء فوراً؟ 🎯',
+          timestamp: new Date(Date.now() - 60000 * 3).toISOString(),
+        }
+      ];
+      setMessages(initial);
+      localStorage.setItem('namaa_chat_history', JSON.stringify(initial));
+    }
+  }, []);
+
+  // Save chat history to localStorage on changes
+  useEffect(() => {
+    if (messages.length > 0) {
+      localStorage.setItem('namaa_chat_history', JSON.stringify(messages));
+    }
+  }, [messages]);
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,8 +72,8 @@ export default function FatherAICoachPage() {
     const userMsg: Message = {
       id: `msg_user_${Date.now()}`,
       sender: 'father',
-      content: userText,
-      timestamp: new Date(),
+      text: userText,
+      timestamp: new Date().toISOString(),
     };
 
     setMessages((prev) => [...prev, userMsg]);
@@ -61,8 +85,8 @@ export default function FatherAICoachPage() {
     const loadingMsg: Message = {
       id: loadingId,
       sender: 'ai',
-      content: 'جاري التفكير وصياغة الرد... 🧠🤖',
-      timestamp: new Date(),
+      text: 'جاري التفكير وصياغة الرد... 🧠🤖',
+      timestamp: new Date().toISOString(),
     };
     setMessages((prev) => [...prev, loadingMsg]);
 
@@ -76,13 +100,14 @@ export default function FatherAICoachPage() {
       const aiResponse: Message = {
         id: `msg_ai_${Date.now()}`,
         sender: 'ai',
-        content: response,
-        timestamp: new Date(),
+        text: response,
+        timestamp: new Date().toISOString(),
       };
 
       setMessages((prev) => prev.filter((m) => m.id !== loadingId).concat(aiResponse));
     } catch (err) {
       console.error(err);
+      setMessages((prev) => prev.filter((m) => m.id !== loadingId));
     } finally {
       setIsLoading(false);
     }
@@ -97,8 +122,8 @@ export default function FatherAICoachPage() {
       const userMsg: Message = {
         id: `msg_action_req_${Date.now()}`,
         sender: 'father',
-        content: `اقترح مهمة لـ ${kidName}${notes ? ` مع التركيز على: ${notes}` : ''} 🎯`,
-        timestamp: new Date(),
+        text: `اقترح مهمة لـ ${kidName}${notes ? ` مع التركيز على: ${notes}` : ''} 🎯`,
+        timestamp: new Date().toISOString(),
       };
       setMessages((prev) => [...prev, userMsg]);
 
@@ -107,8 +132,8 @@ export default function FatherAICoachPage() {
       const loadingMsg: Message = {
         id: loadingId,
         sender: 'ai',
-        content: `جاري التفكير وتوليد المهمة الملائمة لـ ${kidName}... 🧠🤖`,
-        timestamp: new Date(),
+        text: `جاري التفكير وتوليد المهمة الملائمة لـ ${kidName}... 🧠🤖`,
+        timestamp: new Date().toISOString(),
       };
       setMessages((prev) => [...prev, loadingMsg]);
       setIsLoading(true);
@@ -120,29 +145,25 @@ export default function FatherAICoachPage() {
         // Fetch recommendation from Gemini API
         const recommendation = await suggestTaskForKid(geminiApiKey, targetKid, notes);
 
-        // d) Render SuggestedTaskWidget
-        const widgetNode = (
-          <SuggestedTaskWidget
-            kidName={kidName}
-            title={recommendation.title}
-            suggestedAmount={recommendation.suggestedAmount}
-            type={recommendation.type}
-            reasoning={recommendation.reasoning}
-          />
-        );
-
         const replyMsg: Message = {
           id: `msg_widget_${Date.now()}`,
           sender: 'ai',
-          content: widgetNode,
           isWidget: true,
-          timestamp: new Date(),
+          widgetData: {
+            kidName,
+            title: recommendation.title,
+            suggestedAmount: recommendation.suggestedAmount,
+            type: recommendation.type,
+            reasoning: recommendation.reasoning
+          },
+          timestamp: new Date().toISOString(),
         };
 
         // Remove loading bubble and add the actual generative response
         setMessages((prev) => prev.filter((m) => m.id !== loadingId).concat(replyMsg));
       } catch (err) {
         console.error(err);
+        setMessages((prev) => prev.filter((m) => m.id !== loadingId));
       } finally {
         setIsLoading(false);
       }
@@ -151,8 +172,8 @@ export default function FatherAICoachPage() {
       const userMsg: Message = {
         id: `msg_analysis_req_${Date.now()}`,
         sender: 'father',
-        content: `أعطني تقريراً وتحليلاً شاملاً للعائلة 📊`,
-        timestamp: new Date(),
+        text: `أعطني تقريراً وتحليلاً شاملاً للعائلة 📊`,
+        timestamp: new Date().toISOString(),
       };
       setMessages((prev) => [...prev, userMsg]);
 
@@ -161,8 +182,8 @@ export default function FatherAICoachPage() {
       const loadingMsg: Message = {
         id: loadingId,
         sender: 'ai',
-        content: 'جاري جمع البيانات المالية للأبناء وتحليلها سحابياً... 📊📈',
-        timestamp: new Date(),
+        text: 'جاري جمع البيانات المالية للأبناء وتحليلها سحابياً... 📊📈',
+        timestamp: new Date().toISOString(),
       };
       setMessages((prev) => [...prev, loadingMsg]);
       setIsLoading(true);
@@ -174,8 +195,8 @@ export default function FatherAICoachPage() {
         const replyMsg: Message = {
           id: `msg_report_${Date.now()}`,
           sender: 'ai',
-          content: textReport,
-          timestamp: new Date(),
+          text: textReport,
+          timestamp: new Date().toISOString(),
         };
 
         setMessages((prev) => prev.filter((m) => m.id !== loadingId).concat(replyMsg));
@@ -206,7 +227,6 @@ export default function FatherAICoachPage() {
       <div className="flex-1 overflow-y-auto p-6 space-y-4 flex flex-col">
         {messages.map((msg) => {
           const isAI = msg.sender === 'ai';
-          const isText = typeof msg.content === 'string';
 
           return (
             <div
@@ -217,7 +237,11 @@ export default function FatherAICoachPage() {
             >
               {/* Message content */}
               <div className="flex-1 space-y-1">
-                {isText ? (
+                {msg.isWidget ? (
+                  <div className="shadow-lg">
+                    <SuggestedTaskWidget {...msg.widgetData} />
+                  </div>
+                ) : (
                   <div
                     className={`p-4 rounded-3xl text-xs leading-relaxed shadow-lg whitespace-pre-line ${
                       isAI
@@ -225,13 +249,11 @@ export default function FatherAICoachPage() {
                         : 'bg-gradient-to-r from-orange-500 to-[#8c7355] text-white rounded-tl-none'
                     }`}
                   >
-                    {msg.content}
+                    {msg.text}
                   </div>
-                ) : (
-                  <div className="shadow-lg">{msg.content}</div>
                 )}
                 <span className="text-[9px] text-slate-500 font-sans block text-left">
-                  {msg.timestamp.toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' })}
+                  {new Date(msg.timestamp).toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' })}
                 </span>
               </div>
 
