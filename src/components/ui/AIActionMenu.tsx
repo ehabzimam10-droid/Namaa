@@ -15,8 +15,8 @@ export default function AIActionMenu({ isOpen, onClose, onSelectAction }: AIActi
 
   if (!isOpen) return null;
 
-  const handleSuggestTaskSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSuggestTaskSubmit = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     if (!selectedKid) return;
     onSelectAction('suggest_task', { kidName: selectedKid, notes: taskNotes });
     setSelectedKid('');
@@ -70,7 +70,7 @@ export default function AIActionMenu({ isOpen, onClose, onSelectAction }: AIActi
           </button>
         </div>
       ) : (
-        <form onSubmit={handleSuggestTaskSubmit} className="space-y-3">
+        <div className="space-y-3">
           <div className="space-y-1">
             <label className="block text-[10px] text-slate-400">اختر الابن</label>
             <select
@@ -108,13 +108,14 @@ export default function AIActionMenu({ isOpen, onClose, onSelectAction }: AIActi
               رجوع
             </button>
             <button
-              type="submit"
+              type="button"
+              onClick={() => handleSuggestTaskSubmit()}
               className="px-4 py-1.5 bg-gradient-to-r from-orange-500 to-[#8c7355] text-white font-bold rounded-lg text-[10px] transition-all"
             >
               اقتراح 🤖
             </button>
           </div>
-        </form>
+        </div>
       )}
     </div>
   );

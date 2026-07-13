@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
-import { suggestTaskForKid } from '../utils/aiService';
+import { suggestTaskForKid, sendGeneralChatMessage } from '../utils/aiService';
 import SuggestedTaskWidget from '../components/ui/SuggestedTaskWidget';
 import AIActionMenu from '../components/ui/AIActionMenu';
 
@@ -13,7 +13,7 @@ interface Message {
 }
 
 export default function FatherAICoachPage() {
-  const { kids, geminiApiKey } = useApp();
+  const { kids, geminiApiKey, projects } = useApp();
   const [messages, setMessages] = useState<Message[]>([
     {
       id: 'msg_1',
@@ -39,14 +39,16 @@ export default function FatherAICoachPage() {
   const [isActionMenuOpen, setIsActionMenuOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleSendMessage = (e: React.FormEvent) => {
+  const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputValue.trim() || isLoading) return;
+
+    const userText = inputValue.trim();
 
     const userMsg: Message = {
       id: `msg_user_${Date.now()}`,
       sender: 'father',
-      content: inputValue.trim(),
+      content: userText,
       timestamp: new Date(),
     };
 
@@ -54,17 +56,36 @@ export default function FatherAICoachPage() {
     setInputValue('');
     setIsLoading(true);
 
-    // Simulate standard AI response after 1s
-    setTimeout(() => {
+    // Show a loading indicator bubble
+    const loadingId = `msg_loading_${Date.now()}`;
+    const loadingMsg: Message = {
+      id: loadingId,
+      sender: 'ai',
+      content: 'جاري التفكير وصياغة الرد... 🧠🤖',
+      timestamp: new Date(),
+    };
+    setMessages((prev) => [...prev, loadingMsg]);
+
+    try {
+      const response = await sendGeneralChatMessage(
+        geminiApiKey,
+        userText,
+        { kids, projects }
+      );
+
       const aiResponse: Message = {
         id: `msg_ai_${Date.now()}`,
         sender: 'ai',
-        content: 'أنا هنا لمساعدتك في صياغة الحلول والتوجيهات المالية الملائمة لعائلتك. سنقوم قريباً بربط قدرات الذكاء الاصطناعي الحية لتجربة تفاعلية متكاملة! 🍃🚀',
+        content: response,
         timestamp: new Date(),
       };
-      setMessages((prev) => [...prev, aiResponse]);
+
+      setMessages((prev) => prev.filter((m) => m.id !== loadingId).concat(aiResponse));
+    } catch (err) {
+      console.error(err);
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   };
 
   const handleSelectAction = async (action: string, details?: any) => {

@@ -74,3 +74,37 @@ export async function suggestTaskForKid(
     };
   }
 }
+
+export async function sendGeneralChatMessage(
+  apiKey: string,
+  message: string,
+  familyData: { kids: any[]; projects: any[] }
+): Promise<string> {
+  const prompt = `
+    You are Alinma Bank's expert Financial Family Coach inside the application "Namaa".
+    Your role is to guide and advise the father on kids' financial literacy, budgeting, and savings behaviors based on Alinma Bank's core standards.
+    
+    Family Data:
+    - Kids profiles: ${JSON.stringify(familyData.kids || [])}
+    - Family projects: ${JSON.stringify(familyData.projects || [])}
+    
+    Father's message: "${message}"
+    
+    Answer the father's message in Arabic. Keep responses concise, professional, and helpful. Return plain text (no markdown formatting like asterisks or hashtags if possible, just clean, well-spaced Arabic text).
+  `;
+
+  try {
+    if (!apiKey) {
+      throw new Error('API key is missing');
+    }
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    
+    const result = await model.generateContent(prompt);
+    return result.response.text().trim();
+  } catch (err) {
+    console.warn('Gemini API failed, falling back to simulated chat reply:', err);
+    return `أهلاً بك يا أبو خالد. بصفتي مستشار نماء المالي المساعد، يسعدني التفاعل معك. لم يتم استدعاء خادم Gemini بنجاح (يرجى التحقق من إعداد مفتاح API في بوابة المطورين)، ولكن يسعدني إخبارك أن أبناءك سالم وخالد يبدون التزاماً ممتازاً بالادخار وتحديات الحصالة الذكية!`;
+  }
+}
+
