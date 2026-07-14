@@ -74,9 +74,9 @@ export default function FatherDashboard() {
               💡 <strong>توصية:</strong> خالد صرف 80% من رصيده المتاح، نقترح تكليفه بمهمة منزلية.
             </div>
           </div>
-          <button className="w-full mt-4 bg-orange-500/10 hover:bg-orange-500/20 text-orange-300 font-bold py-2 rounded-xl text-xs border border-orange-500/20 transition-all">
+          <Link to="/father/ai" className="w-full mt-4 bg-orange-500/10 hover:bg-orange-500/20 text-orange-300 font-bold py-2 rounded-xl text-xs border border-orange-500/20 transition-all text-center block">
             عرض لوحة التوصيات الكاملة 🤖
-          </button>
+          </Link>
         </div>
 
         {/* Card 3: إدارة الأبناء 👥 */}
