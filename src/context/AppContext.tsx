@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { mockFamilyData } from '../data/mockData';
-import type { Kid, FamilyProject, Task, Transaction, SavingsGoal, FamilyLeague } from '../data/mockData';
+import type { Kid, FamilyProject, Task, Transaction, SavingsGoal, ActiveLeague } from '../data/mockData';
 import { supabase } from '../utils/supabaseClient';
 
 export interface UserProfile {
@@ -43,7 +43,11 @@ interface AppContextType {
   addNotification: (userId: string, role: 'father' | 'kid', title: string, message: string) => Promise<void>;
   markNotificationAsRead: (id: string) => Promise<void>;
   runCleanup: () => Promise<void>;
-  league: FamilyLeague[];
+  activeLeague: ActiveLeague;
+  startLeague: (prize: string, bases: string[]) => Promise<void>;
+  endLeague: () => void;
+  transferAllowance: (kidId: string, amount: number) => Promise<void>;
+  simulateDailyPurchase: (kidName: string, amount: number, reason: string) => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -64,7 +68,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return savedProjects ? JSON.parse(savedProjects) : mockFamilyData.projects;
   });
 
-  const [league, setLeague] = useState<FamilyLeague[]>([]);
+  const [activeLeague, setActiveLeague] = useState<ActiveLeague>(() => {
+    const saved = localStorage.getItem('namaa_active_league');
+    return saved ? JSON.parse(saved) : { isActive: false, prize: '', bases: [] };
+  });
 
   const [geminiApiKey, setGeminiApiKeyState] = useState<string>(() => {
     return localStorage.getItem('namaa_gemini_api_key') || '';
@@ -229,37 +236,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         fetchedNotifs = saved ? JSON.parse(saved) : [];
       }
       setNotifications(fetchedNotifs);
-
-      // Fetch league data from Supabase with fallback
-      let dbLeague: FamilyLeague[] = [];
-      try {
-        const { data, error } = await supabase.from('family_league').select('*');
-        if (!error && data && data.length > 0) {
-          dbLeague = data.map((item: any) => ({
-            id: item.id?.toString(),
-            family_name: item.family_name || '',
-            total_points: item.total_points || 0,
-            rank: item.rank || 0,
-          }));
-        } else {
-          dbLeague = [
-            { family_name: 'عائلة أبو مازن', total_points: 1500, rank: 1 },
-            { family_name: 'عائلة أبو خالد', total_points: 0, rank: 2 },
-            { family_name: 'عائلة أبو سارة', total_points: 850, rank: 3 },
-            { family_name: 'عائلة أبو فهد', total_points: 600, rank: 4 },
-            { family_name: 'عائلة أبو سالم', total_points: 400, rank: 5 },
-          ];
-        }
-      } catch (err) {
-        dbLeague = [
-          { family_name: 'عائلة أبو مازن', total_points: 1500, rank: 1 },
-          { family_name: 'عائلة أبو خالد', total_points: 0, rank: 2 },
-          { family_name: 'عائلة أبو سارة', total_points: 850, rank: 3 },
-          { family_name: 'عائلة أبو فهد', total_points: 600, rank: 4 },
-          { family_name: 'عائلة أبو سالم', total_points: 400, rank: 5 },
-        ];
-      }
-      setLeague(dbLeague);
     } catch (err) {
       console.error('Error fetching data from Supabase:', err);
     }
@@ -269,52 +245,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => {
     fetchData();
   }, []);
-
-  // Update league points dynamically based on kids actual behavior
-  useEffect(() => {
-    if (kids.length === 0) return;
-
-    // Sum points: saved + donationPoints + (approved tasks * 50)
-    const ourPoints = kids.reduce((total, kid) => {
-      const approvedTasksCount = (kid.tasks || []).filter(t => t.status === 'approved').length;
-      return total + (kid.saved || 0) + (kid.donationPoints || 0) + (approvedTasksCount * 50);
-    }, 0);
-
-    const currentLeague = league.length > 0 ? league : [
-      { family_name: 'عائلة أبو مازن', total_points: 1500, rank: 1 },
-      { family_name: 'عائلة أبو خالد', total_points: 0, rank: 2 },
-      { family_name: 'عائلة أبو سارة', total_points: 850, rank: 3 },
-      { family_name: 'عائلة أبو فهد', total_points: 600, rank: 4 },
-      { family_name: 'عائلة أبو سالم', total_points: 400, rank: 5 },
-    ];
-
-    const updated = currentLeague.map((fam) => {
-      if (fam.family_name === 'عائلة أبو خالد') {
-        return { ...fam, total_points: ourPoints };
-      }
-      return fam;
-    });
-
-    // Sort descending by total_points
-    updated.sort((a, b) => b.total_points - a.total_points);
-
-    // Update ranks
-    const ranked = updated.map((fam, index) => ({
-      ...fam,
-      rank: index + 1,
-    }));
-
-    // Only update state if points or ranks changed to avoid infinite loop
-    const isDifferent = league.length === 0 || ranked.some((fam, idx) => 
-      fam.total_points !== league[idx]?.total_points || 
-      fam.family_name !== league[idx]?.family_name ||
-      fam.rank !== league[idx]?.rank
-    );
-
-    if (isDifferent) {
-      setLeague(ranked);
-    }
-  }, [kids, league]);
 
   const mappedTasksFromDb = (dbTasks: any[]): Task[] => {
     return dbTasks.map((t: any) => ({
@@ -949,6 +879,95 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
+  const transferAllowance = async (kidId: string, amount: number) => {
+    const targetKid = kids.find(k => k.id === kidId);
+    if (!targetKid) return;
+
+    const newBalance = targetKid.balance + amount;
+
+    setKids((prevKids) =>
+      prevKids.map((kid) => {
+        if (kid.id === kidId) {
+          return {
+            ...kid,
+            balance: newBalance,
+          };
+        }
+        return kid;
+      })
+    );
+
+    addNotification(kidId, 'kid', 'استلام المصروف الشهري 💸', `تم تحويل مصروفك الشهري بقيمة ${amount} ريال وبدء دوري الأبناء!`);
+
+    try {
+      await Promise.all([
+        supabase
+          .from('kids_profiles')
+          .update({ balance: newBalance })
+          .eq('id', kidId),
+        logTransaction(targetKid.name, `المصروف الشهري: allowance_granted 💸`, amount, 'deposit')
+      ]);
+    } catch (err) {
+      console.error('Failed to sync allowance transfer to Supabase:', err);
+    }
+  };
+
+  const simulateDailyPurchase = async (kidName: string, amount: number, reason: string) => {
+    const targetKid = kids.find(k => k.name === kidName);
+    if (!targetKid) return;
+
+    const newBalance = Math.max(0, targetKid.balance - amount);
+
+    setKids((prevKids) =>
+      prevKids.map((kid) => {
+        if (kid.name === kidName) {
+          return {
+            ...kid,
+            balance: newBalance,
+          };
+        }
+        return kid;
+      })
+    );
+
+    // Notify kid
+    const kidId = targetKid.id;
+    addNotification(kidId, 'kid', 'عملية شراء جديدة 🛒', `تم خصم ${amount} ريال لشراء: ${reason}`);
+    
+    // Notify father
+    addNotification('father', 'father', 'عملية شراء للابن 🛒', `قام ${kidName} بشراء ${reason} بقيمة ${amount} ريال.`);
+
+    try {
+      await Promise.all([
+        supabase
+          .from('kids_profiles')
+          .update({ balance: newBalance })
+          .eq('id', kidId),
+        logTransaction(kidName, `شراء يومي: ${reason} 🛒`, amount, 'withdrawal')
+      ]);
+    } catch (err) {
+      console.error('Failed to sync daily purchase to Supabase:', err);
+    }
+  };
+
+  const startLeague = async (prize: string, bases: string[]) => {
+    // Distribute monthly allowance to all kids
+    for (const kid of kids) {
+      await transferAllowance(kid.id, kid.allowance || 100);
+    }
+    const newLeague = { isActive: true, prize, bases };
+    setActiveLeague(newLeague);
+    localStorage.setItem('namaa_active_league', JSON.stringify(newLeague));
+
+    addNotification('father', 'father', 'تم بدء دوري العائلة 🏆', `تم توزيع المصروف الشهري وتفعيل دوري الأبناء بجائزة: ${prize}`);
+  };
+
+  const endLeague = () => {
+    const newLeague = { isActive: false, prize: '', bases: [] };
+    setActiveLeague(newLeague);
+    localStorage.setItem('namaa_active_league', JSON.stringify(newLeague));
+  };
+
   const assignManualTask = async (
     kidName: string,
     title: string,
@@ -1068,7 +1087,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         addNotification,
         markNotificationAsRead,
         runCleanup,
-        league,
+        activeLeague,
+        startLeague,
+        endLeague,
+        transferAllowance,
+        simulateDailyPurchase,
       }}
     >
       {children}

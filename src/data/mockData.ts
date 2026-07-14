@@ -7,11 +7,10 @@ export interface SavingsGoal {
   deadlineDate?: string;
 }
 
-export interface FamilyLeague {
-  id?: string;
-  family_name: string;
-  total_points: number;
-  rank: number;
+export interface ActiveLeague {
+  isActive: boolean;
+  prize: string;
+  bases: string[];
 }
 
 export interface Transaction {

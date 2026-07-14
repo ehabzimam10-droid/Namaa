@@ -3,15 +3,103 @@ import { useApp } from '../context/AppContext';
 
 export default function KidLeaguePage() {
   const navigate = useNavigate();
-  const { league } = useApp();
+  const { kids, profile, activeLeague } = useApp();
 
-  // Find our family's stats
-  const ourIndex = league.findIndex(f => f.family_name === 'عائلة أبو خالد');
-  const ourFamily = ourIndex !== -1 ? league[ourIndex] : null;
-  
-  // Find the family directly above us in points
-  const familyAbove = ourIndex > 0 ? league[ourIndex - 1] : null;
-  const pointsNeeded = familyAbove && ourFamily ? (familyAbove.total_points - ourFamily.total_points + 1) : 0;
+  const activeKid = kids.find(k => k.name === profile?.name) || kids.find(k => k.name === 'سالم') || kids[0];
+
+  // Helper to calculate kid's detailed scores (aligned with FatherLeaguePage)
+  const calculateKidScores = (kid: typeof kids[0]) => {
+    const allowanceTx = (kid.transactions || []).find(tx => tx.title.includes('allowance_granted'));
+    const monthlyAllowance = allowanceTx ? allowanceTx.amount : (kid.allowance || 100);
+
+    const now = new Date();
+    const currentMonthTx = (kid.transactions || []).filter((tx) => {
+      const d = new Date(tx.date);
+      return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+    });
+
+    const currentMonthTasks = (kid.tasks || []).filter((task) => {
+      const d = task.createdAt ? new Date(task.createdAt) : new Date();
+      return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+    });
+
+    // 1. Savings Points (Max 50)
+    const savingsAmount = currentMonthTx
+      .filter(tx => tx.type === 'withdrawal' && (tx.title.includes('إيداع في حصالة') || tx.title.includes('حصالة')))
+      .reduce((sum, tx) => sum + tx.amount, 0);
+    const savingsScore = activeLeague.bases.includes('الادخار')
+      ? Math.min(50, Math.round((savingsAmount / monthlyAllowance) * 50))
+      : 0;
+
+    // 2. Investment Points (Max 50)
+    const investmentAmount = currentMonthTx
+      .filter(tx => tx.type === 'withdrawal' && (tx.title.includes('استثمار') || tx.title.includes('مشروع')))
+      .reduce((sum, tx) => sum + tx.amount, 0);
+    const investmentScore = activeLeague.bases.includes('الاستثمار')
+      ? Math.min(50, Math.round((investmentAmount / monthlyAllowance) * 50))
+      : 0;
+
+    // 3. Donation Points (Max 50)
+    const donationAmount = currentMonthTx
+      .filter(tx => tx.type === 'withdrawal' && tx.title.includes('تبرع'))
+      .reduce((sum, tx) => sum + tx.amount, 0);
+    const donationScore = activeLeague.bases.includes('التبرع')
+      ? Math.min(50, Math.round((donationAmount / monthlyAllowance) * 50))
+      : 0;
+
+    // 4. Tasks Points (Max 100)
+    const totalTasks = currentMonthTasks.length;
+    const approvedTasks = currentMonthTasks.filter(t => t.status === 'approved').length;
+    const tasksScore = activeLeague.bases.includes('إنجاز المهام') && totalTasks > 0
+      ? Math.min(100, Math.round((approvedTasks / totalTasks) * 100))
+      : 0;
+
+    // 5. AI Spending Eval Points (Max 100)
+    const spentAmount = currentMonthTx
+      .filter(tx => {
+        if (tx.type !== 'withdrawal') return false;
+        const isSavings = tx.title.includes('إيداع في حصالة') || tx.title.includes('حصالة');
+        const isInvestment = tx.title.includes('استثمار') || tx.title.includes('مشروع');
+        const isDonation = tx.title.includes('تبرع');
+        return !isSavings && !isInvestment && !isDonation;
+      })
+      .reduce((sum, tx) => sum + tx.amount, 0);
+    const spendingScore = activeLeague.bases.includes('إدارة المصروف')
+      ? Math.max(0, 100 - Math.round((spentAmount / monthlyAllowance) * 100))
+      : 0;
+
+    const totalPoints = savingsScore + investmentScore + donationScore + tasksScore + spendingScore;
+
+    return {
+      savingsScore,
+      savingsAmount,
+      investmentScore,
+      investmentAmount,
+      donationScore,
+      donationAmount,
+      tasksScore,
+      approvedTasks,
+      totalTasks,
+      spendingScore,
+      spentAmount,
+      totalPoints,
+      monthlyAllowance,
+    };
+  };
+
+  // Compile leaderboard comparing Khalid and Salem
+  const compiledList = kids.map(k => ({
+    kid: k,
+    scores: calculateKidScores(k),
+  })).sort((a, b) => b.scores.totalPoints - a.scores.totalPoints);
+
+  const ourRank = compiledList.findIndex(item => item.kid.id === activeKid.id) + 1;
+  const ourScores = calculateKidScores(activeKid);
+  const isFirst = ourRank === 1;
+
+  // Find sibling above us
+  const siblingAbove = ourRank > 1 ? compiledList[ourRank - 2] : null;
+  const pointsBehind = siblingAbove ? (siblingAbove.scores.totalPoints - ourScores.totalPoints) : 0;
 
   return (
     <div className="w-full space-y-8 text-right font-sans">
@@ -26,86 +114,145 @@ export default function KidLeaguePage() {
             👦 العودة للوحة التحكم
           </button>
           <div>
-            <h2 className="text-xs font-semibold text-orange-400">تحدي التوفير والمسؤولية بين العوائل</h2>
+            <h2 className="text-xs font-semibold text-orange-400">تحدي التوفير والمسؤولية بين الإخوة</h2>
             <h3 className="text-2xl font-black text-white mt-1">دوري العائلة المشترك 🏆</h3>
           </div>
         </div>
       </div>
 
-      {/* Motivation Panel */}
-      {ourFamily && (
-        <div className="relative overflow-hidden bg-gradient-to-r from-orange-500/20 to-[#8c7355]/10 border border-orange-500/20 rounded-3xl p-6 text-right space-y-3">
-          <div className="absolute -left-6 -top-6 text-7xl opacity-10">🚀</div>
-          
-          <h4 className="text-sm font-bold text-orange-300">ترتيب عائلتنا الحالي 📊</h4>
-          
-          <div className="flex flex-row-reverse items-center justify-start gap-4">
-            <div className="w-14 h-14 rounded-full bg-orange-500/20 border border-orange-500/30 flex items-center justify-center font-sans font-black text-xl text-orange-400">
-              {ourFamily.rank === 1 ? '🥇' : ourFamily.rank === 2 ? '🥈' : ourFamily.rank === 3 ? '🥉' : ourFamily.rank}
+      {!activeLeague.isActive ? (
+        <div className="bg-[#111C2E]/60 backdrop-blur-2xl border border-white/10 shadow-2xl rounded-3xl p-8 text-center space-y-4">
+          <span className="text-4xl block">⏳🏆</span>
+          <h4 className="text-sm font-extrabold text-white">لا يوجد دوري نشط حالياً</h4>
+          <p className="text-xs text-slate-400 max-w-sm mx-auto leading-relaxed">
+            اطلب من والدك بدء الدوري وتوزيع المصروف الشهري لتنطلق المنافسة الكبرى وتحصيل الجوائز! 🎁✨
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-6">
+          {/* Motivation Progress Card */}
+          <div className="relative overflow-hidden bg-gradient-to-r from-orange-500/20 to-[#8c7355]/10 border border-orange-500/20 rounded-3xl p-6 text-right space-y-3">
+            <div className="absolute -left-6 -top-6 text-7xl opacity-10">🚀</div>
+            <h4 className="text-xs font-bold text-orange-300">وضعك الحالي في التحدي 📊</h4>
+            
+            <div className="flex flex-row-reverse items-center justify-start gap-4">
+              <div className="w-12 h-12 rounded-full bg-orange-500/20 border border-orange-500/30 flex items-center justify-center font-sans font-black text-lg text-orange-400">
+                {ourRank === 1 ? '🥇' : ourRank === 2 ? '🥈' : ourRank === 3 ? '🥉' : ourRank}
+              </div>
+              <div className="space-y-1">
+                <span className="text-xl font-black text-white font-sans">{ourScores.totalPoints}</span>
+                <span className="text-slate-400 text-[10px] mr-1">نقطة مسجلة</span>
+              </div>
             </div>
-            <div className="space-y-1">
-              <span className="text-2xl font-black text-white font-sans">{ourFamily.total_points}</span>
-              <span className="text-slate-400 text-xs mr-1">نقطة عائلية</span>
+
+            <p className="text-xs leading-relaxed text-slate-200 font-bold pt-2 border-t border-white/5 font-sans">
+              {isFirst ? (
+                <span>أنت في المركز الأول 🥇! حافظ على الصدارة بمواصلة الادخار والمواظبة! 👑✨</span>
+              ) : siblingAbove ? (
+                <span>{siblingAbove.kid.name} يسبقك بـ {pointsBehind} نقطة! ضاعف جهودك في المهام والادخار لتجاوزه! 🔥🚀</span>
+              ) : (
+                <span>بطل نماء! زد من مدخراتك وأنجز مهامك لتسلق الترتيب بسرعة! 🌟</span>
+              )}
+            </p>
+
+            <div className="text-[10px] text-slate-400 pt-1">
+              الجائزة الكبرى للدوري: <strong className="text-orange-300">{activeLeague.prize} 🎁</strong>
             </div>
           </div>
 
-          <p className="text-xs leading-relaxed text-slate-200 font-bold pt-2 border-t border-white/5">
-            {ourFamily.rank === 1 ? (
-              <span>✨ عائلتنا في الصدارة بالمركز الأول! حافظ على هذا الإنجاز الرائع بمواصلة التوفير والتبرع وإتمام المهام! 🥇👑</span>
-            ) : familyAbove ? (
-              <span>🔥 نحتاج إلى {pointsNeeded} نقطة إضافية لنتجاوز {familyAbove.family_name} التي تسبقنا مباشرة في الترتيب! 🚀</span>
-            ) : (
-              <span>بطل نماء! زد من مدخراتك وأنجز مهامك لتسلق الترتيب بسرعة! 🌟</span>
-            )}
-          </p>
+          {/* Sibling Leaderboard comparison */}
+          <div className="relative overflow-hidden bg-white/5 backdrop-blur-2xl border border-white/10 shadow-2xl rounded-3xl p-6 text-right space-y-4">
+            <h4 className="text-xs font-bold text-slate-300 border-b border-white/5 pb-2">جدول الترتيب الحالي للأبناء 📊</h4>
+            <div className="space-y-3">
+              {compiledList.map((item, idx) => {
+                const isOurFamily = item.kid.id === activeKid.id;
+                const rankEmoji = idx === 0 ? '🥇' : idx === 1 ? '🥈' : '';
+                return (
+                  <div
+                    key={item.kid.id}
+                    className={`flex justify-between items-center p-3.5 rounded-2xl border transition-all duration-300 ${
+                      isOurFamily
+                        ? 'bg-orange-500/20 border-orange-500/30 shadow-lg scale-[1.01]'
+                        : 'bg-white/5 border-white/5 hover:bg-white/10'
+                    }`}
+                  >
+                    {/* Left: Points */}
+                    <div className="flex items-center gap-1 font-sans font-black text-xs text-slate-100">
+                      <span className="text-orange-400">{item.scores.totalPoints}</span>
+                      <span className="text-[9px] text-slate-500 font-bold">نقطة</span>
+                    </div>
+
+                    {/* Right: Kid Name */}
+                    <div className="flex items-center gap-3">
+                      <div className="text-right">
+                        <h5 className="font-extrabold text-xs text-white flex items-center justify-end gap-1.5">
+                          {item.kid.name}
+                          {isOurFamily && (
+                            <span className="text-[8px] font-bold px-1.5 py-0.5 rounded bg-orange-500/30 text-orange-300">
+                              أنت ✨
+                            </span>
+                          )}
+                        </h5>
+                      </div>
+                      <div className="w-7 h-7 rounded-full bg-white/5 border border-white/5 flex items-center justify-center font-sans font-black text-xs text-orange-300">
+                        {rankEmoji || (idx + 1)}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Breakdown Score Board */}
+          <div className="relative overflow-hidden bg-white/5 backdrop-blur-2xl border border-white/10 shadow-2xl rounded-3xl p-6 text-right space-y-4">
+            <h4 className="text-xs font-bold text-slate-300 border-b border-white/5 pb-2">تفصيل نقاطك الحالية 🎖️</h4>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4">
+              {/* Savings */}
+              {activeLeague.bases.includes('الادخار') && (
+                <div className="bg-white/5 border border-white/5 p-4 rounded-2xl text-center space-y-1.5">
+                  <span className="text-xs block">الادخار 💰</span>
+                  <span className="text-base font-black text-white font-sans">{ourScores.savingsScore}/50</span>
+                  <p className="text-[9px] text-slate-400">ادخرت {ourScores.savingsAmount} ريال هذا الشهر</p>
+                </div>
+              )}
+              {/* Investment */}
+              {activeLeague.bases.includes('الاستثمار') && (
+                <div className="bg-white/5 border border-white/5 p-4 rounded-2xl text-center space-y-1.5">
+                  <span className="text-xs block">الاستثمار 📈</span>
+                  <span className="text-base font-black text-white font-sans">{ourScores.investmentScore}/50</span>
+                  <p className="text-[9px] text-slate-400">استثمرت {ourScores.investmentAmount} ريال هذا الشهر</p>
+                </div>
+              )}
+              {/* Donation */}
+              {activeLeague.bases.includes('التبرع') && (
+                <div className="bg-white/5 border border-white/5 p-4 rounded-2xl text-center space-y-1.5">
+                  <span className="text-xs block">التبرع 🤲</span>
+                  <span className="text-base font-black text-white font-sans">{ourScores.donationScore}/50</span>
+                  <p className="text-[9px] text-slate-400">تبرعت بمبلغ {ourScores.donationAmount} ريال</p>
+                </div>
+              )}
+              {/* Tasks */}
+              {activeLeague.bases.includes('إنجاز المهام') && (
+                <div className="bg-white/5 border border-white/5 p-4 rounded-2xl text-center space-y-1.5">
+                  <span className="text-xs block">المهام المنجزة 🧹</span>
+                  <span className="text-base font-black text-white font-sans">{ourScores.tasksScore}/100</span>
+                  <p className="text-[9px] text-slate-400">أنجزت {ourScores.approvedTasks} مهام من أصل {ourScores.totalTasks}</p>
+                </div>
+              )}
+              {/* Spending Eval */}
+              {activeLeague.bases.includes('إدارة المصروف') && (
+                <div className="bg-white/5 border border-white/5 p-4 rounded-2xl text-center space-y-1.5">
+                  <span className="text-xs block">إدارة المصروف 🛒</span>
+                  <span className="text-base font-black text-white font-sans">{ourScores.spendingScore}/100</span>
+                  <p className="text-[9px] text-slate-400">صرفت {ourScores.spentAmount} ريال استهلاكياً</p>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       )}
-
-      {/* Leaderboard Grid */}
-      <div className="relative overflow-hidden bg-white/5 backdrop-blur-2xl border border-white/10 shadow-2xl rounded-3xl p-6 text-right space-y-4">
-        <h4 className="text-sm font-bold text-slate-300 border-b border-white/5 pb-2">جدول صدارة الدوري العائلي 📊</h4>
-        
-        <div className="space-y-3">
-          {league.map((fam) => {
-            const isOurFamily = fam.family_name === 'عائلة أبو خالد';
-            const rankEmoji = fam.rank === 1 ? '🥇' : fam.rank === 2 ? '🥈' : fam.rank === 3 ? '🥉' : '';
-            
-            return (
-              <div
-                key={fam.family_name}
-                className={`flex justify-between items-center p-3.5 rounded-2xl border transition-all duration-300 ${
-                  isOurFamily
-                    ? 'bg-orange-500/20 border-orange-500/30 shadow-lg scale-[1.01]'
-                    : 'bg-white/5 border-white/5 hover:bg-white/10'
-                }`}
-              >
-                {/* Left: Points */}
-                <div className="flex items-center gap-1 font-sans font-black text-xs text-slate-100">
-                  <span className="text-orange-400">{fam.total_points}</span>
-                  <span className="text-[9px] text-slate-500 font-bold">نقطة</span>
-                </div>
-
-                {/* Right: Family name & rank */}
-                <div className="flex items-center gap-3">
-                  <div className="text-right">
-                    <h5 className="font-extrabold text-xs text-white flex items-center justify-end gap-1.5">
-                      {fam.family_name}
-                      {isOurFamily && (
-                        <span className="text-[8px] font-bold px-1.5 py-0.5 rounded bg-orange-500/30 text-orange-300">
-                          عائلتنا ✨
-                        </span>
-                      )}
-                    </h5>
-                  </div>
-                  <div className="w-7 h-7 rounded-full bg-white/5 border border-white/5 flex items-center justify-center font-sans font-black text-xs text-orange-300">
-                    {rankEmoji || fam.rank}
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
     </div>
   );
 }
