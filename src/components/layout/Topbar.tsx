@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
 import TransactionsModal from '../ui/TransactionsModal';
 
@@ -8,7 +7,6 @@ interface TopbarProps {
 }
 
 export default function Topbar({ onMenuToggle }: TopbarProps) {
-  const navigate = useNavigate();
   const { profile, kids, notifications, markNotificationAsRead } = useApp();
   const [isTxModalOpen, setIsTxModalOpen] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
