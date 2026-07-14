@@ -10,6 +10,8 @@ import KidDonationsPage from './pages/KidDonationsPage';
 import FatherProjectsPage from './pages/FatherProjectsPage';
 import FatherKidsPage from './pages/FatherKidsPage';
 import FatherAICoachPage from './pages/FatherAICoachPage';
+import FatherLeaguePage from './pages/FatherLeaguePage';
+import KidLeaguePage from './pages/KidLeaguePage';
 import DashboardLayout from './components/layout/DashboardLayout';
 
 function AuthLayout() {
@@ -60,11 +62,13 @@ function App() {
           <Route path="/father/projects" element={<FatherProjectsPage />} />
           <Route path="/father/kids" element={<FatherKidsPage />} />
           <Route path="/father/ai" element={<FatherAICoachPage />} />
+          <Route path="/father/league" element={<FatherLeaguePage />} />
           <Route path="/kid" element={<KidDashboard />} />
           <Route path="/kid/savings" element={<KidSavingsPage />} />
           <Route path="/kid/tasks" element={<KidTasksPage />} />
           <Route path="/kid/investments" element={<KidInvestmentsPage />} />
           <Route path="/kid/donations" element={<KidDonationsPage />} />
+          <Route path="/kid/league" element={<KidLeaguePage />} />
         </Route>
       </Routes>
     </BrowserRouter>

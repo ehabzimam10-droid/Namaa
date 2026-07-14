@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { mockFamilyData } from '../data/mockData';
-import type { Kid, FamilyProject, Task, Transaction, SavingsGoal } from '../data/mockData';
+import type { Kid, FamilyProject, Task, Transaction, SavingsGoal, FamilyLeague } from '../data/mockData';
 import { supabase } from '../utils/supabaseClient';
 
 export interface UserProfile {
@@ -43,6 +43,7 @@ interface AppContextType {
   addNotification: (userId: string, role: 'father' | 'kid', title: string, message: string) => Promise<void>;
   markNotificationAsRead: (id: string) => Promise<void>;
   runCleanup: () => Promise<void>;
+  league: FamilyLeague[];
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -62,6 +63,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const savedProjects = localStorage.getItem('namaa_projects_v14');
     return savedProjects ? JSON.parse(savedProjects) : mockFamilyData.projects;
   });
+
+  const [league, setLeague] = useState<FamilyLeague[]>([]);
 
   const [geminiApiKey, setGeminiApiKeyState] = useState<string>(() => {
     return localStorage.getItem('namaa_gemini_api_key') || '';
@@ -226,6 +229,37 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         fetchedNotifs = saved ? JSON.parse(saved) : [];
       }
       setNotifications(fetchedNotifs);
+
+      // Fetch league data from Supabase with fallback
+      let dbLeague: FamilyLeague[] = [];
+      try {
+        const { data, error } = await supabase.from('family_league').select('*');
+        if (!error && data && data.length > 0) {
+          dbLeague = data.map((item: any) => ({
+            id: item.id?.toString(),
+            family_name: item.family_name || '',
+            total_points: item.total_points || 0,
+            rank: item.rank || 0,
+          }));
+        } else {
+          dbLeague = [
+            { family_name: 'عائلة أبو مازن', total_points: 1500, rank: 1 },
+            { family_name: 'عائلة أبو خالد', total_points: 0, rank: 2 },
+            { family_name: 'عائلة أبو سارة', total_points: 850, rank: 3 },
+            { family_name: 'عائلة أبو فهد', total_points: 600, rank: 4 },
+            { family_name: 'عائلة أبو سالم', total_points: 400, rank: 5 },
+          ];
+        }
+      } catch (err) {
+        dbLeague = [
+          { family_name: 'عائلة أبو مازن', total_points: 1500, rank: 1 },
+          { family_name: 'عائلة أبو خالد', total_points: 0, rank: 2 },
+          { family_name: 'عائلة أبو سارة', total_points: 850, rank: 3 },
+          { family_name: 'عائلة أبو فهد', total_points: 600, rank: 4 },
+          { family_name: 'عائلة أبو سالم', total_points: 400, rank: 5 },
+        ];
+      }
+      setLeague(dbLeague);
     } catch (err) {
       console.error('Error fetching data from Supabase:', err);
     }
@@ -235,6 +269,52 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => {
     fetchData();
   }, []);
+
+  // Update league points dynamically based on kids actual behavior
+  useEffect(() => {
+    if (kids.length === 0) return;
+
+    // Sum points: saved + donationPoints + (approved tasks * 50)
+    const ourPoints = kids.reduce((total, kid) => {
+      const approvedTasksCount = (kid.tasks || []).filter(t => t.status === 'approved').length;
+      return total + (kid.saved || 0) + (kid.donationPoints || 0) + (approvedTasksCount * 50);
+    }, 0);
+
+    const currentLeague = league.length > 0 ? league : [
+      { family_name: 'عائلة أبو مازن', total_points: 1500, rank: 1 },
+      { family_name: 'عائلة أبو خالد', total_points: 0, rank: 2 },
+      { family_name: 'عائلة أبو سارة', total_points: 850, rank: 3 },
+      { family_name: 'عائلة أبو فهد', total_points: 600, rank: 4 },
+      { family_name: 'عائلة أبو سالم', total_points: 400, rank: 5 },
+    ];
+
+    const updated = currentLeague.map((fam) => {
+      if (fam.family_name === 'عائلة أبو خالد') {
+        return { ...fam, total_points: ourPoints };
+      }
+      return fam;
+    });
+
+    // Sort descending by total_points
+    updated.sort((a, b) => b.total_points - a.total_points);
+
+    // Update ranks
+    const ranked = updated.map((fam, index) => ({
+      ...fam,
+      rank: index + 1,
+    }));
+
+    // Only update state if points or ranks changed to avoid infinite loop
+    const isDifferent = league.length === 0 || ranked.some((fam, idx) => 
+      fam.total_points !== league[idx]?.total_points || 
+      fam.family_name !== league[idx]?.family_name ||
+      fam.rank !== league[idx]?.rank
+    );
+
+    if (isDifferent) {
+      setLeague(ranked);
+    }
+  }, [kids, league]);
 
   const mappedTasksFromDb = (dbTasks: any[]): Task[] => {
     return dbTasks.map((t: any) => ({
@@ -988,6 +1068,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         addNotification,
         markNotificationAsRead,
         runCleanup,
+        league,
       }}
     >
       {children}

@@ -23,6 +23,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         { title: 'إدارة الأبناء 👥', path: '/father/kids' },
         { title: 'مشاريع العائلة 📈', path: '/father/projects' },
         { title: 'المستشار الذكي 🤖', path: '/father/ai' },
+        { title: 'دوري العائلات 🏆', path: '/father/league' },
       ]
     : [
         { title: 'الرئيسية 🏠', path: '/kid' },
@@ -30,6 +31,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         { title: 'المهام والمسؤوليات 🧹', path: '/kid/tasks' },
         { title: 'الاستثمار العائلي 📈', path: '/kid/investments' },
         { title: 'المسؤولية المجتمعية (التبرع) 🤲', path: '/kid/donations' },
+        { title: 'دوري العائلة 🏆', path: '/kid/league' },
       ];
 
   return (

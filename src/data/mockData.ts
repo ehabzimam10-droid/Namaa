@@ -7,6 +7,13 @@ export interface SavingsGoal {
   deadlineDate?: string;
 }
 
+export interface FamilyLeague {
+  id?: string;
+  family_name: string;
+  total_points: number;
+  rank: number;
+}
+
 export interface Transaction {
   id: string;
   title: string;
