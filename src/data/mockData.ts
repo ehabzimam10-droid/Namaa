@@ -23,6 +23,7 @@ export interface Task {
   customReward?: string;
   status: 'pending' | 'under_review' | 'completed' | 'approved' | 'failed' | 'expired';
   endDate?: string;
+  createdAt?: string;
 }
 
 export interface Kid {

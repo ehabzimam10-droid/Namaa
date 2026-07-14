@@ -59,7 +59,13 @@ export default function KidTasksPage() {
     return 'pending';
   };
 
-  const filteredTasks = (kid.tasks || []).filter((task) => getTaskCategory(task) === activeTab);
+  const filteredTasks = (kid.tasks || [])
+    .filter((task) => getTaskCategory(task) === activeTab)
+    .sort((a, b) => {
+      const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return dateB - dateA;
+    });
 
   return (
     <div className="w-full space-y-8 text-right font-sans">

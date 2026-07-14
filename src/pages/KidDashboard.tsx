@@ -182,7 +182,11 @@ export default function KidDashboard() {
             </div>
 
             <DynamicCarousel
-              items={kid.tasks || []}
+              items={[...(kid.tasks || [])].sort((a, b) => {
+                const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+                const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+                return dateB - dateA;
+              })}
               renderItem={(task) => (
                 <div className="w-full text-right px-1 flex justify-between items-center text-xs">
                   <span className={`text-[9px] px-2 py-0.5 rounded-md ${

@@ -245,6 +245,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       customReward: t.reward_type === 'custom' ? t.title : undefined,
       status: (t.status as Task['status']) || 'pending',
       endDate: t.end_date || undefined,
+      createdAt: t.created_at || new Date().toISOString(),
     }));
   };
 
@@ -345,6 +346,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       rewardType,
       customReward,
       status: 'pending',
+      createdAt: new Date().toISOString(),
     };
 
     setKids((prevKids) =>
@@ -888,6 +890,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       customReward: type === 'custom' ? customReward : undefined,
       status: 'pending',
       endDate,
+      createdAt: new Date().toISOString(),
     };
 
     setKids((prevKids) =>
