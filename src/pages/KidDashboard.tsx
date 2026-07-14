@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import DynamicCarousel from '../components/ui/DynamicCarousel';
@@ -5,6 +6,25 @@ import { donationCauses } from '../data/mockData';
 
 export default function KidDashboard() {
   const { kids, profile, projects } = useApp();
+  const [toast, setToast] = useState<string | null>(null);
+
+  useEffect(() => {
+    const REMINDER_INTERVAL = 2 * 60 * 60 * 1000; // 2 hours
+
+    // Trigger immediately after 5 seconds for demonstration purposes
+    const demoTimeout = setTimeout(() => {
+      setToast('تذكير: هل تفكر في التبرع اليوم لمساعدة الآخرين؟ 💚');
+    }, 5000);
+
+    const interval = setInterval(() => {
+      setToast('تذكير: هل تفكر في التبرع اليوم لمساعدة الآخرين؟ 💚');
+    }, REMINDER_INTERVAL);
+
+    return () => {
+      clearTimeout(demoTimeout);
+      clearInterval(interval);
+    };
+  }, []);
 
   const kid = kids.find(k => k.name === profile?.name) || kids.find(k => k.name === 'سالم') || kids[0];
   const totalTarget = (kid.savingsGoals || []).reduce((sum, g) => sum + g.targetAmount, 0);
@@ -182,6 +202,22 @@ export default function KidDashboard() {
         </Link>
 
       </div>
+
+      {toast && (
+        <div className="fixed bottom-6 right-6 z-50 max-w-sm bg-[#111C2E]/95 backdrop-blur-2xl border border-emerald-500/30 shadow-2xl rounded-2xl p-4 flex items-center gap-3 animate-fade-in text-right">
+          <div className="flex-1 space-y-1">
+            <h5 className="text-xs font-black text-emerald-400">تذكير المسؤولية المجتمعية 💚</h5>
+            <p className="text-xs text-slate-200 leading-relaxed font-sans">{toast}</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setToast(null)}
+            className="text-slate-400 hover:text-white text-xs font-bold px-2 py-1 rounded-xl bg-white/5 border border-white/10 transition-colors"
+          >
+            إغلاق
+          </button>
+        </div>
+      )}
     </div>
   );
 }

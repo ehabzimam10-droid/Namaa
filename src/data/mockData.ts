@@ -21,7 +21,7 @@ export interface Task {
   rewardAmount: number;
   rewardType: 'cash' | 'points' | 'custom';
   customReward?: string;
-  status: 'pending' | 'under_review' | 'completed' | 'approved';
+  status: 'pending' | 'under_review' | 'completed' | 'approved' | 'failed' | 'expired';
   endDate?: string;
 }
 

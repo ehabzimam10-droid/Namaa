@@ -46,12 +46,12 @@ export default function KidTasksPage() {
     return `الوقت المتبقي: ${diffMinutes} دقائق`;
   };
 
-  const nowVal = new Date();
   const getTaskCategory = (task: any) => {
     if (task.status === 'approved') return 'approved';
     if (task.status === 'under_review') return 'under_review';
+    if (task.status === 'expired' || task.status === 'failed') return 'expired';
     if (task.status === 'pending') {
-      if (task.endDate && new Date(task.endDate) < nowVal) {
+      if (task.endDate && new Date(task.endDate) < new Date()) {
         return 'expired';
       }
       return 'pending';

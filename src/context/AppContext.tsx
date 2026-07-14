@@ -40,8 +40,9 @@ interface AppContextType {
   geminiApiKey: string;
   setGeminiApiKey: (key: string) => void;
   notifications: Notification[];
-  addNotification: (userId: string, role: 'father' | 'kid', title: string, message: string) => void;
-  markNotificationAsRead: (id: string) => void;
+  addNotification: (userId: string, role: 'father' | 'kid', title: string, message: string) => Promise<void>;
+  markNotificationAsRead: (id: string) => Promise<void>;
+  runCleanup: () => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -80,7 +81,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     localStorage.setItem('namaa_notifications', JSON.stringify(notifications));
   }, [notifications]);
 
-  const addNotification = (userId: string, role: 'father' | 'kid', title: string, message: string) => {
+  const addNotification = async (userId: string, role: 'father' | 'kid', title: string, message: string) => {
     const newNotif: Notification = {
       id: `notif_${Date.now()}_${Math.random()}`,
       userId,
@@ -91,12 +92,33 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       isRead: false,
     };
     setNotifications((prev) => [newNotif, ...prev]);
+
+    try {
+      await supabase.from('notifications').insert({
+        user_id: userId,
+        role,
+        title,
+        message,
+        is_read: false
+      });
+    } catch (err) {
+      console.warn('Failed to sync notification to Supabase, saving locally:', err);
+    }
   };
 
-  const markNotificationAsRead = (id: string) => {
+  const markNotificationAsRead = async (id: string) => {
     setNotifications((prev) =>
       prev.map((n) => (n.id === id ? { ...n, isRead: true } : n))
     );
+    try {
+      const dbId = isNaN(Number(id)) ? id : Number(id);
+      await supabase
+        .from('notifications')
+        .update({ is_read: true })
+        .eq('id', dbId);
+    } catch (err) {
+      console.error('Failed to update notification status in Supabase:', err);
+    }
   };
 
   useEffect(() => {
@@ -111,87 +133,106 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     localStorage.setItem('namaa_projects_v14', JSON.stringify(projects));
   }, [projects]);
 
-  // Fetch data on mount
-  useEffect(() => {
-    const fetchData = async () => {
+  const fetchData = async () => {
+    try {
+      const [
+        { data: dbKids, error: kidsError },
+        { data: dbProjects, error: projError },
+        { data: dbTasks },
+        { data: dbGoals },
+        { data: dbTx }
+      ] = await Promise.all([
+        supabase.from('kids_profiles').select('*'),
+        supabase.from('family_projects').select('*'),
+        supabase.from('kid_tasks').select('*'),
+        supabase.from('savings_goals').select('*'),
+        supabase.from('transactions').select('*')
+      ]);
+
+      if (!projError && dbProjects && dbProjects.length > 0) {
+        const mappedProjects: FamilyProject[] = dbProjects.map((p: any) => ({
+          id: p.id?.toString() || `project_${Date.now()}_${Math.random()}`,
+          title: p.title,
+          totalRequired: p.total_required,
+          currentInvested: p.current_invested || 0,
+          roiPercentage: p.roi_percentage,
+          contributors: p.contributors || {},
+        }));
+        setProjects(mappedProjects);
+      }
+
+      if (!kidsError && dbKids && dbKids.length > 0) {
+        setKids((prevKids) =>
+          dbKids.map((k: any) => {
+            const prevKid = prevKids.find(pk => pk.name === k.name) || mockFamilyData.kids.find(lk => lk.name === k.name) || mockFamilyData.kids[0];
+            
+            const kidDbTasks = dbTasks ? dbTasks.filter((t: any) => t.kid_name === k.name) : [];
+            const mappedTasks = mappedTasksFromDb(kidDbTasks);
+
+            const kidGoals = dbGoals ? dbGoals.filter((g: any) => g.kid_name === k.name) : [];
+            const mappedGoals: SavingsGoal[] = kidGoals.map((g: any) => ({
+              id: g.id?.toString(),
+              title: g.title,
+              targetAmount: g.target_amount,
+              currentAmount: g.current_amount,
+              isLocked: g.is_locked,
+              deadlineDate: g.deadline_date || undefined
+            }));
+
+            const kidTx = dbTx ? dbTx.filter((t: any) => t.kid_name === k.name) : [];
+            const mappedTx: Transaction[] = kidTx.map((t: any) => ({
+              id: t.id?.toString(),
+              title: t.title,
+              amount: t.amount,
+              type: t.type as 'deposit' | 'withdrawal',
+              date: t.date || new Date().toISOString().split('T')[0]
+            })).sort((a, b) => b.id.localeCompare(a.id));
+
+            return {
+              ...prevKid,
+              id: k.id,
+              name: k.name,
+              age: k.age || prevKid.age,
+              balance: k.balance || 0,
+              donationPoints: k.donation_points || 0,
+              allowance: k.allowance || prevKid.allowance || 0,
+              tasks: mappedTasks,
+              savingsGoals: mappedGoals,
+              transactions: mappedTx
+            };
+          })
+        );
+      }
+
+      let fetchedNotifs: Notification[] = [];
       try {
-        const [
-          { data: dbKids, error: kidsError },
-          { data: dbProjects, error: projError },
-          { data: dbTasks },
-          { data: dbGoals },
-          { data: dbTx }
-        ] = await Promise.all([
-          supabase.from('kids_profiles').select('*'),
-          supabase.from('family_projects').select('*'),
-          supabase.from('kid_tasks').select('*'),
-          supabase.from('savings_goals').select('*'),
-          supabase.from('transactions').select('*')
-        ]);
-
-        if (!projError && dbProjects && dbProjects.length > 0) {
-          const mappedProjects: FamilyProject[] = dbProjects.map((p: any) => ({
-            id: p.id?.toString() || `project_${Date.now()}_${Math.random()}`,
-            title: p.title,
-            totalRequired: p.total_required,
-            currentInvested: p.current_invested || 0,
-            roiPercentage: p.roi_percentage,
-            contributors: p.contributors || {},
-          }));
-          setProjects(mappedProjects);
-        }
-
-        if (!kidsError && dbKids && dbKids.length > 0) {
-          setKids((prevKids) =>
-            dbKids.map((k: any) => {
-              // Fix Khalid Bug: find kid in local state/mock by name since database ID is a UUID
-              const prevKid = prevKids.find(pk => pk.name === k.name) || mockFamilyData.kids.find(lk => lk.name === k.name) || mockFamilyData.kids[0];
-              
-              // Map tasks
-              const kidDbTasks = dbTasks ? dbTasks.filter((t: any) => t.kid_name === k.name) : [];
-              const mappedTasks = mappedTasksFromDb(kidDbTasks);
-
-              // Map goals
-              const kidGoals = dbGoals ? dbGoals.filter((g: any) => g.kid_name === k.name) : [];
-              const mappedGoals: SavingsGoal[] = kidGoals.map((g: any) => ({
-                id: g.id?.toString(),
-                title: g.title,
-                targetAmount: g.target_amount,
-                currentAmount: g.current_amount,
-                isLocked: g.is_locked,
-                deadlineDate: g.deadline_date || undefined
-              }));
-
-              // Map transactions
-              const kidTx = dbTx ? dbTx.filter((t: any) => t.kid_name === k.name) : [];
-              const mappedTx: Transaction[] = kidTx.map((t: any) => ({
-                id: t.id?.toString(),
-                title: t.title,
-                amount: t.amount,
-                type: t.type as 'deposit' | 'withdrawal',
-                date: t.date || new Date().toISOString().split('T')[0]
-              })).sort((a, b) => b.id.localeCompare(a.id));
-
-              return {
-                ...prevKid,
-                id: k.id,
-                name: k.name,
-                age: k.age || prevKid.age,
-                balance: k.balance || 0,
-                donationPoints: k.donation_points || 0,
-                allowance: k.allowance || prevKid.allowance || 0,
-                tasks: mappedTasks,
-                savingsGoals: mappedGoals,
-                transactions: mappedTx
-              };
-            })
-          );
+        const { data: dbNotifs, error: notifError } = await supabase
+          .from('notifications')
+          .select('*');
+        if (!notifError && dbNotifs && dbNotifs.length > 0) {
+          fetchedNotifs = dbNotifs.map((n: any) => ({
+            id: n.id?.toString(),
+            userId: n.user_id || n.userId,
+            role: n.role as 'father' | 'kid',
+            title: n.title,
+            message: n.message,
+            createdAt: n.created_at || n.createdAt || new Date().toISOString(),
+            isRead: n.is_read !== undefined ? n.is_read : n.isRead,
+          })).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
         }
       } catch (err) {
-        console.error('Error fetching data from Supabase:', err);
+        console.warn('Failed to fetch notifications from Supabase, using localStorage:', err);
+        const saved = localStorage.getItem('namaa_notifications');
+        fetchedNotifs = saved ? JSON.parse(saved) : [];
       }
-    };
+      setNotifications(fetchedNotifs);
+    } catch (err) {
+      console.error('Error fetching data from Supabase:', err);
+    }
+  };
 
+  // Fetch data on mount
+  useEffect(() => {
     fetchData();
   }, []);
 
@@ -202,7 +243,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       rewardAmount: t.reward_amount,
       rewardType: t.reward_type,
       customReward: t.reward_type === 'custom' ? t.title : undefined,
-      status: (t.status as 'pending' | 'under_review' | 'completed' | 'approved') || 'pending',
+      status: (t.status as Task['status']) || 'pending',
       endDate: t.end_date || undefined,
     }));
   };
@@ -271,6 +312,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         return kid;
       })
     );
+
+    // Notify Father of donation
+    addNotification('father', 'father', 'تبرع جديد للمسؤولية المجتمعية 💚', `قام ${targetKid.name} بالتبرع بمبلغ ${amount} ريال للمسؤولية المجتمعية.`);
 
     // Supabase Update & Log Transaction
     try {
@@ -389,6 +433,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       })
     );
 
+    // Notify Father of investment
+    addNotification('father', 'father', 'مساهمة استثمارية جديدة 📈', `قام ${kidName} بالمساهمة بمبلغ ${amount} ريال في مشروع: ${targetProj?.title || 'مشاريع العائلة'}.`);
+
     // Check project completion
     if (targetProj && newInvestedAmount >= targetProj.totalRequired) {
       addNotification('father', 'father', 'اكتمل المشروع', 'تم اكتمال تمويل المشروع بنجاح!');
@@ -498,6 +545,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     const kidId = targetKid.id;
     const updatedBalance = Math.max(0, targetKid.balance - amount);
+    const targetGoal = (targetKid.savingsGoals || []).find(g => g.id === goalId);
+    const newCurrent = targetGoal ? targetGoal.currentAmount + amount : amount;
 
     // Local Update
     setKids((prevKids) =>
@@ -505,7 +554,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         if (kid.name === kidName) {
           const updatedGoals = (kid.savingsGoals || []).map((goal) => {
             if (goal.id === goalId) {
-              const newCurrent = goal.currentAmount + amount;
               return {
                 ...goal,
                 currentAmount: newCurrent,
@@ -525,6 +573,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       })
     );
 
+    // Notify Father of deposit to savings goal
+    addNotification('father', 'father', 'إيداع جديد في الحصالة 🔒', `قام ${kidName} بإيداع مبلغ ${amount} ريال في حصالة الادخار الخاصة به.`);
+
+    // Check if Goal Reached (to Kid)
+    if (targetGoal && newCurrent >= targetGoal.targetAmount && targetGoal.currentAmount < targetGoal.targetAmount) {
+      addNotification(kidId, 'kid', 'تحقيق الهدف 🎉', 'مبروك! لقد حققت هدف الحصالة بنجاح 🎯');
+    }
+
     // Supabase Update
     try {
       const computedSaved = (targetKid.savingsGoals || []).reduce((sum, goal) => {
@@ -535,8 +591,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }, 0);
 
       const dbGoalId = isNaN(Number(goalId)) ? goalId : Number(goalId);
-      const targetGoal = (targetKid.savingsGoals || []).find(g => g.id === goalId);
-      const newCurrent = targetGoal ? targetGoal.currentAmount + amount : amount;
       const isLocked = targetGoal ? newCurrent < targetGoal.targetAmount : true;
 
       await Promise.all([
@@ -747,6 +801,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       })
     );
 
+    // Notify kid that the task was approved
+    addNotification(foundKid.id, 'kid', 'اعتماد المهمة 🎯', 'تم اعتماد مهمتك واستلام الجائزة!');
+
     // Supabase updates
     try {
       const dbId = isNaN(Number(taskId)) ? taskId : Number(taskId);
@@ -792,6 +849,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         return kid;
       })
     );
+
+    // Add notification to kid
+    addNotification(kidId, 'kid', 'تحويل مالي 💸', `تم تحويل مبلغ ${amount} ريال لحسابك لسبب: ${reason}`);
 
     // Supabase Update & Log Transaction
     try {
@@ -860,6 +920,31 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return investedAmount + (investedAmount * (roiPercentage / 100));
   };
 
+  const runCleanup = async () => {
+    try {
+      // 1. Delete tasks from Supabase where status is 'approved' or 'failed' or 'expired'
+      const { error: taskError } = await supabase
+        .from('kid_tasks')
+        .delete()
+        .in('status', ['approved', 'failed', 'expired']);
+      
+      if (taskError) throw taskError;
+
+      // 2. Delete notifications from Supabase
+      const { error: notifError } = await supabase
+        .from('notifications')
+        .delete()
+        .neq('id', '00000000-0000-0000-0000-000000000000');
+      
+      if (notifError) throw notifError;
+
+      // 3. Refresh local state
+      await fetchData();
+    } catch (err) {
+      console.error('Failed to run cleanup in Supabase:', err);
+    }
+  };
+
   useEffect(() => {
     checkSavingsStatus();
     const interval = setInterval(checkSavingsStatus, 10000);
@@ -899,6 +984,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         notifications,
         addNotification,
         markNotificationAsRead,
+        runCleanup,
       }}
     >
       {children}

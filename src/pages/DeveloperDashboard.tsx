@@ -5,8 +5,22 @@ import { useApp } from '../context/AppContext';
 
 export default function DeveloperDashboard() {
   const navigate = useNavigate();
-  const { setProfile, geminiApiKey, setGeminiApiKey } = useApp();
+  const { setProfile, geminiApiKey, setGeminiApiKey, runCleanup } = useApp();
   const [loginLoading, setLoginLoading] = useState<string | null>(null);
+  const [cleanupLoading, setCleanupLoading] = useState(false);
+
+  const handleCleanup = async () => {
+    setCleanupLoading(true);
+    try {
+      await runCleanup();
+      alert('تم تنظيف المهام المعتمدة والمنتهية والإشعارات بنجاح من قاعدة البيانات! 🧹✨');
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setCleanupLoading(false);
+    }
+  };
+
   const [flags, setFlags] = useState({
     enableAIAssistant: true,
     enableGamifiedStreak: false,
@@ -185,6 +199,22 @@ export default function DeveloperDashboard() {
             );
           })}
         </div>
+      </div>
+
+      {/* Simulation & Cleanup Section */}
+      <div className="space-y-4 mt-8 bg-white/5 border border-white/10 rounded-2xl p-4">
+        <h3 className="text-sm font-bold text-slate-200">إجراءات محاكاة سحابية 🧹</h3>
+        <p className="text-[11px] text-slate-400 font-sans leading-relaxed">
+          قم بتشغيل محرك تنظيف المهام المعتمدة والمنتهية بالإضافة إلى تنظيف الإشعارات القديمة لمحاكاة مرور الوقت في النظام.
+        </p>
+        <button
+          type="button"
+          onClick={handleCleanup}
+          disabled={cleanupLoading}
+          className="w-full py-3 rounded-xl bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 hover:text-orange-300 border border-orange-500/20 hover:border-orange-500/30 text-xs font-bold transition-all flex items-center justify-center gap-1 focus:outline-none disabled:opacity-50"
+        >
+          {cleanupLoading ? 'جاري التنظيف... ⏳' : 'محاكاة مرور 24 ساعة (تنظيف المهام المنتهية والإشعارات) 🧹'}
+        </button>
       </div>
 
       <div className="mt-8 border-t border-white/5 pt-4 text-center text-xs text-slate-500 font-sans">
