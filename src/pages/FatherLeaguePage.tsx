@@ -173,15 +173,127 @@ export default function FatherLeaguePage() {
         </div>
       </div>
 
-      {!activeLeague.isActive ? (
-        /* START LEAGUE FORM */
-        <div className="relative overflow-hidden bg-[#111C2E]/60 backdrop-blur-2xl border border-white/10 shadow-2xl rounded-3xl p-6 text-right space-y-6">
-          <div className="border-b border-white/5 pb-3">
-            <h4 className="text-base font-black text-white">بدء تحدي مالي جديد للأبناء 🏁</h4>
-            <p className="text-[10px] text-slate-400 mt-1">
-              اختر معايير التقييم والجائزة، وسيتم تحويل المصروف الشهري تلقائياً وبدء المنافسة رسمياً!
-            </p>
-          </div>
+      {(() => {
+        const isLeagueEndedRecent = !activeLeague.isActive && activeLeague.endDate &&
+          (new Date().getTime() - new Date(activeLeague.endDate).getTime()) < 24 * 60 * 60 * 1000;
+
+        if (!activeLeague.isActive && isLeagueEndedRecent) {
+          return (
+            <div className="space-y-6">
+              {/* Festive Banner */}
+              <div className="relative overflow-hidden bg-gradient-to-br from-indigo-900 to-[#111C2E] border-2 border-orange-500/30 rounded-3xl p-8 text-center space-y-4 shadow-2xl">
+                <div className="absolute -left-12 -top-12 text-8xl opacity-15">🏆</div>
+                <div className="absolute -right-12 -bottom-12 text-8xl opacity-15">🎉</div>
+                
+                <span className="text-5xl block animate-bounce">🏆🎉👑</span>
+                <h2 className="text-xl font-black text-white">إعلان نتائج الدوري العائلي الكبرى 🏆🎉</h2>
+                <p className="text-xs text-slate-350 max-w-md mx-auto leading-relaxed">
+                  تهانينا للجميع! لقد انتهت جولات الدوري بنجاح. إليكم نتائج تقييم أبطال نماء الماليين!
+                </p>
+
+                <div className="bg-orange-500/10 border border-orange-500/20 max-w-sm mx-auto p-4 rounded-2xl">
+                  <span className="text-[10px] text-slate-400 block mb-1">الجائزة الكبرى للدوري:</span>
+                  <span className="text-lg font-black text-orange-400">{activeLeague.prize} 🎁</span>
+                </div>
+              </div>
+
+              {/* Winner announcement card */}
+              {leaderboard.length > 0 && (
+                <div className="bg-white/5 border border-white/10 rounded-3xl p-6 text-center space-y-4 relative overflow-hidden backdrop-blur-xl">
+                  <div className="absolute -left-10 -top-10 h-32 w-32 rounded-full bg-yellow-500/10 blur-2xl"></div>
+                  
+                  <div className="inline-flex flex-col items-center">
+                    <span className="text-5xl mb-2 animate-bounce">👑</span>
+                    <span className="text-sm font-semibold text-slate-400">بطل دوري العائلة المالي:</span>
+                    <span className="text-2xl font-black text-yellow-300 mt-1">{leaderboard[0].kid.name} 👑</span>
+                    <span className="text-xs text-slate-300 mt-1 font-sans">بمجموع نقاط {leaderboard[0].scores.totalPoints} نقطة 🌟</span>
+                  </div>
+                </div>
+              )}
+
+              {/* Final leaderboard list */}
+              <div className="bg-white/5 border border-white/10 rounded-3xl p-6 text-right space-y-4">
+                <h4 className="text-xs font-bold text-slate-300 border-b border-white/5 pb-2">جدول الترتيب النهائي للأبناء 📊</h4>
+                <div className="space-y-3">
+                  {leaderboard.map((item, idx) => {
+                    const isWinner = idx === 0;
+                    return (
+                      <div
+                        key={item.kid.id}
+                        className={`flex justify-between items-center p-4 rounded-2xl border transition-all ${
+                          isWinner
+                            ? 'bg-yellow-500/10 border-yellow-500/20 shadow-md scale-[1.01]'
+                            : 'bg-white/5 border-white/5'
+                        }`}
+                      >
+                        <div className="flex items-center gap-1 font-sans font-black text-xs text-white">
+                          <span className="text-orange-400">{item.scores.totalPoints}</span>
+                          <span className="text-[9px] text-slate-500">نقطة</span>
+                        </div>
+
+                        <div className="flex items-center gap-2.5">
+                          <div className="text-right">
+                            <h5 className="font-extrabold text-xs text-white flex items-center justify-end gap-1.5">
+                              {item.kid.name} {isWinner && '👑'}
+                            </h5>
+                          </div>
+                          <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center font-sans font-black text-xs text-orange-300">
+                            {idx + 1}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Detailed breakdown of all kids' categories */}
+              <div className="bg-white/5 border border-white/10 rounded-3xl p-6 text-right space-y-4">
+                <h4 className="text-xs font-bold text-slate-300 border-b border-white/5 pb-2">تحليل أداء الأداء المالي للأبناء 📊</h4>
+                <div className="space-y-6">
+                  {leaderboard.map((item) => (
+                    <div key={item.kid.id} className="bg-white/5 border border-white/5 rounded-2xl p-4 space-y-3">
+                      <span className="font-extrabold text-xs text-white block">الابن: {item.kid.name} 👦</span>
+                      
+                      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 text-center text-[10px] font-sans">
+                        <div className="bg-white/5 p-2 rounded-xl border border-white/5">
+                          <span className="block text-slate-400">الادخار (50)</span>
+                          <span className="font-extrabold text-white">{item.scores.savingsScore}/50</span>
+                        </div>
+                        <div className="bg-white/5 p-2 rounded-xl border border-white/5">
+                          <span className="block text-slate-400">الاستثمار (50)</span>
+                          <span className="font-extrabold text-white">{item.scores.investmentScore}/50</span>
+                        </div>
+                        <div className="bg-white/5 p-2 rounded-xl border border-white/5">
+                          <span className="block text-slate-400">التبرع (50)</span>
+                          <span className="font-extrabold text-white">{item.scores.donationScore}/50</span>
+                        </div>
+                        <div className="bg-white/5 p-2 rounded-xl border border-white/5">
+                          <span className="block text-slate-400">المهام (100)</span>
+                          <span className="font-extrabold text-white">{item.scores.tasksScore}/100</span>
+                        </div>
+                        <div className="bg-white/5 p-2 rounded-xl border border-white/5">
+                          <span className="block text-slate-400">إدارة المصروف (100)</span>
+                          <span className="font-extrabold text-white">{item.scores.spendingScore}/100</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          );
+        }
+
+        if (!activeLeague.isActive) {
+          return (
+            <div className="relative overflow-hidden bg-[#111C2E]/60 backdrop-blur-2xl border border-white/10 shadow-2xl rounded-3xl p-6 text-right space-y-6">
+              <div className="border-b border-white/5 pb-3">
+                <h4 className="text-base font-black text-white">بدء تحدي مالي جديد للأبناء 🏁</h4>
+                <p className="text-[10px] text-slate-400 mt-1">
+                  اختر معايير التقييم والجائزة، وسيتم تحويل المصروف الشهري تلقائياً وبدء المنافسة رسمياً!
+                </p>
+              </div>
 
           <form onSubmit={handleStartLeague} className="space-y-6">
             {errorMsg && (
@@ -527,7 +639,7 @@ export default function FatherLeaguePage() {
             )}
           </div>
         </div>
-      )}
+      })()}
       {/* Past Leagues History Section */}
       <div className="relative overflow-hidden bg-white/5 backdrop-blur-xl border border-white/10 shadow-2xl rounded-3xl p-6 text-right space-y-4">
         <h3 className="text-base font-black text-white flex items-center justify-end gap-2">
@@ -564,7 +676,7 @@ export default function FatherLeaguePage() {
       {/* Past League Detail Modal */}
       {selectedPastLeague && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
-          <div className="w-full max-w-md bg-[#0D1527]/95 border border-white/10 p-6 rounded-3xl text-right space-y-4 shadow-2xl relative">
+          <div className="w-full max-w-md bg-[#0D1527]/95 border border-white/10 p-6 rounded-3xl text-right space-y-4 shadow-2xl relative max-h-[90vh] overflow-y-auto">
             <div className="border-b border-white/5 pb-3 flex justify-between items-center flex-row-reverse">
               <h3 className="text-lg font-black text-white">تفاصيل التحدي المؤرشف 📜</h3>
               <button
@@ -590,13 +702,125 @@ export default function FatherLeaguePage() {
                 <span>{selectedPastLeague.bases?.join(' ، ')}</span>
               </div>
 
+              {/* Leaderboard & Breakdown inside History Modal */}
+              <div className="space-y-4 border-t border-white/5 pt-3 mt-3">
+                <span className="font-bold text-white block">الترتيب والنتائج النهائية للأبناء:</span>
+                {(() => {
+                  const calculatePastLeagueKidScores = (kid: any, league: any) => {
+                    const baseAllowance = Number(league.allowances?.[kid.id] || league.allowances?.[kid.name] || kid.allowance || 100);
+                    const startTime = new Date(league.start_date).getTime();
+                    const endTime = new Date(league.end_date).getTime();
+
+                    const currentLeagueTx = (kid.transactions || []).filter((tx: any) => {
+                      const txTime = new Date(tx.date).getTime();
+                      return txTime >= startTime && txTime <= endTime;
+                    });
+
+                    const currentLeagueTasks = (kid.tasks || []).filter((task: any) => {
+                      const taskTime = new Date(task.createdAt || task.endDate || '').getTime();
+                      if (isNaN(taskTime)) return false;
+                      return taskTime >= startTime && taskTime <= endTime;
+                    });
+
+                    const savingsAmount = currentLeagueTx
+                      .filter((tx: any) => tx.type === 'withdrawal' && tx.title.includes('حصالة'))
+                      .reduce((sum: number, tx: any) => sum + tx.amount, 0);
+                    const savingsScore = league.bases?.includes('الادخار')
+                      ? Math.min(50, Math.round((savingsAmount / baseAllowance) * 50))
+                      : 0;
+
+                    const investmentAmount = currentLeagueTx
+                      .filter((tx: any) => tx.type === 'withdrawal' && (tx.title.includes('استثمار') || tx.title.includes('مشروع')))
+                      .reduce((sum: number, tx: any) => sum + tx.amount, 0);
+                    const investmentScore = league.bases?.includes('الاستثمار')
+                      ? Math.min(50, Math.round((investmentAmount / baseAllowance) * 50))
+                      : 0;
+
+                    const donationAmount = currentLeagueTx
+                      .filter((tx: any) => tx.type === 'withdrawal' && tx.title.includes('تبرع'))
+                      .reduce((sum: number, tx: any) => sum + tx.amount, 0);
+                    const donationScore = league.bases?.includes('التبرع')
+                      ? Math.min(50, Math.round((donationAmount / baseAllowance) * 50))
+                      : 0;
+
+                    const totalTasks = currentLeagueTasks.length;
+                    const approvedTasks = currentLeagueTasks.filter((t: any) => t.status === 'approved').length;
+                    const tasksScore = league.bases?.includes('إنجاز المهام') && totalTasks > 0
+                      ? Math.min(100, Math.round((approvedTasks / totalTasks) * 100))
+                      : 0;
+
+                    const spendingScores = league.allowances?.spendingScores || {};
+                    const spendingScore = league.bases?.includes('إدارة المصروف')
+                      ? (spendingScores[kid.id] || spendingScores[kid.name] || 0)
+                      : 0;
+
+                    const totalPoints = savingsScore + investmentScore + donationScore + tasksScore + spendingScore;
+
+                    return {
+                      savingsScore,
+                      investmentScore,
+                      donationScore,
+                      tasksScore,
+                      spendingScore,
+                      totalPoints
+                    };
+                  };
+
+                  const pastLeaderboard = kids.map(k => ({
+                    kid: k,
+                    scores: calculatePastLeagueKidScores(k, selectedPastLeague)
+                  })).sort((a, b) => b.scores.totalPoints - a.scores.totalPoints);
+
+                  if (pastLeaderboard.length === 0) return null;
+                  const winnerName = pastLeaderboard[0].kid.name;
+
+                  return (
+                    <div className="space-y-3">
+                      <div className="bg-yellow-500/10 border border-yellow-500/25 p-3 rounded-2xl text-center">
+                        <span className="text-[10px] text-slate-400 block">الفائز بالدوري:</span>
+                        <span className="text-sm font-black text-yellow-300">👑 {winnerName} 👑</span>
+                      </div>
+
+                      <div className="space-y-2">
+                        {pastLeaderboard.map((item, idx) => (
+                          <div key={item.kid.id} className="bg-[#111C2E]/80 border border-white/5 p-3 rounded-xl space-y-2">
+                            <div className="flex justify-between items-center flex-row-reverse text-xs">
+                              <span className="font-extrabold text-white">{idx + 1}. {item.kid.name}</span>
+                              <span className="text-orange-300 font-sans font-bold">{item.scores.totalPoints} نقطة</span>
+                            </div>
+                            <div className="grid grid-cols-5 gap-1 text-[9px] text-center text-slate-400 font-sans">
+                              <div className="bg-white/5 p-1 rounded">
+                                <span>ادخار: {item.scores.savingsScore}</span>
+                              </div>
+                              <div className="bg-white/5 p-1 rounded">
+                                <span>استثمار: {item.scores.investmentScore}</span>
+                              </div>
+                              <div className="bg-white/5 p-1 rounded">
+                                <span>تبرع: {item.scores.donationScore}</span>
+                              </div>
+                              <div className="bg-white/5 p-1 rounded">
+                                <span>مهام: {item.scores.tasksScore}</span>
+                              </div>
+                              <div className="bg-white/5 p-1 rounded">
+                                <span>مصروف: {item.scores.spendingScore}</span>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+
               <div className="space-y-2 border-t border-white/5 pt-3 mt-3">
                 <span className="font-bold text-white block mb-1">المصروفات الموزعة للأبناء:</span>
                 {Object.entries(selectedPastLeague.allowances || {}).map(([kidId, amount]) => {
+                  if (kidId === 'spendingScores') return null; // skip spendingScores metadata
                   const kidObj = kids.find(k => k.id === kidId);
                   return (
                     <div key={kidId} className="flex justify-between flex-row-reverse bg-white/5 p-2 rounded-xl text-[11px]">
-                      <span className="text-slate-300 font-bold">{kidObj ? kidObj.name : 'ابن'}</span>
+                      <span className="text-slate-350 font-bold">{kidObj ? kidObj.name : 'ابن'}</span>
                       <span className="text-white font-sans font-bold">{amount as number} ريال</span>
                     </div>
                   );

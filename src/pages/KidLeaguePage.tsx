@@ -67,16 +67,136 @@ export default function KidLeaguePage() {
         </div>
       </div>
 
-      {!activeLeague.isActive ? (
-        <div className="bg-[#111C2E]/60 backdrop-blur-2xl border border-white/10 shadow-2xl rounded-3xl p-8 text-center space-y-4">
-          <span className="text-4xl block">⏳🏆</span>
-          <h4 className="text-sm font-extrabold text-white">لا يوجد دوري نشط حالياً</h4>
-          <p className="text-xs text-slate-400 max-w-sm mx-auto leading-relaxed">
-            اطلب من والدك بدء الدوري وتوزيع المصروف الشهري لتنطلق المنافسة الكبرى وتحصيل الجوائز! 🎁✨
-          </p>
-        </div>
-      ) : (
-        <div className="space-y-6">
+      {(() => {
+        const isLeagueEndedRecent = !activeLeague.isActive && activeLeague.endDate &&
+          (new Date().getTime() - new Date(activeLeague.endDate).getTime()) < 24 * 60 * 60 * 1000;
+
+        if (!activeLeague.isActive && isLeagueEndedRecent) {
+          return (
+            <div className="space-y-6">
+              {/* Festive Banner */}
+              <div className="relative overflow-hidden bg-gradient-to-br from-indigo-900 to-[#111C2E] border-2 border-orange-500/30 rounded-3xl p-8 text-center space-y-4 shadow-2xl">
+                <div className="absolute -left-12 -top-12 text-8xl opacity-15">🏆</div>
+                <div className="absolute -right-12 -bottom-12 text-8xl opacity-15">🎉</div>
+                
+                <span className="text-5xl block animate-bounce">🏆🎉👑</span>
+                <h2 className="text-xl font-black text-white">إعلان نتائج الدوري العائلي الكبرى 🏆🎉</h2>
+                <p className="text-xs text-slate-350 max-w-md mx-auto leading-relaxed">
+                  تهانينا للجميع! لقد انتهت جولات الدوري بنجاح. إليكم نتائج تقييم أبطال نماء الماليين!
+                </p>
+
+                <div className="bg-orange-500/10 border border-orange-500/20 max-w-sm mx-auto p-4 rounded-2xl">
+                  <span className="text-[10px] text-slate-400 block mb-1">الجائزة الكبرى للدوري:</span>
+                  <span className="text-lg font-black text-orange-400">{activeLeague.prize} 🎁</span>
+                </div>
+              </div>
+
+              {/* Winner announcement card */}
+              {compiledList.length > 0 && (
+                <div className="bg-white/5 border border-white/10 rounded-3xl p-6 text-center space-y-4 relative overflow-hidden backdrop-blur-xl">
+                  <div className="absolute -left-10 -top-10 h-32 w-32 rounded-full bg-yellow-500/10 blur-2xl"></div>
+                  
+                  <div className="inline-flex flex-col items-center">
+                    <span className="text-5xl mb-2 animate-bounce">👑</span>
+                    <span className="text-sm font-semibold text-slate-400">بطل دوري العائلة المالي:</span>
+                    <span className="text-2xl font-black text-yellow-300 mt-1">{compiledList[0].kid.name} 👑</span>
+                    <span className="text-xs text-slate-300 mt-1 font-sans">بمجموع نقاط {compiledList[0].scores.totalPoints} نقطة 🌟</span>
+                  </div>
+                </div>
+              )}
+
+              {/* Final leaderboard list */}
+              <div className="bg-white/5 border border-white/10 rounded-3xl p-6 text-right space-y-4">
+                <h4 className="text-xs font-bold text-slate-300 border-b border-white/5 pb-2">جدول الترتيب النهائي للأبناء 📊</h4>
+                <div className="space-y-3">
+                  {compiledList.map((item, idx) => {
+                    const isWinner = idx === 0;
+                    const isOurProfile = item.kid.id === activeKid.id;
+                    return (
+                      <div
+                        key={item.kid.id}
+                        className={`flex justify-between items-center p-4 rounded-2xl border transition-all ${
+                          isWinner
+                            ? 'bg-yellow-500/10 border-yellow-500/20 shadow-md scale-[1.01]'
+                            : isOurProfile
+                            ? 'bg-orange-500/15 border-orange-500/20'
+                            : 'bg-white/5 border-white/5'
+                        }`}
+                      >
+                        <div className="flex items-center gap-1 font-sans font-black text-xs text-white">
+                          <span className="text-orange-400">{item.scores.totalPoints}</span>
+                          <span className="text-[9px] text-slate-500">نقطة</span>
+                        </div>
+
+                        <div className="flex items-center gap-2.5">
+                          <div className="text-right">
+                            <h5 className="font-extrabold text-xs text-white flex items-center justify-end gap-1.5">
+                              {item.kid.name} {isWinner && '👑'}
+                              {isOurProfile && <span className="text-[8px] font-bold px-1.5 py-0.5 rounded bg-orange-500/20 text-orange-400">أنت</span>}
+                            </h5>
+                          </div>
+                          <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center font-sans font-black text-xs text-orange-300">
+                            {idx + 1}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Detailed breakdown of all kids' categories */}
+              <div className="bg-white/5 border border-white/10 rounded-3xl p-6 text-right space-y-4">
+                <h4 className="text-xs font-bold text-slate-300 border-b border-white/5 pb-2">تحليل أداء الأداء المالي للأبناء 📊</h4>
+                <div className="space-y-6">
+                  {compiledList.map((item) => (
+                    <div key={item.kid.id} className="bg-white/5 border border-white/5 rounded-2xl p-4 space-y-3">
+                      <span className="font-extrabold text-xs text-white block">الابن: {item.kid.name} 👦</span>
+                      
+                      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 text-center text-[10px] font-sans">
+                        <div className="bg-white/5 p-2 rounded-xl border border-white/5">
+                          <span className="block text-slate-400">الادخار (50)</span>
+                          <span className="font-extrabold text-white">{item.scores.savingsScore}/50</span>
+                        </div>
+                        <div className="bg-white/5 p-2 rounded-xl border border-white/5">
+                          <span className="block text-slate-400">الاستثمار (50)</span>
+                          <span className="font-extrabold text-white">{item.scores.investmentScore}/50</span>
+                        </div>
+                        <div className="bg-white/5 p-2 rounded-xl border border-white/5">
+                          <span className="block text-slate-400">التبرع (50)</span>
+                          <span className="font-extrabold text-white">{item.scores.donationScore}/50</span>
+                        </div>
+                        <div className="bg-white/5 p-2 rounded-xl border border-white/5">
+                          <span className="block text-slate-400">المهام (100)</span>
+                          <span className="font-extrabold text-white">{item.scores.tasksScore}/100</span>
+                        </div>
+                        <div className="bg-white/5 p-2 rounded-xl border border-white/5">
+                          <span className="block text-slate-400">إدارة المصروف (100)</span>
+                          <span className="font-extrabold text-white">{item.scores.spendingScore}/100</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          );
+        }
+
+        if (!activeLeague.isActive) {
+          return (
+            <div className="bg-[#111C2E]/60 backdrop-blur-2xl border border-white/10 shadow-2xl rounded-3xl p-8 text-center space-y-4">
+              <span className="text-4xl block">⏳🏆</span>
+              <h4 className="text-sm font-extrabold text-white">لا يوجد دوري نشط حالياً</h4>
+              <p className="text-xs text-slate-400 max-w-sm mx-auto leading-relaxed">
+                اطلب من والدك بدء الدوري وتوزيع المصروف الشهري لتنطلق المنافسة الكبرى وتحصيل الجوائز! 🎁✨
+              </p>
+            </div>
+          );
+        }
+
+        return (
+          <div className="space-y-6">
           {/* Motivation Progress Card */}
           <div className="relative overflow-hidden bg-gradient-to-r from-orange-500/20 to-[#8c7355]/10 border border-orange-500/20 rounded-3xl p-6 text-right space-y-3">
             <div className="absolute -left-6 -top-6 text-7xl opacity-10">🚀</div>
@@ -204,7 +324,7 @@ export default function KidLeaguePage() {
             </div>
           </div>
         </div>
-      )}
+      })()}
     </div>
   );
 }

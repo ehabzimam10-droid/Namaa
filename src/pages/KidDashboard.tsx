@@ -5,7 +5,7 @@ import DynamicCarousel from '../components/ui/DynamicCarousel';
 import { donationCauses } from '../data/mockData';
 
 export default function KidDashboard() {
-  const { kids, profile, projects, simulateDailyPurchase } = useApp();
+  const { kids, profile, projects, simulateDailyPurchase, activeLeague } = useApp();
   const [toast, setToast] = useState<string | null>(null);
 
   // Pay modal states
@@ -88,6 +88,28 @@ export default function KidDashboard() {
           <h2 className="text-xl font-black text-white">لوحة تحكم {kid.name} 👦</h2>
         </div>
       </div>
+
+      {/* Remaining Allowance Card */}
+      {activeLeague?.isActive && (
+        <div className="bg-white/5 border border-white/10 rounded-3xl p-5 text-right flex flex-row-reverse justify-between items-center gap-4 backdrop-blur-xl shadow-2xl relative overflow-hidden">
+          <div className="absolute -left-10 -top-10 h-32 w-32 rounded-full bg-orange-500/10 blur-2xl"></div>
+          <div className="flex items-center gap-2">
+            <span className="text-xl">💳</span>
+            <span className="text-sm font-black text-white">المتبقي من مصروف الدوري:</span>
+          </div>
+          <span className="text-lg font-black text-orange-300 font-sans">
+            {(() => {
+              const baseAllowance = Number(activeLeague.allowances?.[kid.id] || activeLeague.allowances?.[kid.name] || 0);
+              const leagueWithdrawals = (kid.transactions || []).filter(tx => {
+                const txTime = new Date(tx.date).getTime();
+                const startTime = new Date(activeLeague.startDate!).getTime();
+                return txTime >= startTime && tx.type === 'withdrawal';
+              }).reduce((sum, tx) => sum + tx.amount, 0);
+              return Math.max(0, baseAllowance - leagueWithdrawals);
+            })()} ريال 💳
+          </span>
+        </div>
+      )}
 
       {/* Grid of 6 Glassmorphism Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

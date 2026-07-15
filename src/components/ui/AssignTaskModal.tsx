@@ -8,29 +8,35 @@ interface AssignTaskModalProps {
 }
 
 export default function AssignTaskModal({ isOpen, onClose, kidName }: AssignTaskModalProps) {
-  const { assignManualTask, kids } = useApp();
+  const { assignManualTask, kids, activeLeague } = useApp();
 
   const [title, setTitle] = useState('');
   const [rewardType, setRewardType] = useState<'cash' | 'points' | 'custom'>('cash');
   const [amount, setAmount] = useState<number | ''>('');
   const [customReward, setCustomReward] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [difficulty, setDifficulty] = useState<'easy' | 'medium' | 'hard'>('easy');
+  const [bindToLeagueEnd, setBindToLeagueEnd] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
   const kid = kids.find(k => k.name === kidName);
-  const now = new Date();
-  const currentMonthTasks = kid ? (kid.tasks || []).filter(task => {
-    const d = task.createdAt ? new Date(task.createdAt) : new Date();
-    return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+  
+  // Filter active league tasks
+  const leagueTasks = kid ? (kid.tasks || []).filter(task => {
+    if (!activeLeague || !activeLeague.isActive || !activeLeague.startDate) return false;
+    const taskTime = task.createdAt ? new Date(task.createdAt).getTime() : 0;
+    const startTime = new Date(activeLeague.startDate).getTime();
+    const endTime = activeLeague.endDate ? new Date(activeLeague.endDate).getTime() : Infinity;
+    return taskTime >= startTime && taskTime <= endTime;
   }) : [];
 
-  const currentEasy = currentMonthTasks.filter(t => t.rewardType === 'points' ? t.rewardAmount <= 3 : t.rewardAmount <= 15).length;
-  const currentMedium = currentMonthTasks.filter(t => t.rewardType === 'points' ? (t.rewardAmount > 3 && t.rewardAmount <= 7) : (t.rewardAmount > 15 && t.rewardAmount <= 40)).length;
-  const currentHard = currentMonthTasks.filter(t => t.rewardType === 'points' ? t.rewardAmount > 7 : (t.rewardAmount > 40 || t.rewardType === 'custom')).length;
+  const easyCount = leagueTasks.filter(t => t.difficulty === 'easy').length;
+  const mediumCount = leagueTasks.filter(t => t.difficulty === 'medium').length;
+  const hardCount = leagueTasks.filter(t => t.difficulty === 'hard').length;
 
-  const remainingEasy = Math.max(0, 5 - currentEasy);
-  const remainingMedium = Math.max(0, 3 - currentMedium);
-  const remainingHard = Math.max(0, 3 - currentHard);
+  const remainingEasy = Math.max(0, 5 - easyCount);
+  const remainingMedium = Math.max(0, 3 - mediumCount);
+  const remainingHard = Math.max(0, 3 - hardCount);
 
   if (!isOpen) return null;
 
@@ -38,7 +44,19 @@ export default function AssignTaskModal({ isOpen, onClose, kidName }: AssignTask
     e.preventDefault();
     if (!title.trim()) return;
 
-    // Check validation based on type
+    if (difficulty === 'easy' && remainingEasy === 0) {
+      alert('عذراً، لقد استنفدت عدد المهام السهلة المسموح بها (الحد الأقصى: 5)');
+      return;
+    }
+    if (difficulty === 'medium' && remainingMedium === 0) {
+      alert('عذراً، لقد استنفدت عدد المهام المتوسطة المسموح بها (الحد الأقصى: 3)');
+      return;
+    }
+    if (difficulty === 'hard' && remainingHard === 0) {
+      alert('عذراً، لقد استنفدت عدد المهام الصعبة المسموح بها (الحد الأقصى: 3)');
+      return;
+    }
+
     if (rewardType !== 'custom' && (!amount || amount <= 0)) {
       return;
     }
@@ -48,25 +66,30 @@ export default function AssignTaskModal({ isOpen, onClose, kidName }: AssignTask
 
     setIsLoading(true);
 
-    // Simulate 800ms loading delay for premium UX
     setTimeout(async () => {
       try {
         const finalAmount = rewardType === 'custom' ? 0 : Number(amount);
+        const finalEndDate = bindToLeagueEnd && activeLeague && activeLeague.endDate
+          ? activeLeague.endDate
+          : endDate || undefined;
+
         await assignManualTask(
           kidName,
           title.trim(),
           finalAmount,
           rewardType,
           rewardType === 'custom' ? customReward.trim() : undefined,
-          endDate || undefined
+          finalEndDate,
+          difficulty
         );
         setIsLoading(false);
-        // Reset states
         setTitle('');
         setRewardType('cash');
         setAmount('');
         setCustomReward('');
         setEndDate('');
+        setDifficulty('easy');
+        setBindToLeagueEnd(false);
         onClose();
         alert(`تم إسناد المهمة "${title}" للابن ${kidName} بنجاح! 🎯✨`);
       } catch (err) {
@@ -79,10 +102,8 @@ export default function AssignTaskModal({ isOpen, onClose, kidName }: AssignTask
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-md animate-fade-in">
       <div className="relative w-full max-w-md bg-[#0D1527]/90 border border-white/10 shadow-2xl rounded-3xl p-6 text-right font-sans overflow-hidden">
-        {/* Decorative background glow */}
         <div className="absolute -left-10 -top-10 h-28 w-28 rounded-full bg-blue-500/10 blur-2xl pointer-events-none"></div>
 
-        {/* Modal Header */}
         <div className="flex justify-between items-center border-b border-white/5 pb-4 mb-4">
           <button
             onClick={onClose}
@@ -93,25 +114,24 @@ export default function AssignTaskModal({ isOpen, onClose, kidName }: AssignTask
           <h3 className="text-base font-black text-white">تخصيص مهمة جديدة لـ {kidName} 🎯</h3>
         </div>
 
-        {/* Modal Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Target Tasks Progress Helper */}
           <div className="bg-white/5 border border-white/5 p-3 rounded-2xl text-right text-xs space-y-1.5 backdrop-blur-md">
-            <span className="font-bold text-orange-400 block">📊 أهداف المهام لهذا الشهر:</span>
-            <div className="grid grid-cols-3 gap-2 text-center text-[10px] text-slate-300 font-sans">
+            <span className="font-bold text-orange-400 block">📊 أهداف المهام لهذا الدوري:</span>
+            <div className="grid grid-cols-3 gap-2 text-center text-[10px] text-slate-350 font-sans">
               <div className="bg-white/5 p-1.5 rounded-xl border border-white/5">
                 <span className="block text-slate-400">سهلة (5)</span>
-                <span className="font-extrabold text-white">{currentEasy}/5</span>
+                <span className="font-extrabold text-white">{easyCount}/5</span>
                 <span className="block text-[8px] text-slate-500">(المتبقي: {remainingEasy})</span>
               </div>
               <div className="bg-white/5 p-1.5 rounded-xl border border-white/5">
                 <span className="block text-slate-400">متوسطة (3)</span>
-                <span className="font-extrabold text-white">{currentMedium}/3</span>
+                <span className="font-extrabold text-white">{mediumCount}/3</span>
                 <span className="block text-[8px] text-slate-500">(المتبقي: {remainingMedium})</span>
               </div>
               <div className="bg-white/5 p-1.5 rounded-xl border border-white/5">
                 <span className="block text-slate-400">صعبة (3)</span>
-                <span className="font-extrabold text-white">{currentHard}/3</span>
+                <span className="font-extrabold text-white">{hardCount}/3</span>
                 <span className="block text-[8px] text-slate-500">(المتبقي: {remainingHard})</span>
               </div>
             </div>
@@ -128,6 +148,26 @@ export default function AssignTaskModal({ isOpen, onClose, kidName }: AssignTask
               placeholder="مثال: ترتيب الغرفة"
               className="w-full bg-[#111C2E]/80 border border-white/10 focus:border-[#8c7355] rounded-xl px-3 py-2.5 text-right text-white text-xs outline-none transition-all placeholder:text-slate-700 font-sans"
             />
+          </div>
+
+          {/* Difficulty Dropdown */}
+          <div className="space-y-1">
+            <label className="block text-xs text-slate-400">مستوى الصعوبة</label>
+            <select
+              value={difficulty}
+              onChange={(e) => {
+                const diffVal = e.target.value as 'easy' | 'medium' | 'hard';
+                setDifficulty(diffVal);
+                if (rewardType === 'points') {
+                  setAmount(diffVal === 'easy' ? 5 : diffVal === 'medium' ? 10 : 15);
+                }
+              }}
+              className="w-full bg-[#111C2E]/80 border border-white/10 focus:border-[#8c7355] rounded-xl px-3 py-2.5 text-right text-white text-xs outline-none transition-all font-sans"
+            >
+              <option value="easy" disabled={remainingEasy === 0}>سهل (5 نقاط) - المتبقي: {remainingEasy}/5</option>
+              <option value="medium" disabled={remainingMedium === 0}>متوسط (10 نقاط) - المتبقي: {remainingMedium}/3</option>
+              <option value="hard" disabled={remainingHard === 0}>صعب (15 نقطة) - المتبقي: {remainingHard}/3</option>
+            </select>
           </div>
 
           {/* Reward Type (Segmented Toggle) */}
@@ -147,7 +187,10 @@ export default function AssignTaskModal({ isOpen, onClose, kidName }: AssignTask
               </button>
               <button
                 type="button"
-                onClick={() => setRewardType('points')}
+                onClick={() => {
+                  setRewardType('points');
+                  setAmount(difficulty === 'easy' ? 5 : difficulty === 'medium' ? 10 : 15);
+                }}
                 className={`py-2 rounded-lg text-xs font-bold transition-all text-center ${
                   rewardType === 'points'
                     ? 'bg-gradient-to-r from-orange-500 to-[#8c7355] text-white shadow-md'
@@ -180,10 +223,11 @@ export default function AssignTaskModal({ isOpen, onClose, kidName }: AssignTask
                 type="number"
                 required
                 min="1"
+                disabled={rewardType === 'points'}
                 value={amount}
                 onChange={(e) => setAmount(e.target.value === '' ? '' : Number(e.target.value))}
                 placeholder={rewardType === 'cash' ? 'مثال: 20' : 'مثال: 5'}
-                className="w-full bg-[#111C2E]/80 border border-white/10 focus:border-[#8c7355] rounded-xl px-3 py-2.5 text-left text-white text-xs outline-none transition-all placeholder:text-slate-700 font-sans"
+                className="w-full bg-[#111C2E]/80 border border-white/10 focus:border-[#8c7355] rounded-xl px-3 py-2.5 text-left text-white text-xs outline-none transition-all placeholder:text-slate-700 font-sans disabled:opacity-50"
               />
             </div>
           )}
@@ -203,18 +247,34 @@ export default function AssignTaskModal({ isOpen, onClose, kidName }: AssignTask
             </div>
           )}
 
-          {/* End Date */}
-          <div className="space-y-1">
-            <label className="block text-xs text-slate-400">تاريخ النهاية (اختياري)</label>
+          {/* End Date with Toggle */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between flex-row-reverse text-xs text-slate-400">
+              <label className="block">تاريخ نهاية المهمة</label>
+              <label className="flex items-center gap-1 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={bindToLeagueEnd}
+                  onChange={(e) => {
+                    setBindToLeagueEnd(e.target.checked);
+                    if (e.target.checked && activeLeague && activeLeague.endDate) {
+                      setEndDate(activeLeague.endDate.substring(0, 16));
+                    }
+                  }}
+                  className="rounded border-white/10 text-orange-500 focus:ring-0 focus:ring-offset-0 bg-[#111C2E]"
+                />
+                <span className="text-[10px] text-orange-300">ربط نهاية المهمة بنهاية الدوري 🏆</span>
+              </label>
+            </div>
             <input
               type="datetime-local"
+              disabled={bindToLeagueEnd}
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
-              className="w-full bg-[#111C2E]/80 border border-white/10 focus:border-[#8c7355] rounded-xl px-3 py-2.5 text-right text-white text-xs outline-none transition-all placeholder:text-slate-700 font-sans"
+              className="w-full bg-[#111C2E]/80 border border-white/10 focus:border-[#8c7355] rounded-xl px-3 py-2.5 text-right text-white text-xs outline-none transition-all placeholder:text-slate-700 font-sans disabled:opacity-50"
             />
           </div>
 
-          {/* Action Buttons */}
           <div className="flex gap-3 justify-end pt-3 border-t border-white/5">
             <button
               type="button"

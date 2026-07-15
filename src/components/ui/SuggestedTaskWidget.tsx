@@ -16,7 +16,7 @@ export default function SuggestedTaskWidget({
   type: initialType,
   reasoning
 }: SuggestedTaskWidgetProps) {
-  const { assignManualTask } = useApp();
+  const { assignManualTask, kids, activeLeague } = useApp();
   const [status, setStatus] = useState<'idle' | 'approved' | 'rejected'>('idle');
 
   // Local state for editable task fields
@@ -25,16 +25,55 @@ export default function SuggestedTaskWidget({
   const [type, setType] = useState<'cash' | 'points' | 'custom'>(initialType || 'cash');
   const [customReward, setCustomReward] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [difficulty, setDifficulty] = useState<'easy' | 'medium' | 'hard'>('easy');
+  const [bindToLeagueEnd, setBindToLeagueEnd] = useState(false);
+
+  const kid = kids.find(k => k.name === kidName);
+  
+  // Filter active league tasks
+  const leagueTasks = kid ? (kid.tasks || []).filter(task => {
+    if (!activeLeague || !activeLeague.isActive || !activeLeague.startDate) return false;
+    const taskTime = task.createdAt ? new Date(task.createdAt).getTime() : 0;
+    const startTime = new Date(activeLeague.startDate).getTime();
+    const endTime = activeLeague.endDate ? new Date(activeLeague.endDate).getTime() : Infinity;
+    return taskTime >= startTime && taskTime <= endTime;
+  }) : [];
+
+  const easyCount = leagueTasks.filter(t => t.difficulty === 'easy').length;
+  const mediumCount = leagueTasks.filter(t => t.difficulty === 'medium').length;
+  const hardCount = leagueTasks.filter(t => t.difficulty === 'hard').length;
+
+  const remainingEasy = Math.max(0, 5 - easyCount);
+  const remainingMedium = Math.max(0, 3 - mediumCount);
+  const remainingHard = Math.max(0, 3 - hardCount);
 
   const handleApprove = async () => {
+    if (difficulty === 'easy' && remainingEasy === 0) {
+      alert('عذراً، لقد استنفدت عدد المهام السهلة المسموح بها (الحد الأقصى: 5)');
+      return;
+    }
+    if (difficulty === 'medium' && remainingMedium === 0) {
+      alert('عذراً، لقد استنفدت عدد المهام المتوسطة المسموح بها (الحد الأقصى: 3)');
+      return;
+    }
+    if (difficulty === 'hard' && remainingHard === 0) {
+      alert('عذراً، لقد استنفدت عدد المهام الصعبة المسموح بها (الحد الأقصى: 3)');
+      return;
+    }
+
     try {
+      const finalEndDate = bindToLeagueEnd && activeLeague && activeLeague.endDate
+        ? activeLeague.endDate
+        : endDate || undefined;
+
       await assignManualTask(
         kidName,
         title,
         type === 'custom' ? 0 : amount,
         type,
         type === 'custom' ? customReward : undefined,
-        endDate || undefined
+        finalEndDate,
+        difficulty
       );
       setStatus('approved');
     } catch (err) {
@@ -60,6 +99,28 @@ export default function SuggestedTaskWidget({
       <div className="space-y-2.5 text-xs text-right">
         {status === 'idle' ? (
           <>
+            {/* Visual Counters */}
+            <div className="bg-white/5 border border-white/5 p-2 rounded-xl text-right text-[10px] space-y-1 backdrop-blur-md">
+              <span className="font-bold text-orange-400 block">📊 أهداف المهام لهذا الدوري:</span>
+              <div className="grid grid-cols-3 gap-1.5 text-center text-[9px] text-slate-350 font-sans">
+                <div className="bg-white/5 p-1 rounded-lg border border-white/5">
+                  <span className="block text-slate-400">سهلة (5)</span>
+                  <span className="font-extrabold text-white">{easyCount}/5</span>
+                  <span className="block text-[8px] text-slate-500">({remainingEasy} متبقي)</span>
+                </div>
+                <div className="bg-white/5 p-1 rounded-lg border border-white/5">
+                  <span className="block text-slate-400">متوسطة (3)</span>
+                  <span className="font-extrabold text-white">{mediumCount}/3</span>
+                  <span className="block text-[8px] text-slate-500">({remainingMedium} متبقي)</span>
+                </div>
+                <div className="bg-white/5 p-1 rounded-lg border border-white/5">
+                  <span className="block text-slate-400">صعبة (3)</span>
+                  <span className="font-extrabold text-white">{hardCount}/3</span>
+                  <span className="block text-[8px] text-slate-500">({remainingHard} متبقي)</span>
+                </div>
+              </div>
+            </div>
+
             <div>
               <label className="text-[9px] text-slate-400 block mb-1">اسم المهمة</label>
               <input
@@ -71,18 +132,59 @@ export default function SuggestedTaskWidget({
             </div>
 
             <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="text-[9px] text-slate-400 block mb-1">مستوى الصعوبة</label>
+                <select
+                  value={difficulty}
+                  onChange={(e) => {
+                    const diffVal = e.target.value as 'easy' | 'medium' | 'hard';
+                    setDifficulty(diffVal);
+                    if (type === 'points') {
+                      setAmount(diffVal === 'easy' ? 5 : diffVal === 'medium' ? 10 : 15);
+                    }
+                  }}
+                  className="w-full bg-[#111C2E]/60 border border-white/10 focus:border-[#8c7355] rounded-xl px-2.5 py-1.5 text-right text-white text-xs outline-none transition-all font-sans"
+                >
+                  <option value="easy" disabled={remainingEasy === 0}>سهل (5 نقاط) - متبقي {remainingEasy}</option>
+                  <option value="medium" disabled={remainingMedium === 0}>متوسط (10 نقاط) - متبقي {remainingMedium}</option>
+                  <option value="hard" disabled={remainingHard === 0}>صعب (15 نقطة) - متبقي {remainingHard}</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="text-[9px] text-slate-400 block mb-1">نوع المكافأة</label>
+                <select
+                  value={type}
+                  onChange={(e) => {
+                    const nextType = e.target.value as 'cash' | 'points' | 'custom';
+                    setType(nextType);
+                    if (nextType === 'points') {
+                      setAmount(difficulty === 'easy' ? 5 : difficulty === 'medium' ? 10 : 15);
+                    }
+                  }}
+                  className="w-full bg-[#111C2E]/60 border border-white/10 focus:border-[#8c7355] rounded-xl px-2.5 py-1.5 text-right text-white text-xs outline-none transition-all"
+                >
+                  <option value="cash">ريال 💸</option>
+                  <option value="points">نقاط 🌟</option>
+                  <option value="custom">مخصصة 🎁</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
               {type !== 'custom' ? (
-                <div>
+                <div className="col-span-2">
                   <label className="text-[9px] text-slate-400 block mb-1">قيمة المكافأة</label>
                   <input
                     type="number"
+                    disabled={type === 'points'}
                     value={amount === 0 ? '' : amount}
                     onChange={(e) => setAmount(Number(e.target.value))}
-                    className="w-full bg-[#111C2E]/60 border border-white/10 focus:border-[#8c7355] rounded-xl px-2.5 py-1.5 text-left text-white text-xs outline-none transition-all font-sans"
+                    className="w-full bg-[#111C2E]/60 border border-white/10 focus:border-[#8c7355] rounded-xl px-2.5 py-1.5 text-left text-white text-xs outline-none transition-all font-sans disabled:opacity-50"
                   />
                 </div>
               ) : (
-                <div>
+                <div className="col-span-2">
                   <label className="text-[9px] text-slate-400 block mb-1">المكافأة المخصصة</label>
                   <input
                     type="text"
@@ -93,27 +195,32 @@ export default function SuggestedTaskWidget({
                   />
                 </div>
               )}
-              <div>
-                <label className="text-[9px] text-slate-400 block mb-1">نوع المكافأة</label>
-                <select
-                  value={type}
-                  onChange={(e) => setType(e.target.value as 'cash' | 'points' | 'custom')}
-                  className="w-full bg-[#111C2E]/60 border border-white/10 focus:border-[#8c7355] rounded-xl px-2.5 py-1.5 text-right text-white text-xs outline-none transition-all"
-                >
-                  <option value="cash">ريال 💸</option>
-                  <option value="points">نقاط 🌟</option>
-                  <option value="custom">مخصصة 🎁</option>
-                </select>
-              </div>
             </div>
 
-            <div>
-              <label className="text-[9px] text-slate-400 block mb-1">تاريخ النهاية (اختياري)</label>
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between flex-row-reverse text-[10px] text-slate-400">
+                <label className="block font-bold">تاريخ النهاية</label>
+                <label className="flex items-center gap-1 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={bindToLeagueEnd}
+                    onChange={(e) => {
+                      setBindToLeagueEnd(e.target.checked);
+                      if (e.target.checked && activeLeague && activeLeague.endDate) {
+                        setEndDate(activeLeague.endDate.substring(0, 16));
+                      }
+                    }}
+                    className="rounded border-white/10 text-orange-500 focus:ring-0 focus:ring-offset-0 bg-[#111C2E]"
+                  />
+                  <span className="text-[9px] text-orange-300">ربط نهاية المهمة بنهاية الدوري 🏆</span>
+                </label>
+              </div>
               <input
                 type="datetime-local"
+                disabled={bindToLeagueEnd}
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
-                className="w-full bg-[#111C2E]/60 border border-white/10 focus:border-[#8c7355] rounded-xl px-2.5 py-1.5 text-right text-white text-xs outline-none transition-all font-sans"
+                className="w-full bg-[#111C2E]/60 border border-white/10 focus:border-[#8c7355] rounded-xl px-2.5 py-1.5 text-right text-white text-xs outline-none transition-all font-sans disabled:opacity-50"
               />
             </div>
           </>
@@ -158,7 +265,7 @@ export default function SuggestedTaskWidget({
             <button
               type="button"
               onClick={handleReject}
-              className="px-3 py-1.5 border border-rose-500/20 text-rose-400 hover:bg-rose-500/10 rounded-lg text-[10px] font-bold transition-all active:scale-95"
+              className="px-3 py-1.5 border border-rose-500/20 text-rose-440 hover:bg-rose-500/10 rounded-lg text-[10px] font-bold transition-all active:scale-95"
             >
               رفض ❌
             </button>

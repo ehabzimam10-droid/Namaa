@@ -143,22 +143,23 @@ export async function evaluateKidsSpending(
   });
 
   const prompt = `
-    You are an expert financial advisor for Alinma Bank's family banking application "Namaa".
-    Your role is to analyze the spending transactions of the kids during their active league challenge.
+    You are a highly intelligent financial auditor for Alinma Bank's family banking application "Namaa".
+    Your role is to analyze the daily purchases and transactions of the kids during their active league challenge to evaluate their spending habits.
     
-    Kids Data (including recent transactions and allowance details):
+    Kids Data (including transactions in the active league period):
     ${JSON.stringify(filteredKids)}
     
     Please evaluate the "Spending Management" score for each kid on a scale from 0 to 100.
-    - A higher score (e.g. 80-100) indicates they spent their money wisely on essential things or saved most of it, avoiding random consumer or unnecessary daily spending.
-    - A lower score indicates they spent a large part of their allowance on consumer purchases (like sweets, games, toys) quickly without planning.
+    1. Act as a strict auditor. Determine if their spending is 'طبيعي ومستدام' (normal and sustainable) or 'مسرف وتبذيري' (profligate and wasteful).
+    2. If a kid has excessive daily transactions on consumer purchases such as sweets, junk food, toys, or video games, deduct points from their 100 Spending Score dynamically.
+    3. If they managed their allowance wisely, saved most of it, or donated a portion of it, award a high score (85-100) and mark it as 'طبيعي ومستدام'.
     
     You MUST output a strict JSON array matching this exact schema:
     [
       {
         "kidName": "Name of the kid (string)",
         "suggestedScore": An integer between 0 and 100,
-        "reasoning": "A concise explanation in Arabic (1-2 sentences) justifying the score based on their transactions."
+        "reasoning": "A concise explanation in Arabic (1-2 sentences) justifying the score based on their transactions, explicitly stating if they were 'طبيعي ومستدام' or 'مسرف وتبذيري'."
       }
     ]
     

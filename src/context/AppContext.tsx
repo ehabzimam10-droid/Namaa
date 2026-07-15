@@ -35,7 +35,7 @@ interface AppContextType {
   transferMoney: (kidId: string, amount: number, reason: string) => Promise<void>;
   finalizeTaskApproval: (taskId: string) => Promise<void>;
   logout: () => void;
-  assignManualTask: (kidName: string, title: string, amount: number, type: 'cash' | 'points' | 'custom', customReward?: string, endDate?: string) => Promise<void>;
+  assignManualTask: (kidName: string, title: string, amount: number, type: 'cash' | 'points' | 'custom', customReward?: string, endDate?: string, difficulty?: 'easy' | 'medium' | 'hard') => Promise<void>;
   calculateROI: (investedAmount: number, roiPercentage: number) => number;
   geminiApiKey: string;
   setGeminiApiKey: (key: string) => void;
@@ -252,15 +252,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
       setNotifications(fetchedNotifs);
 
-      // Fetch active family league
+      // Fetch active or recently ended family league
       try {
         const { data: dbLeagues, error: leagueError } = await supabase
           .from('family_leagues')
           .select('*')
-          .eq('is_active', true);
+          .order('end_date', { ascending: false })
+          .limit(1);
         
         if (!leagueError && dbLeagues && dbLeagues.length > 0) {
           const active = dbLeagues[0];
+          const allowancesData = active.allowances || {};
+          const spendingScores = allowancesData.spendingScores || undefined;
+
           setActiveLeague({
             id: active.id,
             isActive: active.is_active,
@@ -268,7 +272,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             bases: active.bases || [],
             startDate: active.start_date,
             endDate: active.end_date,
-            allowances: active.allowances || {}
+            allowances: allowancesData,
+            spendingScores: spendingScores
           });
         } else {
           setActiveLeague({ isActive: false, prize: '', bases: [] });
@@ -1227,10 +1232,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         await addNotification('father', 'father', 'إلغاء التحدي 🛑', 'تم إلغاء التحدي العائلي بنجاح.');
       }
 
-      // 1. Update is_active to false in Supabase
+      // 1. Update is_active to false in Supabase and store finalSpendingScores inside allowances JSON
       const { error: leagueError } = await supabase
         .from('family_leagues')
-        .update({ is_active: false })
+        .update({
+          is_active: false,
+          allowances: {
+            ...activeLeague.allowances,
+            spendingScores: finalSpendingScores
+          }
+        })
         .eq('id', leagueId);
       if (leagueError) throw leagueError;
 
@@ -1305,7 +1316,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     amount: number,
     type: 'cash' | 'points' | 'custom',
     customReward?: string,
-    endDate?: string
+    endDate?: string,
+    difficulty?: 'easy' | 'medium' | 'hard'
   ) => {
     // Add notification to kid
     const targetKid = kids.find((k) => k.name === kidName);
@@ -1321,6 +1333,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       status: 'pending',
       endDate,
       createdAt: new Date().toISOString(),
+      difficulty,
     };
 
     setKids((prevKids) =>
@@ -1342,7 +1355,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         reward_type: type,
         status: 'pending',
         kid_name: kidName,
-        end_date: endDate || null
+        end_date: endDate || null,
+        difficulty: difficulty || null
       });
     } catch (err) {
       console.error('Failed to sync manual task to Supabase:', err);

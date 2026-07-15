@@ -126,6 +126,20 @@ export default function FatherDashboard() {
                     <span>المدخرات: {kid.saved} ريال</span>
                     <span>الرصيد المتاح: {kid.balance} ريال</span>
                   </div>
+
+                  {activeLeague?.isActive && (
+                    <div className="mt-3 bg-white/5 border border-orange-500/20 rounded-xl px-3 py-1.5 text-center text-[10px] text-orange-300 font-bold backdrop-blur-md">
+                      المتبقي من مصروف الدوري: {(() => {
+                        const baseAllowance = Number(activeLeague.allowances?.[kid.id] || activeLeague.allowances?.[kid.name] || 0);
+                        const leagueWithdrawals = (kid.transactions || []).filter(tx => {
+                          const txTime = new Date(tx.date).getTime();
+                          const startTime = new Date(activeLeague.startDate!).getTime();
+                          return txTime >= startTime && tx.type === 'withdrawal';
+                        }).reduce((sum, tx) => sum + tx.amount, 0);
+                        return Math.max(0, baseAllowance - leagueWithdrawals);
+                      })()} ريال 💳
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

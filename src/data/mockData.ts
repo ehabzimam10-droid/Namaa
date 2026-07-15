@@ -35,6 +35,7 @@ export interface Task {
   status: 'pending' | 'under_review' | 'completed' | 'approved' | 'failed' | 'expired';
   endDate?: string;
   createdAt?: string;
+  difficulty?: 'easy' | 'medium' | 'hard';
 }
 
 export interface Kid {
