@@ -322,8 +322,8 @@ export default function KidLeaguePage() {
               </div>
             </div>
           </div>
-        )
-      })()} // تم إضافة الـ () هنا لتشغيل الدالة
+        );
+      })()}
     </div>
   );
 }

@@ -394,9 +394,12 @@ export default function FatherLeaguePage() {
             </button>
           </form>
         </div>
-      ) : (
-        /* ACTIVE LEAGUE LEADERBOARD */
-        <div className="space-y-6">
+      );
+    }
+
+    return (
+      /* ACTIVE LEAGUE LEADERBOARD */
+      <div className="space-y-6">
           {/* Active League Prize Info */}
           <div className="relative overflow-hidden bg-gradient-to-r from-orange-500/10 to-indigo-500/5 border border-white/10 rounded-3xl p-6 text-right flex justify-between items-center gap-4">
             {!isLeagueExpired ? (
@@ -516,7 +519,8 @@ export default function FatherLeaguePage() {
             })}
           </div>
         </div>
-      )}
+      );
+    })()}
 
       {/* Custom Glassmorphism Confirmation Modal */}
       {showEndConfirm && (
@@ -639,7 +643,7 @@ export default function FatherLeaguePage() {
             )}
           </div>
         </div>
-      })()}
+      )}
       {/* Past Leagues History Section */}
       <div className="relative overflow-hidden bg-white/5 backdrop-blur-xl border border-white/10 shadow-2xl rounded-3xl p-6 text-right space-y-4">
         <h3 className="text-base font-black text-white flex items-center justify-end gap-2">
