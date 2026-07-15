@@ -1,64 +1,15 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import CastleVisual from '../components/ui/CastleVisual';
-
-type PartStatus = 'thriving' | 'average' | 'damaged';
+import VillageBoard from '../components/village/VillageBoard';
 
 export default function KidCastlePage() {
   const navigate = useNavigate();
 
-  // Test states for development phase
-  const [level, setLevel] = useState<number>(3);
-  const [parts, setParts] = useState<{
-    savings: PartStatus;
-    spending: PartStatus;
-    donation: PartStatus;
-    investment: PartStatus;
-    tasks: PartStatus;
-  }>({
-    savings: 'average',
-    spending: 'average',
-    donation: 'average',
-    investment: 'average',
-    tasks: 'average',
-  });
-
-  const togglePart = (partKey: keyof typeof parts) => {
-    setParts((prev) => {
-      const current = prev[partKey];
-      let next: PartStatus = 'average';
-      if (current === 'average') next = 'thriving';
-      else if (current === 'thriving') next = 'damaged';
-      else if (current === 'damaged') next = 'average';
-
-      return {
-        ...prev,
-        [partKey]: next,
-      };
-    });
-  };
-
-  const getStatusLabel = (status: PartStatus) => {
-    switch (status) {
-      case 'thriving':
-        return 'مزدهر ✨';
-      case 'average':
-        return 'طبيعي ⚖️';
-      case 'damaged':
-        return 'متضرر ⚠️';
-    }
-  };
-
-  const getStatusColor = (status: PartStatus) => {
-    switch (status) {
-      case 'thriving':
-        return 'text-emerald-400 border-emerald-500/30 bg-emerald-500/10';
-      case 'average':
-        return 'text-slate-350 border-slate-500/20 bg-slate-500/5';
-      case 'damaged':
-        return 'text-rose-400 border-rose-500/30 bg-rose-500/10';
-    }
-  };
+  // Range slider states for the 4 isometric village buildings (levels 1-5)
+  const [bankLevel, setBankLevel] = useState<number>(3);
+  const [farmLevel, setFarmLevel] = useState<number>(3);
+  const [marketLevel, setMarketLevel] = useState<number>(3);
+  const [centerLevel, setCenterLevel] = useState<number>(3);
 
   return (
     <div className="w-full space-y-8 text-right font-sans">
@@ -68,92 +19,134 @@ export default function KidCastlePage() {
         <div className="flex items-center justify-between w-full">
           <button
             onClick={() => navigate('/kid')}
-            className="rounded-xl bg-white/10 hover:bg-white/20 px-3 py-2 text-xs font-bold text-white transition-all border border-white/5"
+            className="rounded-xl bg-white/10 hover:bg-white/20 px-3 py-2 text-xs font-bold text-white transition-all border border-white/5 animate-pulse"
           >
             👦 العودة للوحة التحكم
           </button>
           <div>
-            <h2 className="text-xs font-semibold text-orange-400">التمثيل البصري التفاعلي لنموك المالي وسلوكك</h2>
-            <h3 className="text-2xl font-black text-white mt-1">القلعة الافتراضية والقرية الذكية 🏰</h3>
+            <h2 className="text-xs font-semibold text-orange-400">التمثيل البصري ثلاثي الأبعاد للنمو المالي والادخاري</h2>
+            <h3 className="text-2xl font-black text-white mt-1">القرية الافتراضية ثلاثية الأبعاد 2.5D 🏰</h3>
           </div>
         </div>
       </div>
 
-      {/* Intro info banner */}
-      <div className="bg-[#111C2E]/60 border border-white/10 p-5 rounded-3xl text-xs leading-relaxed text-slate-350">
-        <strong>💡 كيف تعمل القلعة الافتراضية؟</strong> تتأثر وتتغير معالم قريتك المخصصة بناءً على سلوكك المالي الحقيقي في تطبيق نماء:
-        <ul className="list-disc pr-5 mt-2 space-y-1 text-slate-400">
-          <li><strong>حصالة الادخار (البرج المركزي):</strong> يرتفع ويزدهر باللون الذهبي كلما ادخرت والتزمت بأهدافك.</li>
-          <li><strong>إدارة المصروف (الأسوار والقرية):</strong> تظل قوية وسليمة وتتصدع في حال الإسراف الاستهلاكي.</li>
-          <li><strong>بوابة التبرع (الواحة والمزرعة):</strong> تصبح خضراء يانعة ومليئة بالمياه كلما شاركت بالخير والعطاء.</li>
-          <li><strong>الاستثمار العائلي (الخيمة التجارية/السوق):</strong> تزدحم بخيام التجار والنشاط كلما استثمرت عوائدك.</li>
-          <li><strong>إنجاز المهام (طاحونة الهواء):</strong> تدور أشرعتها بسرعة مع كل مهمة منزلية تنجزها بجد وتوقف عند الإهمال.</li>
-        </ul>
+      {/* Info Banner */}
+      <div className="bg-[#111C2E]/60 border border-white/10 p-5 rounded-3xl text-xs leading-relaxed text-slate-300">
+        <strong>💡 دليل معالم القرية الافتراضية ثلاثية الأبعاد:</strong>
+        <p className="text-slate-400 mt-1">
+          هذه قرية حيوية تتطور معالمها ومبانيها هندسياً وبصرياً بناءً على تقدمك المالي وسلوكك. مرر مؤشر الماوس (أو انقر) فوق أي مبنى لرؤية تصنيفه ومستواه!
+        </p>
       </div>
 
-      {/* Main Castle Visual Container */}
-      <div className="flex justify-center py-4">
-        <CastleVisual level={level} parts={parts} />
+      {/* Center Section: Render the 2.5D Isometric Village Board */}
+      <div className="flex items-center justify-center bg-[#0D1527]/40 border border-white/5 rounded-3xl p-6 shadow-inner relative overflow-hidden min-h-[420px]">
+        {/* Glowing background circles */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-72 h-72 rounded-full bg-orange-500/5 blur-3xl pointer-events-none"></div>
+        <div className="absolute top-1/3 left-1/4 w-48 h-48 rounded-full bg-blue-500/5 blur-3xl pointer-events-none"></div>
+
+        <VillageBoard
+          levels={{
+            bank: bankLevel,
+            farm: farmLevel,
+            market: marketLevel,
+            center: centerLevel,
+          }}
+        />
       </div>
 
-      {/* Developer Debug Panel */}
-      <div className="bg-white/5 border border-white/10 rounded-3xl p-6 shadow-2xl relative overflow-hidden backdrop-blur-xl space-y-4">
-        <div className="border-b border-white/5 pb-2">
-          <h4 className="text-sm font-black text-orange-400">لوحة تحكم وتطوير معالم القرية (Developer Debug Panel) 🛠️</h4>
+      {/* Developer Controls Glass Panel */}
+      <div className="bg-white/5 border border-white/10 rounded-3xl p-6 shadow-2xl relative overflow-hidden backdrop-blur-xl space-y-6">
+        <div className="border-b border-white/5 pb-3">
+          <h4 className="text-sm font-black text-orange-400">لوحة تحكيم وتطوير المطورين (Developer Controls) 🛠️</h4>
           <p className="text-[10px] text-slate-400 mt-1 font-sans">
-            استخدم الأزرار أدناه لتغيير مستوى القرية وحالة الأقسام الخمسة لمشاهدة التغيرات البصرية والتفاعلية فورياً.
+            اسحب مؤشرات التمرير أدناه للتحكم في مستوى كل مبنى على حدة (من 1 إلى 5) لمعاينة التغيرات الهندسية ومستويات الجمال المدمجة.
           </p>
         </div>
 
-        {/* Level Toggler */}
-        <div className="flex flex-row-reverse items-center justify-between bg-white/5 p-3 rounded-2xl border border-white/5">
-          <span className="text-xs font-bold text-slate-300">مستوى القرية العام:</span>
-          <div className="flex gap-1.5">
-            {[1, 2, 3, 4, 5].map((lvl) => (
-              <button
-                key={lvl}
-                type="button"
-                onClick={() => setLevel(lvl)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold font-sans transition-all active:scale-95 ${
-                  level === lvl
-                    ? 'bg-orange-500 text-white shadow-lg'
-                    : 'bg-white/5 text-slate-400 hover:bg-white/10'
-                }`}
-              >
-                {lvl}
-              </button>
-            ))}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Slider 1: Center Palace */}
+          <div className="space-y-2 bg-white/5 p-4 rounded-2xl border border-white/5">
+            <div className="flex justify-between items-center">
+              <span className="text-xs font-sans text-slate-400 font-bold">المستوى: {centerLevel}</span>
+              <span className="text-xs font-black text-white">المركز الرئيسي (قصر البلدية) 🏛️</span>
+            </div>
+            <input
+              type="range"
+              min="1"
+              max="5"
+              step="1"
+              value={centerLevel}
+              onChange={(e) => setCenterLevel(Number(e.target.value))}
+              className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-orange-500"
+            />
+            <div className="flex justify-between text-[8px] text-slate-500 font-sans">
+              <span>مستوى 5 (ملكي ذهبي)</span>
+              <span>مستوى 1 (بسيط رمادي)</span>
+            </div>
           </div>
-        </div>
 
-        {/* Parts State Togglers */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-          {(Object.keys(parts) as Array<keyof typeof parts>).map((key) => {
-            let label = '';
-            if (key === 'savings') label = 'حصالة الادخار 💰';
-            else if (key === 'spending') label = 'الإنفاق والمصروف 💳';
-            else if (key === 'donation') label = 'التبرع والعطاء 💚';
-            else if (key === 'investment') label = 'الاستثمار العائلي 📈';
-            else if (key === 'tasks') label = 'إنجاز المهام 🎯';
+          {/* Slider 2: Bank Vault */}
+          <div className="space-y-2 bg-white/5 p-4 rounded-2xl border border-white/5">
+            <div className="flex justify-between items-center">
+              <span className="text-xs font-sans text-slate-400 font-bold">المستوى: {bankLevel}</span>
+              <span className="text-xs font-black text-white">البنك العائلي (الادخار) 💰</span>
+            </div>
+            <input
+              type="range"
+              min="1"
+              max="5"
+              step="1"
+              value={bankLevel}
+              onChange={(e) => setBankLevel(Number(e.target.value))}
+              className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-orange-500"
+            />
+            <div className="flex justify-between text-[8px] text-slate-500 font-sans">
+              <span>مستوى 5 (نقود عائمة)</span>
+              <span>مستوى 1 (خزنة حجرية)</span>
+            </div>
+          </div>
 
-            const status = parts[key];
+          {/* Slider 3: Farm Oasis */}
+          <div className="space-y-2 bg-white/5 p-4 rounded-2xl border border-white/5">
+            <div className="flex justify-between items-center">
+              <span className="text-xs font-sans text-slate-400 font-bold">المستوى: {farmLevel}</span>
+              <span className="text-xs font-black text-white">واحة العطاء (التبرعات) 💚</span>
+            </div>
+            <input
+              type="range"
+              min="1"
+              max="5"
+              step="1"
+              value={farmLevel}
+              onChange={(e) => setFarmLevel(Number(e.target.value))}
+              className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-emerald-500"
+            />
+            <div className="flex justify-between text-[8px] text-slate-500 font-sans">
+              <span>مستوى 5 (شلال مقدس)</span>
+              <span>مستوى 1 (أرض قاحلة)</span>
+            </div>
+          </div>
 
-            return (
-              <button
-                key={key}
-                type="button"
-                onClick={() => togglePart(key)}
-                className={`flex flex-col items-center justify-between p-3 border rounded-2xl transition-all active:scale-95 text-center gap-2 focus:outline-none ${getStatusColor(
-                  status
-                )}`}
-              >
-                <span className="text-xs font-black">{label}</span>
-                <span className="text-[9px] font-sans bg-black/30 px-2 py-0.5 rounded-full block mt-1">
-                  {getStatusLabel(status)}
-                </span>
-              </button>
-            );
-          })}
+          {/* Slider 4: Market Tent */}
+          <div className="space-y-2 bg-white/5 p-4 rounded-2xl border border-white/5">
+            <div className="flex justify-between items-center">
+              <span className="text-xs font-sans text-slate-400 font-bold">المستوى: {marketLevel}</span>
+              <span className="text-xs font-black text-white">سوق الاستثمار العائلي 📈</span>
+            </div>
+            <input
+              type="range"
+              min="1"
+              max="5"
+              step="1"
+              value={marketLevel}
+              onChange={(e) => setMarketLevel(Number(e.target.value))}
+              className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-500"
+            />
+            <div className="flex justify-between text-[8px] text-slate-500 font-sans">
+              <span>مستوى 5 (مهرجان تجاري)</span>
+              <span>مستوى 1 (كشك بسيط)</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
