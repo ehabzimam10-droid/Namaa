@@ -224,7 +224,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               tasks: mappedTasks,
               savingsGoals: mappedGoals,
               transactions: mappedTx,
-              is_league_winner: !!k.is_league_winner
+              is_league_winner: !!k.is_league_winner,
+              last_savings_points: k.last_savings_points || 0,
+              last_league_score: k.last_league_score || 0
             };
           })
         );
@@ -1052,9 +1054,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     // 1. Savings Points (Max 50) - Every 1% of allowance saved = 2 pts
     const leagueGoal = (kid.savingsGoals || []).find((g) => g.title === 'حصالة دوري العائلة 🏆');
     const savingsAmount = leagueGoal ? leagueGoal.currentAmount : 0;
-    const savingsScore = activeLeague.bases.includes('الادخار') && baseAllowance > 0
-      ? Math.min(50, Math.round(((savingsAmount / baseAllowance) * 100) * 2))
-      : 0;
+    const savingsScore = activeLeague.isActive
+      ? (activeLeague.bases.includes('الادخار') && baseAllowance > 0
+        ? Math.min(50, Math.round(((savingsAmount / baseAllowance) * 100) * 2))
+        : 0)
+      : (kid.last_savings_points || 0);
 
     // 2. Investment Points (Max 50) - Every 1% of allowance invested = 5 pts
     const investmentAmount = currentLeagueTx
@@ -1267,84 +1271,102 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       // Automatically clean up 'حصالة دوري العائلة 🏆' and refund money
       const updatedKids = [...kids];
 
-      // 3. Determine league winner if evaluated and update database/state
-      if (isEvaluated && finalSpendingScores) {
-        const tempActiveLeague = {
-          ...activeLeague,
-          spendingScores: finalSpendingScores
-        };
-        
-        const kidPoints = updatedKids.map(k => {
-          const baseAllowance = Number(tempActiveLeague.allowances?.[k.id] || tempActiveLeague.allowances?.[k.name] || k.allowance || 100);
-          const startTime = new Date(tempActiveLeague.startDate!).getTime();
-          const endTime = new Date(tempActiveLeague.endDate!).getTime();
+      // 3. Calculate each kid's current savings points and overall league points before refund/cleanup
+      const tempActiveLeague = {
+        ...activeLeague,
+        spendingScores: finalSpendingScores || activeLeague.spendingScores || {}
+      };
 
-          const currentLeagueTx = (k.transactions || []).filter((tx) => {
-            const txTime = new Date(tx.date).getTime();
-            return txTime >= startTime && txTime <= endTime;
-          });
+      const computedScores = updatedKids.map(k => {
+        const baseAllowance = Number(tempActiveLeague.allowances?.[k.id] || tempActiveLeague.allowances?.[k.name] || k.allowance || 100);
+        const startTime = new Date(tempActiveLeague.startDate!).getTime();
+        const endTime = new Date(tempActiveLeague.endDate!).getTime();
 
-          const currentLeagueTasks = (k.tasks || []).filter((task) => {
-            const taskTime = new Date(task.createdAt || task.endDate || '').getTime();
-            if (isNaN(taskTime)) return false;
-            return taskTime >= startTime && taskTime <= endTime;
-          });
-
-          // 1. Savings Points
-          const leagueGoal = (k.savingsGoals || []).find((g) => g.title === 'حصالة دوري العائلة 🏆');
-          const savingsAmount = leagueGoal ? leagueGoal.currentAmount : 0;
-          const savingsScore = tempActiveLeague.bases.includes('الادخار') && baseAllowance > 0
-            ? Math.min(50, Math.round(((savingsAmount / baseAllowance) * 100) * 2))
-            : 0;
-
-          // 2. Investment Points
-          const investmentAmount = currentLeagueTx
-            .filter(tx => tx.type === 'withdrawal' && (tx.title.includes('استثمار') || tx.title.includes('مشروع')))
-            .reduce((sum, tx) => sum + tx.amount, 0);
-          const investmentScore = tempActiveLeague.bases.includes('الاستثمار') && baseAllowance > 0
-            ? Math.min(50, Math.round(((investmentAmount / baseAllowance) * 100) * 5))
-            : 0;
-
-          // 3. Donation Points
-          const donationAmount = currentLeagueTx
-            .filter(tx => tx.type === 'withdrawal' && tx.title.includes('تبرع'))
-            .reduce((sum, tx) => sum + tx.amount, 0);
-          const donationScore = tempActiveLeague.bases.includes('التبرع') && baseAllowance > 0
-            ? Math.min(50, Math.round(((donationAmount / baseAllowance) * 100) * 5))
-            : 0;
-
-          // 4. Tasks Points
-          const tasksScore = tempActiveLeague.bases.includes('إنجاز المهام')
-            ? Math.min(100, currentLeagueTasks.filter(t => t.status === 'approved').reduce((sum, t) => {
-                const pts = t.difficulty === 'easy' ? 5 : t.difficulty === 'medium' ? 10 : t.difficulty === 'hard' ? 15 : 5;
-                return sum + pts;
-              }, 0))
-            : 0;
-
-          // 5. Spending Points
-          const spendingScore = tempActiveLeague.bases.includes('إدارة المصروف')
-            ? (finalSpendingScores[k.id] || finalSpendingScores[k.name] || 0)
-            : 0;
-
-          const totalPoints = savingsScore + investmentScore + donationScore + tasksScore + spendingScore;
-          return { kidId: k.id, totalPoints };
+        const currentLeagueTx = (k.transactions || []).filter((tx) => {
+          const txTime = new Date(tx.date).getTime();
+          return txTime >= startTime && txTime <= endTime;
         });
 
-        // Sort kids by total points descending
-        kidPoints.sort((a, b) => b.totalPoints - a.totalPoints);
-        
-        if (kidPoints.length > 0) {
-          const winnerId = kidPoints[0].kidId;
-          for (const k of updatedKids) {
-            const isWinner = k.id === winnerId;
-            k.is_league_winner = isWinner;
-            
-            // Sync to Supabase
-            await supabase
-              .from('kids_profiles')
-              .update({ is_league_winner: isWinner })
-              .eq('id', k.id);
-          }
+        const currentLeagueTasks = (k.tasks || []).filter((task) => {
+          const taskTime = new Date(task.createdAt || task.endDate || '').getTime();
+          if (isNaN(taskTime)) return false;
+          return taskTime >= startTime && taskTime <= endTime;
+        });
+
+        // 1. Savings Points
+        const leagueGoal = (k.savingsGoals || []).find((g) => g.title === 'حصالة دوري العائلة 🏆');
+        const savingsAmount = leagueGoal ? leagueGoal.currentAmount : 0;
+        const savingsScore = tempActiveLeague.bases.includes('الادخار') && baseAllowance > 0
+          ? Math.min(50, Math.round(((savingsAmount / baseAllowance) * 100) * 2))
+          : 0;
+
+        // 2. Investment Points
+        const investmentAmount = currentLeagueTx
+          .filter(tx => tx.type === 'withdrawal' && (tx.title.includes('استثمار') || tx.title.includes('مشروع')))
+          .reduce((sum, tx) => sum + tx.amount, 0);
+        const investmentScore = tempActiveLeague.bases.includes('الاستثمار') && baseAllowance > 0
+          ? Math.min(50, Math.round(((investmentAmount / baseAllowance) * 100) * 5))
+          : 0;
+
+        // 3. Donation Points
+        const donationAmount = currentLeagueTx
+          .filter(tx => tx.type === 'withdrawal' && tx.title.includes('تبرع'))
+          .reduce((sum, tx) => sum + tx.amount, 0);
+        const donationScore = tempActiveLeague.bases.includes('التبرع') && baseAllowance > 0
+          ? Math.min(50, Math.round(((donationAmount / baseAllowance) * 100) * 5))
+          : 0;
+
+        // 4. Tasks Points
+        const tasksScore = tempActiveLeague.bases.includes('إنجاز المهام')
+          ? Math.min(100, currentLeagueTasks.filter(t => t.status === 'approved').reduce((sum, t) => {
+              const pts = t.difficulty === 'easy' ? 5 : t.difficulty === 'medium' ? 10 : t.difficulty === 'hard' ? 15 : 5;
+              return sum + pts;
+            }, 0))
+          : 0;
+
+        // 5. Spending Points
+        const spendingScore = tempActiveLeague.bases.includes('إدارة المصروف')
+          ? (tempActiveLeague.spendingScores?.[k.id] || tempActiveLeague.spendingScores?.[k.name] || 0)
+          : 0;
+
+        const totalPoints = savingsScore + investmentScore + donationScore + tasksScore + spendingScore;
+
+        return {
+          kidId: k.id,
+          savingsScore,
+          totalPoints
+        };
+      });
+
+      // Save frozen values to Database: Update Supabase kids_profiles
+      for (const k of updatedKids) {
+        const scores = computedScores.find(s => s.kidId === k.id);
+        if (scores) {
+          k.last_savings_points = scores.savingsScore;
+          k.last_league_score = scores.totalPoints;
+          await supabase
+            .from('kids_profiles')
+            .update({
+              last_savings_points: scores.savingsScore,
+              last_league_score: scores.totalPoints
+            })
+            .eq('id', k.id);
+        }
+      }
+
+      // Determine league winner if evaluated (Draw logic: Khalid total score === Salem total score -> both win)
+      if (isEvaluated && finalSpendingScores) {
+        const maxScore = Math.max(...computedScores.map(s => s.totalPoints));
+        const winnerIds = computedScores.filter(s => s.totalPoints === maxScore).map(s => s.kidId);
+
+        for (const k of updatedKids) {
+          const isWinner = winnerIds.includes(k.id);
+          k.is_league_winner = isWinner;
+          
+          await supabase
+            .from('kids_profiles')
+            .update({ is_league_winner: isWinner })
+            .eq('id', k.id);
         }
       }
 

@@ -50,6 +50,8 @@ export interface Kid {
   tasks: Task[];
   savingsGoals: SavingsGoal[];
   is_league_winner?: boolean;
+  last_savings_points?: number;
+  last_league_score?: number;
 }
 
 export interface Father {

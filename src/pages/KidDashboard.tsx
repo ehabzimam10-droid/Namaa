@@ -37,6 +37,27 @@ export default function KidDashboard() {
   const progressPercentage = totalTarget > 0 ? Math.min(100, Math.round((kid.saved / totalTarget) * 100)) : 0;
   const isThriving = kid.saved > 0;
 
+  // Compute dynamic badges
+  const currentMonth = new Date().getMonth();
+  const currentYear = new Date().getFullYear();
+  const filteredTransactions = (kid.transactions || []).filter(tx => {
+    const txDate = new Date(tx.date);
+    return txDate.getFullYear() === currentYear && txDate.getMonth() === currentMonth;
+  });
+
+  const monthSavings = filteredTransactions
+    .filter(tx => tx.type === 'withdrawal' && (tx.title.includes('إيداع في حصالة') || tx.title.includes('حصالة')))
+    .reduce((sum, tx) => sum + tx.amount, 0);
+
+  const approvedCount = (kid.tasks || []).filter(t => t.status === 'approved').length;
+  const donated = (kid.transactions || []).some(tx => tx.title.includes('تبرع'));
+
+  const dynamicBadges: string[] = [];
+  if (monthSavings > 0) dynamicBadges.push('🏆 بطل التوفير');
+  if (approvedCount > 2) dynamicBadges.push('🎯 المنجز');
+  if (donated) dynamicBadges.push('💚 المعطاء');
+  if (dynamicBadges.length === 0) dynamicBadges.push('🌱 بداية واعدة');
+
   const handlePurchaseSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const amount = Number(purchaseAmount);
@@ -87,12 +108,24 @@ export default function KidDashboard() {
           </div>
           <div className="flex flex-col items-end">
             <h2 className="text-xl font-black text-white">لوحة تحكم {kid.name} 👦</h2>
-            {kid.is_league_winner && (
-              <span className="mt-1 bg-yellow-500/25 border border-yellow-500/40 text-yellow-300 rounded-full px-2.5 py-0.5 text-[10px] font-black flex items-center gap-1 animate-pulse">
-                <span>🏆</span>
-                <span>بطل دوري العائلة الحالي</span>
-              </span>
-            )}
+            
+            {/* Badges list */}
+            <div className="flex flex-wrap gap-1.5 justify-end mt-1.5">
+              {kid.is_league_winner && (
+                <span className="bg-yellow-500/25 border border-yellow-500/40 text-yellow-300 rounded-full px-2.5 py-0.5 text-[9px] font-black flex items-center gap-1 animate-pulse">
+                  <span>🏆</span>
+                  <span>بطل دوري العائلة الحالي</span>
+                </span>
+              )}
+              {dynamicBadges.map((badge, index) => (
+                <span
+                  key={index}
+                  className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-white/10 border border-white/5 text-slate-200"
+                >
+                  {badge}
+                </span>
+              ))}
+            </div>
           </div>
         </div>
       </div>
