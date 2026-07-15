@@ -52,6 +52,10 @@ export interface Kid {
   is_league_winner?: boolean;
   last_savings_points?: number;
   last_league_score?: number;
+  bank_level?: number;
+  farm_level?: number;
+  market_level?: number;
+  center_level?: number;
 }
 
 export interface Father {

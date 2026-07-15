@@ -14,6 +14,7 @@ import FatherLeaguePage from './pages/FatherLeaguePage';
 import KidLeaguePage from './pages/KidLeaguePage';
 import DashboardLayout from './components/layout/DashboardLayout';
 import KidCastlePage from './pages/KidCastlePage';
+import FatherVillagePage from './pages/FatherVillagePage';
 import { useApp } from './context/AppContext';
 
 function AuthLayout() {
@@ -77,6 +78,7 @@ function App() {
           <Route path="/father/kids" element={<FatherKidsPage />} />
           <Route path="/father/ai" element={<FatherAICoachPage />} />
           <Route path="/father/league" element={<FatherLeaguePage />} />
+          <Route path="/father/village" element={<FatherVillagePage />} />
           <Route path="/kid" element={<KidDashboard />} />
           <Route path="/kid/savings" element={<KidSavingsPage />} />
           <Route path="/kid/tasks" element={<KidTasksPage />} />

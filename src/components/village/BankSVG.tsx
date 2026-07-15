@@ -5,53 +5,52 @@ interface BankSVGProps {
 }
 
 export default function BankSVG({ level }: BankSVGProps) {
-  // Determine color palettes dynamically based on level (1 to 5)
   const getPalette = () => {
     switch (level) {
       case 1:
         return {
-          top: '#7E8B9B',
-          left: '#5F6C7D',
-          right: '#3F4956',
-          accent: '#A0AAB5',
+          top: '#8E9AA8',
+          left: '#6D7C8D',
+          right: '#4B5766',
+          accent: '#A5B1BD',
           glow: 'none',
           glowClass: '',
         };
       case 2:
         return {
-          top: '#5C6F8E',
-          left: '#40526F',
-          right: '#243147',
-          accent: '#7FA2C7',
+          top: '#6C7E9C',
+          left: '#4E5F7C',
+          right: '#32425B',
+          accent: '#8EB4DC',
           glow: 'none',
           glowClass: '',
         };
       case 3:
         return {
-          top: '#C19370', // Copper tones
-          left: '#A37554',
-          right: '#7A5235',
+          top: '#D4A47E', // Radiant Copper
+          left: '#B5855F',
+          right: '#8E5F3B',
           accent: '#009639', // Alinma green
           glow: 'none',
           glowClass: '',
         };
       case 4:
         return {
-          top: '#D1AC6D',
-          left: '#B28E51',
-          right: '#8E6E34',
+          top: '#E8C485',
+          left: '#C79F63',
+          right: '#9E7A42',
           accent: '#FF8A00',
-          glow: 'rgba(235, 166, 68, 0.3)',
+          glow: 'rgba(235, 166, 68, 0.35)',
           glowClass: 'animate-pulse',
         };
       case 5:
       default:
         return {
-          top: '#FFD700', // Shiny Gold
-          left: '#E6B800',
-          right: '#B38F00',
-          accent: '#00A8F3', // Bright blue glow
-          glow: 'rgba(255, 215, 0, 0.6)',
+          top: '#FFE552', // Ultra Shiny Gold
+          left: '#E6C300',
+          right: '#B89B00',
+          accent: '#00C8FF', // Cosmic glow
+          glow: 'rgba(255, 215, 0, 0.7)',
           glowClass: 'animate-pulse',
         };
     }
@@ -61,34 +60,56 @@ export default function BankSVG({ level }: BankSVGProps) {
 
   return (
     <svg viewBox="0 0 160 160" className="w-full h-full">
+      <defs>
+        {/* Subtle drop shadow filter for depth */}
+        <filter id="bankShadow" x="-10%" y="-10%" width="120%" height="120%">
+          <feDropShadow dx="0" dy="6" stdDeviation="4" flood-color="#050B14" flood-opacity="0.55" />
+        </filter>
+        {/* Gradients */}
+        <linearGradient id="topGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor={p.top} />
+          <stop offset="100%" stopColor={p.left} />
+        </linearGradient>
+        <linearGradient id="leftGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stopColor={p.left} />
+          <stop offset="100%" stopColor={p.right} />
+        </linearGradient>
+        <linearGradient id="rightGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stopColor={p.right} />
+          <stop offset="100%" stopColor="#182333" />
+        </linearGradient>
+      </defs>
+
       {/* Glow effect for high levels */}
       {level >= 4 && (
         <ellipse
           cx="80"
           cy="110"
-          rx="60"
-          ry="30"
+          rx="65"
+          ry="32"
           fill={p.glow}
-          filter="blur(10px)"
+          filter="blur(12px)"
           className={p.glowClass}
         />
       )}
 
       {/* Ground shadows */}
-      <polygon points="80,125 125,102.5 80,80 35,102.5" fill="#0C1527" opacity="0.6" />
+      <polygon points="80,125 125,102.5 80,80 35,102.5" fill="#050B14" opacity="0.75" />
 
-      {/* Building Base block (Isometric box) */}
-      {/* Left side */}
-      <polygon points="35,102.5 80,125 80,95 35,72.5" fill={p.right} />
-      {/* Right side */}
-      <polygon points="80,125 125,102.5 125,72.5 80,95" fill={p.left} />
-      {/* Top face */}
-      <polygon points="80,95 125,72.5 80,50 35,72.5" fill={p.top} />
+      {/* Building Base block (Isometric box) with Drop Shadow */}
+      <g filter="url(#bankShadow)">
+        {/* Left side */}
+        <polygon points="35,102.5 80,125 80,95 35,72.5" fill="url(#rightGrad)" />
+        {/* Right side */}
+        <polygon points="80,125 125,102.5 125,72.5 80,95" fill="url(#leftGrad)" />
+        {/* Top face */}
+        <polygon points="80,95 125,72.5 80,50 35,72.5" fill="url(#topGrad)" />
+      </g>
 
       {/* Vault Door (Left face) */}
-      <polygon points="45,95 65,105 65,85 45,75" fill="#1C273C" />
+      <polygon points="45,95 65,105 65,85 45,75" fill="#0D1525" />
       {/* Vault handle / wheel */}
-      <circle cx="55" cy="90" r="4" fill={p.accent} />
+      <circle cx="55" cy="90" r="4.5" fill={p.accent} />
       {level >= 3 && <circle cx="55" cy="90" r="1.5" fill="#fff" />}
 
       {/* Dynamic details based on level */}
@@ -101,11 +122,11 @@ export default function BankSVG({ level }: BankSVGProps) {
       )}
 
       {level >= 3 && (
-        <g>
+        <g filter="url(#bankShadow)">
           {/* Additional top block representing bank vault header */}
-          <polygon points="50,72.5 80,87.5 80,72.5 50,57.5" fill={p.right} />
-          <polygon points="80,87.5 110,72.5 110,57.5 80,72.5" fill={p.left} />
-          <polygon points="80,72.5 110,57.5 80,42.5 50,57.5" fill={p.top} />
+          <polygon points="50,72.5 80,87.5 80,72.5 50,57.5" fill="url(#rightGrad)" />
+          <polygon points="80,87.5 110,72.5 110,57.5 80,72.5" fill="url(#leftGrad)" />
+          <polygon points="80,72.5 110,57.5 80,42.5 50,57.5" fill="url(#topGrad)" />
         </g>
       )}
 
@@ -121,14 +142,10 @@ export default function BankSVG({ level }: BankSVGProps) {
         <g>
           {/* Golden Coin floating on top */}
           <g className="animate-bounce" style={{ transformOrigin: '80px 30px' }}>
-            {/* Coin shadow */}
-            <ellipse cx="80" cy="38" rx="8" ry="4" fill="#000" opacity="0.4" />
-            
-            {/* The gold coin itself */}
-            <circle cx="80" cy="25" r="9" fill="#FFF2A3" />
-            <circle cx="80" cy="25" r="7.5" fill="#FFD700" />
-            {/* Currency symbol inside coin - geometric 'N' for Namaa */}
-            <path d="M 77 28 L 77 22 L 83 28 L 83 22" stroke="#FFF2A3" strokeWidth="1.5" fill="none" />
+            <ellipse cx="80" cy="38" rx="8" ry="4" fill="#000" opacity="0.45" />
+            <circle cx="80" cy="25" r="9" fill="#FFF4B8" filter="url(#bankShadow)" />
+            <circle cx="80" cy="25" r="7.5" fill="#FFE552" />
+            <path d="M 77 28 L 77 22 L 83 28 L 83 22" stroke="#FFF4B8" strokeWidth="1.8" fill="none" />
           </g>
         </g>
       )}

@@ -246,7 +246,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               transactions: mappedTx,
               is_league_winner: !!k.is_league_winner,
               last_savings_points: k.last_savings_points || 0,
-              last_league_score: k.last_league_score || 0
+              last_league_score: k.last_league_score || 0,
+              bank_level: k.bank_level || 3,
+              farm_level: k.farm_level || 3,
+              market_level: k.market_level || 3,
+              center_level: k.center_level || 3,
             };
           })
         );
