@@ -14,7 +14,7 @@ interface Message {
 }
 
 export default function FatherAICoachPage() {
-  const { kids, geminiApiKey, projects } = useApp();
+  const { kids, geminiApiKey, projects, activeLeague } = useApp();
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isActionMenuOpen, setIsActionMenuOpen] = useState(false);
@@ -94,7 +94,7 @@ export default function FatherAICoachPage() {
       const response = await sendGeneralChatMessage(
         geminiApiKey,
         userText,
-        { kids, projects }
+        { kids, projects, activeLeague }
       );
 
       const aiResponse: Message = {

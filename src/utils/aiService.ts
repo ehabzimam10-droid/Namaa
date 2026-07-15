@@ -3,7 +3,7 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 export interface SuggestedTask {
   title: string;
   suggestedAmount: number;
-  type: 'cash' | 'points';
+  type: 'cash' | 'points' | 'custom';
   reasoning: string;
 }
 
@@ -13,32 +13,32 @@ export async function suggestTaskForKid(
   fatherNotes?: string
 ): Promise<SuggestedTask> {
   const prompt = `
-    You are a financial coach for Alinma Bank's kids financial literacy application "Namaa".
-    Your role is to analyze a child's financial profile and suggest a personalized, educational house task or financial responsibility.
+    You are a highly intelligent financial coach for Alinma Bank's kids financial literacy application "Namaa".
+    Your role is to analyze a child's specific financial and task database profile and suggest a personalized, educational task or responsibility.
     
     Child Profile:
     - Name: ${kidData.name}
     - Age: ${kidData.age}
-    - Balance: ${kidData.balance} SAR
+    - Current Balance: ${kidData.balance} SAR
+    - Saved Amount: ${kidData.saved} SAR
     - Savings Goals: ${JSON.stringify(kidData.savingsGoals || [])}
-    - Recent Transactions: ${JSON.stringify((kidData.transactions || []).slice(0, 5))}
-    - Father's specific instructions/notes: "${fatherNotes || 'None provided'}"
+    - Expired/Failed Tasks count: ${(kidData.tasks || []).filter((t: any) => t.status === 'expired' || t.status === 'failed').length}
+    - Recent Transaction History: ${JSON.stringify((kidData.transactions || []).slice(0, 10))}
+    - Father's Specific Notes: "${fatherNotes || 'None provided'}"
     
-    Based on this, suggest a task that helps them:
-    - Earn money if their balance is low.
-    - Practice delayed gratification if they have a savings goal.
-    - Encourage charity if they have excess money.
-    - Fits their age.
+    Instruction:
+    Analyze this data. Suggest an age-appropriate task for the child.
+    - If the child has a high count of expired/failed tasks, suggest a simpler/easier task.
+    - If the child's balance is low relative to their savings target, suggest a task with a cash/points reward.
+    - If they have excess money, suggest a task involving donation or charity.
     
-    You MUST output a JSON object in this exact schema:
+    You MUST output a clean, strictly typed JSON object in this exact schema:
     {
-      "title": "A short, engaging task title in Arabic (e.g., ترتيب الغرفة وترتيب الكتب 🧹)",
+      "title": "A short, engaging task title in Arabic (e.g. ترتيب الغرفة وترتيب الكتب 🧹)",
       "suggestedAmount": A reasonable reward amount (integer number, e.g. 10 or 15),
-      "type": "cash" or "points",
-      "reasoning": "A concise explanation in Arabic for the father explaining why this task is suggested based on the kid's financial status."
+      "type": "cash" or "points" or "custom",
+      "reasoning": "A concise explanation in Arabic for the father explaining why this task is suggested based on the kid's balance, savings, tasks, or transaction history."
     }
-    
-    Output ONLY the JSON object. Do not include markdown codeblocks (like \`\`\`json) or any additional text.
   `;
 
   try {
@@ -47,14 +47,13 @@ export async function suggestTaskForKid(
     }
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({
-      model: 'gemini-3.5-flash', // التعديل هنا
+      model: 'gemini-1.5-flash',
       generationConfig: { responseMimeType: 'application/json' },
     });
 
     const result = await model.generateContent(prompt);
     const text = result.response.text();
 
-    // Clean potential json block markers if returned despite mime-type config
     const cleanedText = text
       .trim()
       .replace(/^```json/i, '')
@@ -78,7 +77,7 @@ export async function suggestTaskForKid(
 export async function sendGeneralChatMessage(
   apiKey: string,
   message: string,
-  familyData: { kids: any[]; projects: any[] }
+  familyData: { kids: any[]; projects: any[]; activeLeague?: any }
 ): Promise<string> {
   const prompt = `
     You are Alinma Bank's expert Financial Family Coach inside the application "Namaa".
@@ -87,6 +86,7 @@ export async function sendGeneralChatMessage(
     Family Data:
     - Kids profiles: ${JSON.stringify(familyData.kids || [])}
     - Family projects: ${JSON.stringify(familyData.projects || [])}
+    - Active Family League: ${JSON.stringify(familyData.activeLeague || 'No active league')}
     
     Father's message: "${message}"
     
@@ -98,7 +98,7 @@ export async function sendGeneralChatMessage(
       throw new Error('API key is missing');
     }
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: 'gemini-3.5-flash' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
     const result = await model.generateContent(prompt);
     return result.response.text().trim();

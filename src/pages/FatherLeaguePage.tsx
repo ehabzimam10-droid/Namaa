@@ -24,6 +24,13 @@ export default function FatherLeaguePage() {
   const [countdownText, setCountdownText] = useState('');
   const [pastLeagues, setPastLeagues] = useState<any[]>([]);
   const [selectedPastLeague, setSelectedPastLeague] = useState<any | null>(null);
+  const [forceShowCreateForm, setForceShowCreateForm] = useState(false);
+
+  useEffect(() => {
+    if (activeLeague && activeLeague.isActive) {
+      setForceShowCreateForm(false);
+    }
+  }, [activeLeague]);
 
   useEffect(() => {
     const fetchPastLeagues = async () => {
@@ -177,7 +184,7 @@ export default function FatherLeaguePage() {
         const isLeagueEndedRecent = !activeLeague.isActive && activeLeague.endDate &&
           (new Date().getTime() - new Date(activeLeague.endDate).getTime()) < 24 * 60 * 60 * 1000;
 
-        if (!activeLeague.isActive && isLeagueEndedRecent) {
+        if (!activeLeague.isActive && isLeagueEndedRecent && !forceShowCreateForm) {
           return (
             <div className="space-y-6">
               {/* Festive Banner */}
@@ -194,6 +201,16 @@ export default function FatherLeaguePage() {
                 <div className="bg-orange-500/10 border border-orange-500/20 max-w-sm mx-auto p-4 rounded-2xl">
                   <span className="text-[10px] text-slate-400 block mb-1">الجائزة الكبرى للدوري:</span>
                   <span className="text-lg font-black text-orange-400">{activeLeague.prize} 🎁</span>
+                </div>
+
+                <div className="pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setForceShowCreateForm(true)}
+                    className="px-6 py-3 bg-[#E57A44]/20 hover:bg-[#E57A44]/35 text-[#E57A44] border border-[#E57A44]/40 font-extrabold rounded-2xl text-sm transition-all shadow-lg backdrop-blur-md active:scale-95 flex items-center justify-center gap-2 mx-auto font-sans"
+                  >
+                    <span>بدء تحدي جديد 🎯</span>
+                  </button>
                 </div>
               </div>
 
