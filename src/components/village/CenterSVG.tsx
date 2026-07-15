@@ -5,166 +5,168 @@ interface CenterSVGProps {
 }
 
 export default function CenterSVG({ level }: CenterSVGProps) {
-  const getColors = () => {
-    switch (level) {
-      case 1:
-        return {
-          walls: '#8E9AA8',
-          shadow: '#6D7C8D',
-          dark: '#4B5766',
-          dome: '#6D7C8D',
-          accent: '#A5B1BD',
-        };
-      case 2:
-        return {
-          walls: '#6C7E9C',
-          shadow: '#4E5F7C',
-          dark: '#32425B',
-          dome: '#4E5F7C',
-          accent: '#8EB4DC',
-        };
-      case 3:
-        return {
-          walls: '#D4A47E', // Radiant Copper
-          shadow: '#B5855F',
-          dark: '#8E5F3B',
-          dome: '#009639', // Alinma green dome
-          accent: '#FF8A00', // Orange flag
-        };
-      case 4:
-        return {
-          walls: '#E8C485',
-          shadow: '#C79F63',
-          dark: '#9E7A42',
-          dome: '#009639',
-          accent: '#FFE552',
-        };
-      case 5:
-      default:
-        return {
-          walls: '#FFE552', // Ultra Gold Castle Walls
-          shadow: '#E6C300',
-          dark: '#B89B00',
-          dome: '#FFF4B8', // Glowing gold dome
-          accent: '#00C8FF', // Radiant blue
-        };
-    }
-  };
-
-  const c = getColors();
-
+  // Render based on level
   return (
     <svg viewBox="0 0 180 180" className="w-full h-full">
       <defs>
-        {/* Shadow for premium 3D effect */}
-        <filter id="centerShadow" x="-15%" y="-15%" width="130%" height="130%">
-          <feDropShadow dx="0" dy="8" stdDeviation="5" flood-color="#050B14" flood-opacity="0.6" />
+        <filter id="centerDropShadow" x="-10%" y="-10%" width="120%" height="120%">
+          <feDropShadow dx="0" dy="8" stdDeviation="5" flood-color="#040810" flood-opacity="0.65" />
         </filter>
-        <linearGradient id="wallGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%" stopColor={c.walls} />
-          <stop offset="100%" stopColor={c.shadow} />
+        <linearGradient id="castleGold" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stopColor="#FFE552" />
+          <stop offset="100%" stopColor="#E6C300" />
         </linearGradient>
-        <linearGradient id="shadowGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%" stopColor={c.shadow} />
-          <stop offset="100%" stopColor={c.dark} />
+        <linearGradient id="castleGoldDark" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stopColor="#E6C300" />
+          <stop offset="100%" stopColor="#8A7000" />
         </linearGradient>
-        <linearGradient id="domeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor={c.dome} />
-          <stop offset="100%" stopColor="#006b29" opacity={level === 3 || level === 4 ? 0.4 : 0} />
+        <linearGradient id="stoneGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stopColor="#8E9AA8" />
+          <stop offset="100%" stopColor="#4B5766" />
         </linearGradient>
       </defs>
 
-      {/* Glow aura background for level 5 */}
-      {level === 5 && (
-        <circle cx="90" cy="90" r="70" fill="rgba(255, 244, 184, 0.28)" filter="blur(16px)" className="animate-pulse" />
-      )}
-
       {/* Ground shadow */}
-      <polygon points="90,140 145,112.5 90,85 35,112.5" fill="#050B14" opacity="0.75" />
+      <polygon points="90,145 145,117.5 90,90 35,117.5" fill="#040810" opacity="0.8" />
 
-      {/* Level 1 & 2: Basic Isometric Block Tower with Shadow */}
-      {level <= 2 && (
-        <g filter="url(#centerShadow)">
-          {/* Main Tower body */}
-          <polygon points="55,112.5 90,130 90,70 55,52.5" fill="url(#shadowGrad)" />
-          <polygon points="90,130 125,112.5 125,52.5 90,70" fill={c.dark} />
-          <polygon points="90,70 125,52.5 90,35 55,52.5" fill="url(#wallGrad)" />
+      {/* LEVEL 1: Campfire & Tiny Mud Tent (low height) */}
+      {level === 1 && (
+        <g filter="url(#centerDropShadow)">
+          {/* Mud Tent */}
+          {/* Left face */}
+          <polygon points="55,120 80,128 80,100 55,95" fill="#8C7355" />
+          {/* Right face */}
+          <polygon points="80,128 105,120 105,95 80,100" fill="#735E45" />
+          {/* Tent poles */}
+          <line x1="80" y1="100" x2="80" y2="92" stroke="#5C4533" strokeWidth="2.5" />
+          <line x1="55" y1="95" x2="50" y2="93" stroke="#5C4533" strokeWidth="2" />
+          <line x1="105" y1="95" x2="110" y2="93" stroke="#5C4533" strokeWidth="2" />
 
-          {/* Simple flat battlements */}
-          <polygon points="55,52.5 70,60 70,55 55,47.5" fill={c.accent} />
-          <polygon points="125,52.5 110,60 110,55 125,47.5" fill={c.accent} />
-
-          {/* Gate archway (Left) */}
-          <polygon points="65,107.5 78,114 78,94 65,87.5" fill="#0D1525" />
+          {/* Tiny Campfire (center right) */}
+          <ellipse cx="115" cy="122" rx="10" ry="5" fill="#3D291F" />
+          {/* Fire embers (Red/Orange polygons) */}
+          <polygon points="110,122 115,110 120,122" fill="#FF4500" />
+          <polygon points="112,122 115,115 118,122" fill="#FF8C00" />
+          <polygon points="114,122 115,118 116,122" fill="#FFD700" />
         </g>
       )}
 
-      {/* Level 3: Majestic Tower with a Green Dome and Side Balconies */}
-      {level === 3 && (
-        <g filter="url(#centerShadow)">
-          {/* Base structure */}
-          <polygon points="50,115 90,135 90,85 50,65" fill="url(#shadowGrad)" />
-          <polygon points="90,135 130,115 130,65 90,85" fill={c.dark} />
-          <polygon points="90,85 130,65 90,45 50,65" fill="url(#wallGrad)" />
+      {/* LEVEL 2: Simple stone fort wall (Medium-low) */}
+      {level === 2 && (
+        <g filter="url(#centerDropShadow)">
+          {/* Main wall block */}
+          {/* Left wall */}
+          <polygon points="50,118 90,136 90,100 50,82" fill="url(#stoneGrad)" />
+          {/* Right wall */}
+          <polygon points="90,136 130,118 130,82 90,100" fill="#323E27" /> {/* Darker stone */}
+          <polygon points="90,100 130,82 90,64 50,82" fill="#6A7A8C" />
 
-          {/* Central Dome on top */}
-          <ellipse cx="90" cy="45" rx="20" ry="12" fill="url(#domeGrad)" />
-          <path d="M 70,45 Q 90,20 110,45 Z" fill="url(#domeGrad)" />
-          {/* Flagpole and banner */}
-          <line x1="90" y1="20" x2="90" y2="5" stroke="#FFF" strokeWidth="2" />
-          <polygon points="90,5 110,10 90,15" fill={c.accent} />
+          {/* Basic battlements */}
+          <rect x="52" y="72" width="12" height="10" fill="#6A7A8C" />
+          <rect x="72" y="81" width="12" height="10" fill="#6A7A8C" />
+          <rect x="106" y="81" width="12" height="10" fill="#6A7A8C" />
+          <rect x="116" y="76" width="12" height="10" fill="#6A7A8C" />
+
+          {/* Arch door */}
+          <polygon points="65,112.5 78,119 78,99 65,92.5" fill="#0D1525" />
+        </g>
+      )}
+
+      {/* LEVEL 3: Solid tower with a green dome and gate */}
+      {level === 3 && (
+        <g filter="url(#centerDropShadow)">
+          {/* Base castle structure */}
+          <polygon points="45,122.5 90,143 90,93 45,72.5" fill="url(#stoneGrad)" />
+          <polygon points="90,143 135,122.5 135,72.5 90,93" fill="#3A4859" />
+          <polygon points="90,93 135,72.5 90,52 45,72.5" fill="#6A7A8C" />
+
+          {/* Central Green Dome */}
+          <ellipse cx="90" cy="52" rx="18" ry="10" fill="#009639" />
+          <path d="M 72,52 Q 90,26 108,52 Z" fill="#009639" />
+          
+          {/* Flag */}
+          <line x1="90" y1="26" x2="90" y2="10" stroke="#FFF" strokeWidth="2" />
+          <polygon points="90,10 108,15 90,20" fill="#E57A44" />
 
           {/* Arched Gate */}
-          <path d="M 70,115 C 70,95 110,95 110,115 Z" fill="#0D1525" />
-          <polygon points="90,135 90,105 90,135" stroke="#009639" strokeWidth="2" />
+          <path d="M 68,122 C 68,102 112,102 112,122 Z" fill="#0D1525" />
         </g>
       )}
 
-      {/* Level 4 & 5: Two-Story Castle with Side Turrets & Banners */}
-      {level >= 4 && (
-        <g filter="url(#centerShadow)">
+      {/* LEVEL 4: Tall two-story castle with side towers, battlements, and flags */}
+      {level === 4 && (
+        <g filter="url(#centerDropShadow)">
           {/* Left Turret */}
-          <polygon points="35,112.5 55,122.5 55,62.5 35,52.5" fill="url(#shadowGrad)" />
-          <polygon points="35,52.5 55,62.5 45,35" fill={c.accent} />
+          <polygon points="35,115 55,125 55,65 35,55" fill="url(#stoneGrad)" />
+          <polygon points="35,55 55,65 45,38" fill="#E57A44" />
 
           {/* Right Turret */}
-          <polygon points="125,122.5 145,112.5 145,52.5 125,62.5" fill={c.dark} />
-          <polygon points="125,62.5 145,52.5 135,35" fill={c.accent} />
+          <polygon points="125,125 145,115 145,55 125,65" fill="#3A4859" />
+          <polygon points="125,65 145,55 135,38" fill="#E57A44" />
 
-          {/* Central Main Building Block */}
-          <polygon points="55,122.5 90,140 90,75 55,57.5" fill="url(#shadowGrad)" />
-          <polygon points="90,140 125,122.5 125,57.5 90,75" fill={c.dark} />
-          <polygon points="90,75 125,57.5 90,40 55,57.5" fill="url(#wallGrad)" />
+          {/* Central Block */}
+          <polygon points="55,125 90,143 90,78 55,60" fill="url(#stoneGrad)" />
+          <polygon points="90,143 125,125 125,60 90,78" fill="#3A4859" />
+          <polygon points="90,78 125,60 90,42 55,60" fill="#6A7A8C" />
 
-          {/* Grand Dome on Center Tower */}
-          <ellipse cx="90" cy="40" rx="16" ry="9" fill="url(#domeGrad)" />
-          <path d="M 74,40 Q 90,15 106,40 Z" fill="url(#domeGrad)" />
-          <line x1="90" y1="15" x2="90" y2="2" stroke="#FFF" strokeWidth="2" />
-          <polygon points="90,2 108,7 90,12" fill={level === 5 ? '#FFE552' : '#E57A44'} />
-
-          {/* Grand Arch Doorways (Double pillars) */}
-          <path d="M 75,128 A 15 15 0 0 1 105,128 L 105,132 L 75,132 Z" fill="#050B14" />
-
-          {/* Glowing Windows (Level 5 only) */}
-          {level === 5 && (
-            <g>
-              <polygon points="68,90 82,97 82,82 68,75" fill="#FFF4B8" opacity="0.95" className="animate-pulse" />
-              <polygon points="98,97 112,90 112,75 98,82" fill="#FFF4B8" opacity="0.95" className="animate-pulse" />
-            </g>
-          )}
-
-          {/* Hanging Castle Banners */}
-          <polygon points="62,95 62,110 57,105" fill={c.accent} />
-          <polygon points="118,95 118,110 123,105" fill={c.accent} />
+          {/* Dome */}
+          <ellipse cx="90" cy="42" rx="15" ry="8" fill="#009639" />
+          <path d="M 75,42 Q 90,18 105,42 Z" fill="#009639" />
         </g>
       )}
 
-      {/* Floating Sparkles for level 5 */}
+      {/* LEVEL 5: Majestic multi-tiered Citadel/Castle (high height, grand towers, turrets, glowing arched windows, cascading banners, and sparkles) */}
       {level === 5 && (
-        <g fill="#FFF4B8" className="animate-pulse">
-          <circle cx="30" cy="60" r="2" />
-          <circle cx="150" cy="50" r="2.5" />
-          <circle cx="90" cy="160" r="2" />
+        <g filter="url(#centerDropShadow)">
+          {/* Massive Base Stone Platform */}
+          <polygon points="30,122.5 90,152.5 150,122.5 90,92.5" fill="#4B5666" />
+          <polygon points="30,122.5 90,152.5 90,142.5 30,112.5" fill="#333C47" />
+          <polygon points="90,152.5 150,122.5 150,112.5 90,142.5" fill="#20262E" />
+
+          {/* Left Tower Turret */}
+          <polygon points="35,112.5 58,124 58,54 35,42.5" fill="url(#castleGoldDark)" />
+          {/* Left Turret Golden Roof */}
+          <polygon points="35,42.5 58,54 46.5,22" fill="url(#castleGold)" />
+
+          {/* Right Tower Turret */}
+          <polygon points="122,124 145,112.5 145,42.5 122,54" fill="#8A7000" />
+          {/* Right Turret Golden Roof */}
+          <polygon points="122,54 145,42.5 133.5,22" fill="url(#castleGold)" />
+
+          {/* Main Center Castle Structure (Two levels) */}
+          {/* Level 1 block */}
+          <polygon points="58,124 90,140 90,75 58,59" fill="url(#castleGoldDark)" />
+          <polygon points="90,140 122,124 122,59 90,75" fill="#8A7000" />
+          
+          {/* Level 2 central tower rising higher */}
+          <polygon points="70,75 90,85 90,45 70,35" fill="url(#castleGoldDark)" />
+          <polygon points="90,85 110,75 110,45 90,45" fill="#8A7000" />
+
+          {/* Grand Dome on top of Level 2 */}
+          <ellipse cx="90" cy="45" rx="18" ry="9" fill="url(#castleGold)" />
+          <path d="M 72,45 Q 90,15 108,45 Z" fill="#FFF4B8" />
+
+          {/* Spire and flags */}
+          <line x1="90" y1="15" x2="90" y2="0" stroke="#FFF" strokeWidth="2.5" />
+          <polygon points="90,0 112,6 90,12" fill="#00C8FF" />
+
+          {/* Double arched portals */}
+          <path d="M 76,126 A 14 14 0 0 1 104,126 L 104,131 L 76,131 Z" fill="#050B14" />
+
+          {/* Glowing Windows */}
+          <polygon points="74,68 84,73 84,61 74,56" fill="#FFF4B8" className="animate-pulse" />
+          <polygon points="96,73 106,68 106,56 96,61" fill="#FFF4B8" className="animate-pulse" />
+
+          {/* Hanging banners */}
+          <polygon points="63,90 63,108 58,103" fill="#00C8FF" />
+          <polygon points="117,90 117,108 122,103" fill="#00C8FF" />
+
+          {/* Floating magic sparkles */}
+          <g fill="#FFF2A3" className="animate-pulse">
+            <circle cx="25" cy="55" r="2.5" />
+            <circle cx="155" cy="45" r="3" />
+            <circle cx="90" cy="155" r="2" />
+          </g>
         </g>
       )}
     </svg>

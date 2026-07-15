@@ -5,149 +5,156 @@ interface MarketSVGProps {
 }
 
 export default function MarketSVG({ level }: MarketSVGProps) {
-  const getColors = () => {
-    switch (level) {
-      case 1:
-        return {
-          roof: '#8E9AA8',
-          wood: '#5C4A38',
-          accent: '#A5B1BD',
-          banner: '#6D7C8D',
-        };
-      case 2:
-        return {
-          roof: '#D95D5D',
-          wood: '#6E553F',
-          accent: '#FFF',
-          banner: '#5C749C',
-        };
-      case 3:
-        return {
-          roof: '#D4A47E', // Radiant Copper
-          wood: '#9C7A59',
-          accent: '#009639', // Alinma green banner
-          banner: '#E57A44', // Orange detail
-        };
-      case 4:
-        return {
-          roof: '#E8C485',
-          wood: '#B38E59',
-          accent: '#FF8A00',
-          banner: '#009639',
-        };
-      case 5:
-      default:
-        return {
-          roof: '#FFE552', // Ultra Shiny Gold
-          wood: '#B89600',
-          accent: '#00D0FF', // Neon Blue accent
-          banner: '#E57A44', // Orange wind flag
-        };
-    }
-  };
-
-  const c = getColors();
-
+  // Return different SVG structures based on levels
   return (
-    <svg viewBox="0 0 160 160" className="w-full h-full">
+    <svg viewBox="0 0 180 180" className="w-full h-full">
       <defs>
-        <filter id="marketShadow" x="-10%" y="-10%" width="120%" height="120%">
-          <feDropShadow dx="0" dy="6" stdDeviation="4" flood-color="#050B14" flood-opacity="0.5" />
+        <filter id="marketDropShadow" x="-10%" y="-10%" width="120%" height="120%">
+          <feDropShadow dx="0" dy="6" stdDeviation="4" flood-color="#040810" flood-opacity="0.6" />
         </filter>
-        <linearGradient id="roofGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor={c.roof} />
-          <stop offset="100%" stopColor="#8C6E3F" opacity={level >= 4 ? 0.3 : 0} />
+        <linearGradient id="carpetGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#C24D4D" />
+          <stop offset="100%" stopColor="#802626" />
         </linearGradient>
-        <linearGradient id="woodGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%" stopColor={c.wood} />
-          <stop offset="100%" stopColor="#4A3423" />
+        <linearGradient id="roofStripeRed" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stopColor="#D9534F" />
+          <stop offset="100%" stopColor="#A94442" />
+        </linearGradient>
+        <linearGradient id="bazaarGold" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stopColor="#FFE054" />
+          <stop offset="100%" stopColor="#B38F00" />
         </linearGradient>
       </defs>
 
       {/* Ground shadow */}
-      <polygon points="80,125 125,102.5 80,80 35,102.5" fill="#050B14" opacity="0.75" />
+      <polygon points="90,145 145,117.5 90,90 35,117.5" fill="#040810" opacity="0.8" />
 
-      {/* Main Base floor with Shadow */}
-      <g filter="url(#marketShadow)">
-        {/* Left side */}
-        <polygon points="35,102.5 80,125 80,118 35,95.5" fill="#1C273C" />
-        {/* Right side */}
-        <polygon points="80,125 125,102.5 125,95.5 80,118" fill="#151E2E" />
-        {/* Top tile */}
-        <polygon points="80,118 125,95.5 80,73 35,95.5" fill="#24324D" />
-      </g>
-
-      {/* Level 1 & 2: Simple Wooden Market Stall */}
-      {level <= 2 && (
-        <g filter="url(#marketShadow)">
-          {/* Wooden stall posts */}
-          <rect x="50" y="70" width="3.5" height="30" fill="url(#woodGrad)" />
-          <rect x="75" y="82" width="3.5" height="30" fill="url(#woodGrad)" />
-          <rect x="100" y="70" width="3.5" height="30" fill="url(#woodGrad)" />
-
-          {/* Table / Counter */}
-          <polygon points="48,93 78,108 78,100 48,85" fill="url(#woodGrad)" />
-          <polygon points="78,108 108,93 108,85 78,100" fill="#423427" />
-          <polygon points="78,100 108,85 78,70 48,85" fill={c.accent} />
-
-          {/* Simple flat roof */}
-          <polygon points="45,70 78,86.5 78,82 45,65.5" fill="url(#roofGrad)" />
-          <polygon points="78,86.5 110,70.5 110,66 78,82" fill="#B34444" opacity={level === 2 ? 1 : 0.6} />
-          <polygon points="78,82 110,66 78,49.5 45,65.5" fill={c.accent} />
+      {/* LEVEL 1: Small rug (low height, simple carpet lying on the ground) */}
+      {level === 1 && (
+        <g filter="url(#marketDropShadow)">
+          {/* Flat thin carpet */}
+          <polygon points="50,115 90,135 130,115 90,95" fill="url(#carpetGrad)" />
+          {/* Carpet fringes/lines */}
+          <line x1="50" y1="115" x2="60" y2="120" stroke="#FFF" strokeWidth="1.5" opacity="0.6" />
+          <line x1="130" y1="115" x2="120" y2="110" stroke="#FFF" strokeWidth="1.5" opacity="0.6" />
+          {/* A small brown bowl on the rug */}
+          <ellipse cx="90" cy="115" rx="5" ry="2.5" fill="#5C4533" />
         </g>
       )}
 
-      {/* Level 3 & 4: Dual Merchant Tent Structures */}
-      {level >= 3 && (
-        <g filter="url(#marketShadow)">
-          {/* Tent 1 (Left-Center) */}
-          <line x1="45" y1="92" x2="45" y2="70" stroke="url(#woodGrad)" strokeWidth="3" />
-          <line x1="75" y1="107" x2="75" y2="85" stroke="url(#woodGrad)" strokeWidth="3" />
-          {/* Main Tent Peak / Roof */}
-          <polygon points="40,70 75,87.5 75,80 40,62.5" fill="url(#roofGrad)" />
-          <polygon points="75,87.5 105,72.5 105,65 75,80" fill={c.accent} />
-          <polygon points="75,80 105,65 75,47.5 40,62.5" fill="url(#roofGrad)" />
-          
-          {/* Alinma Green Hanging banner */}
-          <polygon points="50,85 65,92.5 65,100 50,92.5" fill={c.accent} />
+      {/* LEVEL 2: Simple wooden table under a single small red/white striped canopy */}
+      {level === 2 && (
+        <g filter="url(#marketDropShadow)">
+          {/* Base */}
+          <polygon points="35,117.5 90,145 145,117.5 90,90" fill="#24324D" />
 
-          {/* Tent 2 (Right-Back) */}
-          <line x1="85" y1="87" x2="85" y2="67" stroke="url(#woodGrad)" strokeWidth="2.5" />
-          <line x1="110" y1="74" x2="110" y2="54" stroke="url(#woodGrad)" strokeWidth="2.5" />
-          <polygon points="82,67 110,81 110,76 82,62" fill={c.banner} />
-          <polygon points="110,81 132,70 132,65 110,76" fill="url(#roofGrad)" />
-          <polygon points="110,76 132,65 110,50 82,62" fill={c.accent} />
+          {/* Wooden posts */}
+          <rect x="55" y="80" width="3.5" height="36" fill="#6B5641" />
+          <rect x="85" y="93" width="3.5" height="36" fill="#6B5641" />
+          <rect x="110" y="80" width="3.5" height="36" fill="#6B5641" />
+
+          {/* Counter table */}
+          <polygon points="50,105 85,122 85,114 50,97" fill="#6B5641" />
+          <polygon points="85,122 120,105 120,97 85,114" fill="#4A3423" />
+          <polygon points="85,114 120,97 85,82 50,97" fill="#8C6E53" />
+
+          {/* Striped Canopy Roof */}
+          <polygon points="45,82 85,99 85,93 45,76" fill="url(#roofStripeRed)" />
+          <polygon points="85,99 122,82 122,76 85,93" fill="#FFF" />
+          <polygon points="85,93 122,76 85,60 45,77" fill="url(#roofStripeRed)" />
         </g>
       )}
 
-      {/* Level 4 extra details: Banners & Gold Columns */}
-      {level >= 4 && (
-        <g>
-          {/* Gold column trims */}
-          <rect x="73.5" y="80" width="3.5" height="26" fill="#FFE552" filter="url(#marketShadow)" />
-          <rect x="43.5" y="65.5" width="3.5" height="26" fill="#FFE552" filter="url(#marketShadow)" />
+      {/* LEVEL 3: Two tents side by side with flags */}
+      {level === 3 && (
+        <g filter="url(#marketDropShadow)">
+          {/* Floor */}
+          <polygon points="35,117.5 90,145 145,117.5 90,90" fill="#24324D" />
 
-          {/* Trade flag flying */}
-          <line x1="75" y1="47.5" x2="75" y2="28" stroke="#FFF" strokeWidth="2" />
-          <polygon points="75,28 92,34 75,40" fill={c.banner} />
+          {/* Tent 1 (Left side) */}
+          <line x1="50" y1="102" x2="50" y2="75" stroke="#6B5641" strokeWidth="3" />
+          <line x1="80" y1="117" x2="80" y2="90" stroke="#6B5641" strokeWidth="3" />
+          <polygon points="45,75 80,92.5 80,85 45,67.5" fill="#D4A47E" />
+          <polygon points="80,92.5 110,77.5 110,70 80,85" fill="#FFF" />
+          <polygon points="80,85 110,70 80,52.5 45,67.5" fill="#D4A47E" />
+
+          {/* Tent 2 (Right side) */}
+          <line x1="90" y1="97" x2="90" y2="77" stroke="#6B5641" strokeWidth="2.5" />
+          <line x1="115" y1="84" x2="115" y2="64" stroke="#6B5641" strokeWidth="2.5" />
+          <polygon points="87,77 115,91 115,86 87,72" fill="#009639" />
+          <polygon points="115,91 137,80 137,75 115,86" fill="#FFF" />
+          <polygon points="115,86 137,75 115,60 87,72" fill="#009639" />
         </g>
       )}
 
-      {/* Level 5 details: Golden pillars, rotating wind banner, glowing details */}
+      {/* LEVEL 4: Solid wooden market bazaar with striped roofs and merchant boxes */}
+      {level === 4 && (
+        <g filter="url(#marketDropShadow)">
+          {/* Grand wooden floor deck */}
+          <polygon points="35,117.5 90,145 145,117.5 90,90" fill="#6E553F" />
+
+          {/* Front arches / pillars */}
+          <rect x="52" y="85" width="4.5" height="38" fill="#8C7355" />
+          <rect x="78" y="98" width="4.5" height="38" fill="#8C7355" />
+          <rect x="105" y="98" width="4.5" height="38" fill="#8C7355" />
+          <rect x="123" y="88" width="4.5" height="38" fill="#8C7355" />
+
+          {/* Multi-striped grand roofs */}
+          <polygon points="45,85 78,101.5 78,95 45,78.5" fill="url(#roofStripeRed)" />
+          <polygon points="78,101.5 105,88 105,82 78,95" fill="#FFF" />
+          <polygon points="105,88 132,74.5 132,68.5 105,82" fill="url(#roofStripeRed)" />
+          {/* Top ridges */}
+          <polygon points="78,95 105,82 78,65 45,78" fill="#D9534F" />
+
+          {/* Merchant crates/boxes on floor */}
+          <polygon points="55,120 65,125 65,115 55,110" fill="#8C6E53" />
+          <polygon points="110,120 120,125 120,115 110,110" fill="#8C6E53" />
+        </g>
+      )}
+
+      {/* LEVEL 5: Grand multi-tiered bazaar marketplace with colorful banners, glowing lanterns, golden columns, wind flags waving, and crowded details (High height & majestic scale) */}
       {level === 5 && (
-        <g>
-          {/* Floating gold particles */}
-          <circle cx="50" cy="50" r="2" fill="#FFF4B8" className="animate-pulse" />
-          <circle cx="105" cy="40" r="2.5" fill="#FFF4B8" className="animate-ping" />
-          <circle cx="120" cy="55" r="2" fill="#FFF4B8" />
+        <g filter="url(#marketDropShadow)">
+          {/* Base tiled platform */}
+          <polygon points="35,117.5 90,145 145,117.5 90,90" fill="#24324D" />
+          <polygon points="35,117.5 90,145 90,137 35,109.5" fill="#1C273C" />
+          <polygon points="90,145 145,117.5 145,109.5 90,137" fill="#151E2E" />
 
-          {/* Grand double-shield ornament on main roof */}
-          <polygon points="75,47.5 83,43.5 75,39.5 67,43.5" fill="#FFF4B8" />
-          <circle cx="75" cy="43.5" r="2.5" fill={c.accent} />
+          {/* Main bazaar dome center (Story 1) */}
+          <polygon points="50,110 90,130 130,110 90,80" fill="url(#bazaarGold)" />
+          {/* Main pillars */}
+          <rect x="52" y="80" width="5" height="34" fill="#FFE552" />
+          <rect x="80" y="94" width="5" height="34" fill="#FFE552" />
+          <rect x="108" y="94" width="5" height="34" fill="#FFE552" />
+          <rect x="123" y="86.5" width="5" height="34" fill="#FFE552" />
 
-          {/* Waving/Spinning wind banner on flagpole */}
-          <g className="animate-bounce" style={{ transformOrigin: '75px 28px' }}>
-            <polygon points="75,22 95,26 75,30" fill="#FF8A00" filter="url(#marketShadow)" />
+          {/* Story 2: Elevated dome canopy */}
+          <polygon points="62,80 90,94 118,80 90,60" fill="#00C8FF" />
+          {/* Golden top spire */}
+          <polygon points="80,60 90,65 100,60 90,40" fill="#FFE552" />
+
+          {/* Colorful Banners hanging */}
+          {/* Left banner (Red/White) */}
+          <polygon points="56,92 56,108 61,104" fill="#D9534F" />
+          <polygon points="61,94 61,110 66,106" fill="#FFF" />
+          {/* Right banner (Green/Gold) */}
+          <polygon points="108,98 108,114 113,110" fill="#009639" />
+          <polygon points="113,96 113,112 118,108" fill="#FFE552" />
+
+          {/* Waving/Spinning wind flag on top */}
+          <g className="animate-bounce" style={{ transformOrigin: '90px 40px' }}>
+            <line x1="90" y1="40" x2="90" y2="20" stroke="#FFE552" strokeWidth="2.5" />
+            <polygon points="90,20 112,26 90,32" fill="#E57A44" />
+          </g>
+
+          {/* Glowing lanterns (Level 5 only) */}
+          <circle cx="70" cy="94" r="3.5" fill="#FFC90E" className="animate-pulse" />
+          <circle cx="110" cy="94" r="3.5" fill="#FFC90E" className="animate-pulse" />
+
+          {/* Sparkles */}
+          <g fill="#FFF2A3" className="animate-pulse">
+            <circle cx="45" cy="50" r="2" />
+            <circle cx="135" cy="45" r="2.5" />
           </g>
         </g>
       )}

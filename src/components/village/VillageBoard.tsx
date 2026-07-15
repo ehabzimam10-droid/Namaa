@@ -3,6 +3,7 @@ import BankSVG from './BankSVG';
 import FarmSVG from './FarmSVG';
 import MarketSVG from './MarketSVG';
 import CenterSVG from './CenterSVG';
+import FortressWall from './FortressWall';
 
 interface VillageBoardProps {
   levels: {
@@ -11,81 +12,72 @@ interface VillageBoardProps {
     market: number;
     center: number;
   };
+  wallLevel?: number; // surrounding fortress wall level (defaults to center level)
 }
 
-export default function VillageBoard({ levels }: VillageBoardProps) {
+export default function VillageBoard({ levels, wallLevel }: VillageBoardProps) {
+  const finalWallLevel = wallLevel !== undefined ? wallLevel : levels.center;
+
   return (
-    <div className="relative w-full max-w-lg aspect-square mx-auto flex items-center justify-center p-4">
+    <div className="relative w-full max-w-2xl aspect-square mx-auto flex items-center justify-center p-8 overflow-visible">
       {/* 3D Perspective Wrapper */}
       <div 
-        className="w-full h-full relative" 
-        style={{ perspective: '1200px' }}
+        className="w-full h-full relative flex items-center justify-center" 
+        style={{ perspective: '1500px' }}
       >
-        {/* The Rotated Ground Board */}
+        {/* The Rotated Ground Board (scaled up to 1.8x to fill the screen area) */}
         <div
-          className="absolute inset-0 m-auto w-[330px] h-[330px] bg-gradient-to-br from-[#1C2C4E]/70 to-[#0A111E]/90 border-2 border-white/10 rounded-[45px] transition-transform duration-500 shadow-2xl flex items-center justify-center"
+          className="absolute w-[330px] h-[330px] bg-gradient-to-br from-[#1A263F] to-[#0A101C] border-2 border-white/10 rounded-[45px] transition-transform duration-500 shadow-2xl flex items-center justify-center"
           style={{
-            transform: 'rotateX(60deg) rotateZ(-45deg) scale(1.05)',
+            transform: 'rotateX(60deg) rotateZ(-45deg) scale(1.8)',
             transformStyle: 'preserve-3d',
-            boxShadow: '0 40px 80px rgba(0,0,0,0.85), inset 0 2px 15px rgba(255,255,255,0.08)',
+            boxShadow: '0 45px 90px rgba(0,0,0,0.9), inset 0 2px 15px rgba(255,255,255,0.08)',
           }}
         >
-          {/* Ground Texture & Paths Connecting Buildings */}
+          {/* Solid ground paths and stone textures to connect buildings (no dotted lines or glows) */}
           <svg className="absolute inset-0 w-full h-full rounded-[45px] pointer-events-none z-0">
-            <defs>
-              {/* Radial gradient to make center glow */}
-              <radialGradient id="boardGlow" cx="50%" cy="50%" r="50%">
-                <stop offset="0%" stopColor="#E57A44" stopOpacity="0.2" />
-                <stop offset="100%" stopColor="#E57A44" stopOpacity="0" />
-              </radialGradient>
-            </defs>
-
-            {/* Glowing center area */}
-            <circle cx="165" cy="165" r="90" fill="url(#boardGlow)" />
-
-            {/* Cobblestone style connecting paths (underneath buildings) */}
-            {/* Center nodes: Bank(73, 73), Center(248, 81), Farm(73, 256), Market(248, 256) */}
-            
-            {/* Outline roads */}
+            {/* Outline roads - Solid stone path */}
             <path
               d="M 73.5 73.5 L 248.5 73.5 L 248.5 256.5 L 73.5 256.5 Z"
               fill="none"
-              stroke="#5C4A38"
-              strokeWidth="10"
+              stroke="#403328"
+              strokeWidth="14"
               strokeLinecap="round"
               strokeLinejoin="round"
-              opacity="0.35"
+              opacity="0.8"
             />
-            {/* Inner neon guide path */}
+            {/* Center infill road - Solid cobblestone accent */}
             <path
               d="M 73.5 73.5 L 248.5 73.5 L 248.5 256.5 L 73.5 256.5 Z"
               fill="none"
-              stroke="#E57A44"
-              strokeWidth="2.5"
+              stroke="#8C7355"
+              strokeWidth="6"
               strokeLinecap="round"
               strokeLinejoin="round"
-              strokeDasharray="6 4"
-              opacity="0.65"
+              opacity="0.9"
             />
 
-            {/* Crossways meeting in the center plaza */}
-            <line x1="73.5" y1="73.5" x2="248.5" y2="256.5" stroke="#5C4A38" strokeWidth="10" opacity="0.35" />
-            <line x1="73.5" y1="73.5" x2="248.5" y2="256.5" stroke="#E57A44" strokeWidth="2" strokeDasharray="4 4" opacity="0.6" />
+            {/* Solid crossways pathways meeting at center plaza */}
+            <line x1="73.5" y1="73.5" x2="248.5" y2="256.5" stroke="#403328" strokeWidth="12" opacity="0.8" />
+            <line x1="73.5" y1="73.5" x2="248.5" y2="256.5" stroke="#8C7355" strokeWidth="5" opacity="0.9" />
 
-            <line x1="248.5" y1="73.5" x2="73.5" y2="256.5" stroke="#5C4A38" strokeWidth="10" opacity="0.35" />
-            <line x1="248.5" y1="73.5" x2="73.5" y2="256.5" stroke="#E57A44" strokeWidth="2" strokeDasharray="4 4" opacity="0.6" />
+            <line x1="248.5" y1="73.5" x2="73.5" y2="256.5" stroke="#403328" strokeWidth="12" opacity="0.8" />
+            <line x1="248.5" y1="73.5" x2="73.5" y2="256.5" stroke="#8C7355" strokeWidth="5" opacity="0.9" />
 
-            {/* Center Plaza Circle */}
-            <circle cx="165" cy="165" r="35" fill="none" stroke="#5C4A38" strokeWidth="8" opacity="0.4" />
-            <circle cx="165" cy="165" r="35" fill="none" stroke="#E57A44" strokeWidth="2.5" opacity="0.8" className="animate-pulse" />
+            {/* Center Plaza - solid stone platform */}
+            <circle cx="165" cy="165" r="38" fill="#1C273C" stroke="#403328" strokeWidth="8" opacity="0.9" />
+            <circle cx="165" cy="165" r="30" fill="none" stroke="#8C7355" strokeWidth="4" opacity="0.9" />
           </svg>
 
           {/* Isometric Grid lines overlay on the floor */}
-          <div className="absolute inset-0 grid grid-cols-4 grid-rows-4 opacity-10 pointer-events-none z-0">
+          <div className="absolute inset-0 grid grid-cols-4 grid-rows-4 opacity-5 pointer-events-none z-0">
             {Array.from({ length: 16 }).map((_, i) => (
-              <div key={i} className="border border-white/20"></div>
+              <div key={i} className="border border-white/10"></div>
             ))}
           </div>
+
+          {/* Surrounding Fortress Wall */}
+          <FortressWall level={finalWallLevel} />
 
           {/* 1. BANK (Top-Left in local coordinates -> Left corner on screen) */}
           <div
