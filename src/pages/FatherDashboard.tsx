@@ -1,9 +1,36 @@
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import DynamicCarousel from '../components/ui/DynamicCarousel';
 
 export default function FatherDashboard() {
   const { kids, projects, activeLeague } = useApp();
+
+  const [countdownText, setCountdownText] = useState('');
+
+  useEffect(() => {
+    if (!activeLeague || !activeLeague.isActive || !activeLeague.endDate) return;
+
+    const updateTimer = () => {
+      const target = new Date(activeLeague.endDate!).getTime();
+      const now = new Date().getTime();
+      const diff = target - now;
+
+      if (diff <= 0) {
+        setCountdownText('انتهت مدة التحدي 🏁');
+      } else {
+        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+        setCountdownText(`المتبقي: ${days} يوم، ${hours} ساعة، ${minutes} دقيقة، ${seconds} ثانية`);
+      }
+    };
+
+    updateTimer();
+    const interval = setInterval(updateTimer, 1000);
+    return () => clearInterval(interval);
+  }, [activeLeague]);
 
   // Calculate total family balance (sum of all kids' saved amounts)
   const totalBalance = kids.reduce((sum, kid) => sum + kid.saved, 0);
@@ -153,11 +180,19 @@ export default function FatherDashboard() {
               تحدي وتنافس مالي وتربوي إيجابي بين الأبناء (خالد وسالم) لتعزيز ثقافة الادخار والاستثمار الذكي.
             </p>
             
-            <div className="bg-white/5 p-2 rounded-xl border border-white/5 flex justify-between items-center text-xs font-sans">
-              <span className={activeLeague?.isActive ? "text-emerald-400 font-extrabold" : "text-orange-400 font-extrabold"}>
-                {activeLeague?.isActive ? "دوري نشط حالياً 🔥" : "ابدأ تحدي جديد الآن 🎯"}
-              </span>
-              <span className="text-slate-400">حالة التحدي:</span>
+            <div className="bg-white/5 p-2 rounded-xl border border-white/5 flex flex-col gap-1.5 text-xs font-sans">
+              <div className="flex justify-between items-center w-full">
+                <span className={activeLeague?.isActive ? "text-emerald-400 font-extrabold" : "text-orange-400 font-extrabold"}>
+                  {activeLeague?.isActive ? "دوري نشط حالياً 🔥" : "ابدأ تحدي جديد الآن 🎯"}
+                </span>
+                <span className="text-slate-400">حالة التحدي:</span>
+              </div>
+              {activeLeague?.isActive && countdownText && (
+                <div className="flex justify-between items-center w-full border-t border-white/5 pt-1.5 font-sans">
+                  <span className="text-orange-300 font-bold">{countdownText}</span>
+                  <span className="text-slate-400 text-[10px]">الوقت المتبقي:</span>
+                </div>
+              )}
             </div>
           </div>
           <button className="w-full mt-4 bg-white/5 hover:bg-white/10 text-white font-bold py-2 rounded-xl text-xs border border-white/10 transition-all">

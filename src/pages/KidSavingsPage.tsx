@@ -4,7 +4,7 @@ import { useApp } from '../context/AppContext';
 
 export default function KidSavingsPage() {
   const navigate = useNavigate();
-  const { kids, profile, addSavingsGoal, addToGoal, withdrawGoal } = useApp();
+  const { kids, profile, addSavingsGoal, addToGoal, withdrawGoal, activeLeague } = useApp();
   
   // Find current active kid
   const kid = kids.find((k) => k.name === profile?.name) || kids.find((k) => k.name === 'سالم') || kids[0];
@@ -43,6 +43,10 @@ export default function KidSavingsPage() {
   };
 
   const handleWithdraw = (goalId: string, goalTitle: string) => {
+    if (goalTitle === 'حصالة دوري العائلة 🏆' && activeLeague && activeLeague.isActive) {
+      alert('لا يمكن سحب مدخرات دوري العائلة حتى يتم إعلان نتائج الدوري من قبل والدك! 🏆🔒');
+      return;
+    }
     withdrawGoal(kid.name, goalId);
     alert(`تهانينا! 🎉 تم سحب كامل مبلغ حصالة "${goalTitle}" وإضافته إلى رصيدك المتاح بنجاح! 🔓💰`);
   };
@@ -133,7 +137,8 @@ export default function KidSavingsPage() {
               const customAddAmount = addAmounts[goal.id] || 0;
               const isGoalAchieved = goal.currentAmount >= goal.targetAmount;
               const isDeadlinePassed = goal.deadlineDate && new Date() > new Date(goal.deadlineDate);
-              const isUnlocked = !goal.isLocked || isGoalAchieved || isDeadlinePassed;
+              const isLeagueSavings = goal.title === 'حصالة دوري العائلة 🏆' && activeLeague && activeLeague.isActive;
+              const isUnlocked = !isLeagueSavings && (!goal.isLocked || isGoalAchieved || isDeadlinePassed);
 
               return (
                 <div

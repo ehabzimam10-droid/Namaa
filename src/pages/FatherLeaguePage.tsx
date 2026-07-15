@@ -20,6 +20,31 @@ export default function FatherLeaguePage() {
   const [isAiLoading, setIsAiLoading] = useState(false);
   const [aiEvaluations, setAiEvaluations] = useState<any[]>([]);
   const [customScores, setCustomScores] = useState<Record<string, number>>({});
+  const [countdownText, setCountdownText] = useState('');
+
+  useEffect(() => {
+    if (!activeLeague || !activeLeague.isActive || !activeLeague.endDate) return;
+
+    const updateTimer = () => {
+      const target = new Date(activeLeague.endDate!).getTime();
+      const now = new Date().getTime();
+      const diff = target - now;
+
+      if (diff <= 0) {
+        setCountdownText('انتهت مدة التحدي 🏁');
+      } else {
+        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+        setCountdownText(`المتبقي: ${days} يوم، ${hours} ساعة، ${minutes} دقيقة، ${seconds} ثانية`);
+      }
+    };
+
+    updateTimer();
+    const interval = setInterval(updateTimer, 1000);
+    return () => clearInterval(interval);
+  }, [activeLeague]);
 
   useEffect(() => {
     if (kids.length > 0 && Object.keys(allowances).length === 0) {
@@ -263,6 +288,11 @@ export default function FatherLeaguePage() {
               <p className="text-[9px] text-slate-400">
                 المعايير المعتمدة: {activeLeague.bases.join(' ، ')}
               </p>
+              {countdownText && (
+                <span className="text-[10px] text-orange-300 font-bold block mt-1 font-sans">
+                  {countdownText}
+                </span>
+              )}
             </div>
           </div>
 
@@ -334,7 +364,7 @@ export default function FatherLeaguePage() {
                     {activeLeague.bases.includes('إنجاز المهام') && (
                       <div className="bg-white/5 border border-white/5 p-3 rounded-2xl text-center space-y-1">
                         <span className="text-[9px] text-slate-400 block">المهام 🧹</span>
-                        <span className="text-xs font-bold text-white font-sans">{scores.tasksScore}/50</span>
+                        <span className="text-xs font-bold text-white font-sans">{scores.tasksScore}/100</span>
                         <span className="text-[8px] text-slate-500 block font-sans">({scores.approvedTasks}/{scores.totalTasks})</span>
                       </div>
                     )}
@@ -342,7 +372,7 @@ export default function FatherLeaguePage() {
                     {activeLeague.bases.includes('إدارة المصروف') && (
                       <div className="bg-white/5 border border-white/5 p-3 rounded-2xl text-center space-y-1">
                         <span className="text-[9px] text-slate-400 block">المصروف 🛒</span>
-                        <span className="text-xs font-bold text-white font-sans">{scores.spendingScore}/50</span>
+                        <span className="text-xs font-bold text-white font-sans">{scores.spendingScore}/100</span>
                         <span className="text-[8px] text-slate-500 block font-sans">({scores.spentAmount} ر)</span>
                       </div>
                     )}

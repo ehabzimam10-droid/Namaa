@@ -1,9 +1,36 @@
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 
 export default function KidLeaguePage() {
   const navigate = useNavigate();
   const { kids, profile, activeLeague, calculateKidScores } = useApp();
+
+  const [countdownText, setCountdownText] = useState('');
+
+  useEffect(() => {
+    if (!activeLeague || !activeLeague.isActive || !activeLeague.endDate) return;
+
+    const updateTimer = () => {
+      const target = new Date(activeLeague.endDate!).getTime();
+      const now = new Date().getTime();
+      const diff = target - now;
+
+      if (diff <= 0) {
+        setCountdownText('انتهت مدة التحدي 🏁');
+      } else {
+        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+        setCountdownText(`المتبقي: ${days} يوم، ${hours} ساعة، ${minutes} دقيقة، ${seconds} ثانية`);
+      }
+    };
+
+    updateTimer();
+    const interval = setInterval(updateTimer, 1000);
+    return () => clearInterval(interval);
+  }, [activeLeague]);
 
   const activeKid = kids.find(k => k.name === profile?.name) || kids.find(k => k.name === 'سالم') || kids[0];
 
@@ -78,6 +105,11 @@ export default function KidLeaguePage() {
             <div className="text-[10px] text-slate-400 pt-1">
               الجائزة الكبرى للدوري: <strong className="text-orange-300">{activeLeague.prize} 🎁</strong>
             </div>
+            {countdownText && (
+              <div className="text-[10px] text-orange-300 font-bold font-sans pt-1.5 border-t border-white/5 mt-2">
+                الوقت المتبقي: {countdownText}
+              </div>
+            )}
           </div>
 
           {/* Sibling Leaderboard comparison */}

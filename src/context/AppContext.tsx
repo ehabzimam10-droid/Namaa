@@ -668,6 +668,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const goal = (targetKid.savingsGoals || []).find((g) => g.id === goalId);
     if (!goal || goal.isLocked) return;
 
+    if (goal.title === 'حصالة دوري العائلة 🏆' && activeLeague && activeLeague.isActive) {
+      console.warn('Cannot withdraw from the active league savings goal.');
+      return;
+    }
+
     const kidId = targetKid.id;
     const amountToWithdraw = goal.currentAmount;
     const updatedBalance = targetKid.balance + amountToWithdraw;
@@ -754,6 +759,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         const updatedGoals = (kid.savingsGoals || []).filter((goal) => {
           const isTargetAchieved = goal.currentAmount >= goal.targetAmount;
           const isDeadlinePassed = goal.deadlineDate && new Date() > new Date(goal.deadlineDate);
+
+          if (goal.title === 'حصالة دوري العائلة 🏆' && activeLeague && activeLeague.isActive) {
+            return true;
+          }
 
           if (goal.isLocked && (isTargetAchieved || isDeadlinePassed)) {
             kidChanged = true;
