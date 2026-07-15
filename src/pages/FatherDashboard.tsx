@@ -3,7 +3,7 @@ import { useApp } from '../context/AppContext';
 import DynamicCarousel from '../components/ui/DynamicCarousel';
 
 export default function FatherDashboard() {
-  const { kids, projects } = useApp();
+  const { kids, projects, activeLeague } = useApp();
 
   // Calculate total family balance (sum of all kids' saved amounts)
   const totalBalance = kids.reduce((sum, kid) => sum + kid.saved, 0);
@@ -145,27 +145,29 @@ export default function FatherDashboard() {
           </div>
         </Link>
 
-        {/* Card 5: دوري العائلات */}
-        <div className="relative overflow-hidden bg-white/5 backdrop-blur-xl border border-white/10 shadow-2xl rounded-3xl p-6 flex flex-col justify-between transition-all hover:scale-[1.01] duration-300">
+        {/* Card 5: دوري العائلة 🏆 */}
+        <Link to="/father/league" className="relative overflow-hidden bg-white/5 backdrop-blur-xl border border-white/10 shadow-2xl rounded-3xl p-6 flex flex-col justify-between transition-all hover:scale-[1.01] duration-300">
           <div className="absolute -left-6 -top-6 text-6xl opacity-15">🏆</div>
           <div className="space-y-3">
             <div className="flex items-center justify-end gap-2">
-              <h4 className="text-lg font-bold text-white">دوري العائلات</h4>
+              <h4 className="text-lg font-bold text-white">دوري العائلة 🏆</h4>
               <span className="text-xl">🏆</span>
             </div>
-            <p className="text-xs text-slate-300 leading-relaxed">
-              تنافس إيجابي وتحديات توفير مشتركة بين العائلات على مستوى الحي أو المدرسة.
+            <p className="text-xs text-slate-300 leading-relaxed text-right">
+              تحدي وتنافس مالي وتربوي إيجابي بين الأبناء (خالد وسالم) لتعزيز ثقافة الادخار والاستثمار الذكي.
             </p>
             
             <div className="bg-white/5 p-2 rounded-xl border border-white/5 flex justify-between items-center text-xs font-sans">
-              <span className="text-emerald-400 font-extrabold">المركز الـ 3 🥉</span>
-              <span className="text-slate-400">ترتيب عائلة آل مطر:</span>
+              <span className={activeLeague?.isActive ? "text-emerald-400 font-extrabold" : "text-orange-400 font-extrabold"}>
+                {activeLeague?.isActive ? "دوري نشط حالياً 🔥" : "ابدأ تحدي جديد الآن 🎯"}
+              </span>
+              <span className="text-slate-400">حالة التحدي:</span>
             </div>
           </div>
           <button className="w-full mt-4 bg-white/5 hover:bg-white/10 text-white font-bold py-2 rounded-xl text-xs border border-white/10 transition-all">
-            استعراض لوحة الصدارة 🏆
+            استعراض الدوري 🏆
           </button>
-        </div>
+        </Link>
 
       </div>
     </div>

@@ -1066,7 +1066,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         return !isSavings && !isInvestment && !isDonation;
       })
       .reduce((sum, tx) => sum + tx.amount, 0);
-    const spendingScore = activeLeague.bases.includes('إدارة المصروف')
+    const isLeagueEnded = new Date() >= new Date(activeLeague.endDate);
+    const spendingScore = activeLeague.bases.includes('إدارة المصروف') && isLeagueEnded
       ? Math.max(0, 50 - Math.round((spentAmount / baseAllowance) * 50))
       : 0;
 

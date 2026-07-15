@@ -14,6 +14,7 @@ export default function FatherLeaguePage() {
   const [endDate, setEndDate] = useState('');
   const [allowances, setAllowances] = useState<Record<string, number>>({});
   const [errorMsg, setErrorMsg] = useState('');
+  const [showEndConfirm, setShowEndConfirm] = useState(false);
 
   useEffect(() => {
     if (kids.length > 0 && Object.keys(allowances).length === 0) {
@@ -66,15 +67,8 @@ export default function FatherLeaguePage() {
     }
   };
 
-  const handleEndLeague = async () => {
-    const firstConfirm = window.confirm('هل أنت متأكد من رغبتك في إنهاء التحدي مبكراً؟');
-    if (!firstConfirm) return;
-    const secondConfirm = window.confirm('تحذير: سيؤدي هذا إلى إنهاء التحدي نهائياً وإلغاء جميع المهام المعلقة للأبناء. هل أنت متأكد تماماً؟');
-    if (!secondConfirm) return;
-
-    if (activeLeague.id !== undefined) {
-      await endFamilyLeague(activeLeague.id);
-    }
+  const handleEndLeague = () => {
+    setShowEndConfirm(true);
   };
 
   // Compile leaderboard
@@ -303,7 +297,7 @@ export default function FatherLeaguePage() {
                     {activeLeague.bases.includes('إنجاز المهام') && (
                       <div className="bg-white/5 border border-white/5 p-3 rounded-2xl text-center space-y-1">
                         <span className="text-[9px] text-slate-400 block">المهام 🧹</span>
-                        <span className="text-xs font-bold text-white font-sans">{scores.tasksScore}/100</span>
+                        <span className="text-xs font-bold text-white font-sans">{scores.tasksScore}/50</span>
                         <span className="text-[8px] text-slate-500 block font-sans">({scores.approvedTasks}/{scores.totalTasks})</span>
                       </div>
                     )}
@@ -311,7 +305,7 @@ export default function FatherLeaguePage() {
                     {activeLeague.bases.includes('إدارة المصروف') && (
                       <div className="bg-white/5 border border-white/5 p-3 rounded-2xl text-center space-y-1">
                         <span className="text-[9px] text-slate-400 block">المصروف 🛒</span>
-                        <span className="text-xs font-bold text-white font-sans">{scores.spendingScore}/100</span>
+                        <span className="text-xs font-bold text-white font-sans">{scores.spendingScore}/50</span>
                         <span className="text-[8px] text-slate-500 block font-sans">({scores.spentAmount} ر)</span>
                       </div>
                     )}
@@ -319,6 +313,39 @@ export default function FatherLeaguePage() {
                 </div>
               );
             })}
+          </div>
+        </div>
+      )}
+
+      {/* Custom Glassmorphism Confirmation Modal */}
+      {showEndConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
+          <div className="w-full max-w-md bg-[#0D1527]/90 border border-white/10 p-6 rounded-3xl text-right space-y-4 shadow-2xl relative">
+            <h3 className="text-lg font-black text-white">هل أنت متأكد؟</h3>
+            <p className="text-xs text-slate-300 leading-relaxed">
+              سيتم إنهاء الدوري الحالي وإلغاء جميع المهام المعلقة للأبناء بشكل نهائي. هل تريد الاستمرار؟
+            </p>
+            <div className="flex gap-3 justify-end pt-2">
+              <button
+                type="button"
+                onClick={() => setShowEndConfirm(false)}
+                className="px-4 py-2 border border-white/10 rounded-xl text-xs font-bold text-slate-350 hover:bg-white/5 transition-all"
+              >
+                إلغاء
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  setShowEndConfirm(false);
+                  if (activeLeague.id !== undefined) {
+                    await endFamilyLeague(activeLeague.id);
+                  }
+                }}
+                className="px-4 py-2 bg-rose-500 hover:bg-rose-600 text-white rounded-xl text-xs font-bold transition-all shadow-lg"
+              >
+                نعم، متأكد
+              </button>
+            </div>
           </div>
         </div>
       )}
