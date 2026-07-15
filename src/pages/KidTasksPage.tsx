@@ -4,7 +4,7 @@ import { useApp } from '../context/AppContext';
 
 export default function KidTasksPage() {
   const navigate = useNavigate();
-  const { kids, profile, submitTaskProof } = useApp();
+  const { kids, profile, submitTaskProof, showToast } = useApp();
   
   // Find current active kid
   const kid = kids.find((k) => k.name === profile?.name) || kids.find((k) => k.name === 'سالم') || kids[0];
@@ -22,7 +22,7 @@ export default function KidTasksPage() {
     setTimeout(async () => {
       await submitTaskProof(taskId);
       setUploadLoading((prev) => ({ ...prev, [taskId]: false }));
-      alert('تم رفع إثبات إنجاز المهمة بنجاح وهو الآن قيد مراجعة ولي الأمر! 📸✨');
+      showToast('تم رفع إثبات إنجاز المهمة بنجاح وهو الآن قيد مراجعة ولي الأمر! 📸✨', 'success');
     }, 1200);
   };
 

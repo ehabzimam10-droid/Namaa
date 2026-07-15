@@ -92,18 +92,29 @@ export default function KidLeaguePage() {
               </div>
 
               {/* Winner announcement card */}
-              {compiledList.length > 0 && (
-                <div className="bg-white/5 border border-white/10 rounded-3xl p-6 text-center space-y-4 relative overflow-hidden backdrop-blur-xl">
-                  <div className="absolute -left-10 -top-10 h-32 w-32 rounded-full bg-yellow-500/10 blur-2xl"></div>
+              {compiledList.length > 0 && (() => {
+                const maxPoints = compiledList[0].scores.totalPoints;
+                const winners = compiledList.filter(item => item.scores.totalPoints === maxPoints);
+                const isTie = winners.length > 1;
+                const winnerNames = winners.map(w => w.kid.name).join(' و');
 
-                  <div className="inline-flex flex-col items-center">
-                    <span className="text-5xl mb-2 animate-bounce">👑</span>
-                    <span className="text-sm font-semibold text-slate-400">بطل دوري العائلة المالي:</span>
-                    <span className="text-2xl font-black text-yellow-300 mt-1">{compiledList[0].kid.name} 👑</span>
-                    <span className="text-xs text-slate-300 mt-1 font-sans">بمجموع نقاط {compiledList[0].scores.totalPoints} نقطة 🌟</span>
+                return (
+                  <div className="bg-white/5 border border-white/10 rounded-3xl p-6 text-center space-y-4 relative overflow-hidden backdrop-blur-xl">
+                    <div className="absolute -left-10 -top-10 h-32 w-32 rounded-full bg-yellow-500/10 blur-2xl"></div>
+                    
+                    <div className="inline-flex flex-col items-center">
+                      <span className="text-5xl mb-2 animate-bounce">👑</span>
+                      <span className="text-sm font-semibold text-slate-400">
+                        {isTie ? 'أبطال دوري العائلة المشتركون:' : 'بطل دوري العائلة المالي:'}
+                      </span>
+                      <span className="text-2xl font-black text-yellow-300 mt-1">
+                        {isTie ? `أبطال دوري العائلة: ${winnerNames} 👑🏆` : `${compiledList[0].kid.name} 👑`}
+                      </span>
+                      <span className="text-xs text-slate-300 mt-1 font-sans">بمجموع نقاط {maxPoints} نقطة 🌟</span>
+                    </div>
                   </div>
-                </div>
-              )}
+                );
+              })()}
 
               {/* Final leaderboard list */}
               <div className="bg-white/5 border border-white/10 rounded-3xl p-6 text-right space-y-4">

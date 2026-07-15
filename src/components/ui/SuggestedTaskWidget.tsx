@@ -16,7 +16,7 @@ export default function SuggestedTaskWidget({
   type: initialType,
   reasoning
 }: SuggestedTaskWidgetProps) {
-  const { assignManualTask, kids, activeLeague } = useApp();
+  const { assignManualTask, kids, activeLeague, showToast } = useApp();
   const [status, setStatus] = useState<'idle' | 'approved' | 'rejected'>('idle');
 
   // Local state for editable task fields
@@ -49,15 +49,15 @@ export default function SuggestedTaskWidget({
 
   const handleApprove = async () => {
     if (difficulty === 'easy' && remainingEasy === 0) {
-      alert('عذراً، لقد استنفدت عدد المهام السهلة المسموح بها (الحد الأقصى: 5)');
+      showToast('عذراً، لقد استنفدت عدد المهام السهلة المسموح بها (الحد الأقصى: 5)', 'error');
       return;
     }
     if (difficulty === 'medium' && remainingMedium === 0) {
-      alert('عذراً، لقد استنفدت عدد المهام المتوسطة المسموح بها (الحد الأقصى: 3)');
+      showToast('عذراً، لقد استنفدت عدد المهام المتوسطة المسموح بها (الحد الأقصى: 3)', 'error');
       return;
     }
     if (difficulty === 'hard' && remainingHard === 0) {
-      alert('عذراً، لقد استنفدت عدد المهام الصعبة المسموح بها (الحد الأقصى: 3)');
+      showToast('عذراً، لقد استنفدت عدد المهام الصعبة المسموح بها (الحد الأقصى: 3)', 'error');
       return;
     }
 

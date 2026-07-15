@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { mockFamilyData } from '../data/mockData';
 import type { Kid, FamilyProject, Task, Transaction, SavingsGoal, ActiveLeague } from '../data/mockData';
 import { supabase } from '../utils/supabaseClient';
@@ -63,6 +63,8 @@ interface AppContextType {
   };
   transferAllowance: (kidId: string, amount: number) => Promise<void>;
   simulateDailyPurchase: (kidName: string, amount: number, reason: string) => Promise<void>;
+  toast: { show: boolean; message: string; type: 'success' | 'error' | null };
+  showToast: (message: string, type: 'success' | 'error') => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -72,6 +74,24 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const savedProfile = localStorage.getItem('namaa_profile');
     return savedProfile ? JSON.parse(savedProfile) : null;
   });
+
+  const [toast, setToastState] = useState<{ show: boolean; message: string; type: 'success' | 'error' | null }>({
+    show: false,
+    message: '',
+    type: null,
+  });
+
+  const toastTimerRef = useRef<any>(null);
+
+  const showToast = (message: string, type: 'success' | 'error') => {
+    if (toastTimerRef.current) {
+      clearTimeout(toastTimerRef.current);
+    }
+    setToastState({ show: true, message, type });
+    toastTimerRef.current = setTimeout(() => {
+      setToastState({ show: false, message: '', type: null });
+    }, 3000);
+  };
 
   const [kids, setKids] = useState<Kid[]>(() => {
     const savedKids = localStorage.getItem('namaa_kids_v14');
@@ -1546,6 +1566,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         calculateKidScores,
         transferAllowance,
         simulateDailyPurchase,
+        toast,
+        showToast,
       }}
     >
       {children}

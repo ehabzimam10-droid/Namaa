@@ -5,7 +5,7 @@ import { useApp } from '../context/AppContext';
 
 export default function DeveloperDashboard() {
   const navigate = useNavigate();
-  const { setProfile, geminiApiKey, setGeminiApiKey, runCleanup } = useApp();
+  const { setProfile, geminiApiKey, setGeminiApiKey, runCleanup, showToast } = useApp();
   const [loginLoading, setLoginLoading] = useState<string | null>(null);
   const [cleanupLoading, setCleanupLoading] = useState(false);
 
@@ -13,7 +13,7 @@ export default function DeveloperDashboard() {
     setCleanupLoading(true);
     try {
       await runCleanup();
-      alert('تم تنظيف المهام المعتمدة والمنتهية والإشعارات بنجاح من قاعدة البيانات! 🧹✨');
+      showToast('تم تنظيف المهام المعتمدة والمنتهية والإشعارات بنجاح من قاعدة البيانات! 🧹✨', 'success');
     } catch (err) {
       console.error(err);
     } finally {

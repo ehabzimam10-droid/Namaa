@@ -4,7 +4,7 @@ import { useApp } from '../context/AppContext';
 
 export default function KidSavingsPage() {
   const navigate = useNavigate();
-  const { kids, profile, addSavingsGoal, addToGoal, withdrawGoal, activeLeague } = useApp();
+  const { kids, profile, addSavingsGoal, addToGoal, withdrawGoal, activeLeague, showToast } = useApp();
   
   // Find current active kid
   const kid = kids.find((k) => k.name === profile?.name) || kids.find((k) => k.name === 'سالم') || kids[0];
@@ -25,7 +25,7 @@ export default function KidSavingsPage() {
     setNewTitle('');
     setNewTarget('');
     setNewDeadline('');
-    alert('تم إنشاء حصالة ادخار جديدة مقفلة! 🔒✨');
+    showToast('تم إنشاء حصالة ادخار جديدة مقفلة! 🔒✨', 'success');
   };
 
   const handleAddMoney = (goalId: string) => {
@@ -33,22 +33,22 @@ export default function KidSavingsPage() {
     if (amount <= 0) return;
 
     if (kid.balance < amount) {
-      alert('عذراً، الرصيد المتاح غير كافٍ! 😔');
+      showToast('عذراً، الرصيد المتاح غير كافٍ! 😔', 'error');
       return;
     }
 
     addToGoal(kid.name, goalId, amount);
     setAddAmounts((prev) => ({ ...prev, [goalId]: 0 }));
-    alert('تم إيداع المبلغ بنجاح في الحصالة المقفلة! 🔒💰');
+    showToast('تم إيداع المبلغ بنجاح في الحصالة المقفلة! 🔒💰', 'success');
   };
 
   const handleWithdraw = (goalId: string, goalTitle: string) => {
     if (goalTitle === 'حصالة دوري العائلة 🏆' && activeLeague && activeLeague.isActive) {
-      alert('لا يمكن سحب مدخرات دوري العائلة حتى يتم إعلان نتائج الدوري من قبل والدك! 🏆🔒');
+      showToast('لا يمكن سحب مدخرات دوري العائلة حتى يتم إعلان نتائج الدوري من قبل والدك! 🏆🔒', 'error');
       return;
     }
     withdrawGoal(kid.name, goalId);
-    alert(`تهانينا! 🎉 تم سحب كامل مبلغ حصالة "${goalTitle}" وإضافته إلى رصيدك المتاح بنجاح! 🔓💰`);
+    showToast(`تهانينا! 🎉 تم سحب كامل مبلغ حصالة "${goalTitle}" وإضافته إلى رصيدك المتاح بنجاح! 🔓💰`, 'success');
   };
 
   return (

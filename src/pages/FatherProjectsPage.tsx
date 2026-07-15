@@ -4,7 +4,7 @@ import { useApp } from '../context/AppContext';
 
 export default function FatherProjectsPage() {
   const navigate = useNavigate();
-  const { projects, addProject, calculateROI } = useApp();
+  const { projects, addProject, calculateROI, showToast } = useApp();
 
   // Form states
   const [title, setTitle] = useState('');
@@ -25,7 +25,7 @@ export default function FatherProjectsPage() {
       setRequired('');
       setRoi('');
       setIsLoading(false);
-      alert('تم إضافة المشروع الاستثماري بنجاح سحابياً ومحلياً! 🚀');
+      showToast('تم إضافة المشروع الاستثماري بنجاح سحابياً ومحلياً! 🚀', 'success');
     }, 800);
   };
 

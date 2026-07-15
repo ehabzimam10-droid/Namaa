@@ -8,7 +8,7 @@ interface AssignTaskModalProps {
 }
 
 export default function AssignTaskModal({ isOpen, onClose, kidName }: AssignTaskModalProps) {
-  const { assignManualTask, kids, activeLeague } = useApp();
+  const { assignManualTask, kids, activeLeague, showToast } = useApp();
 
   const [title, setTitle] = useState('');
   const [rewardType, setRewardType] = useState<'cash' | 'points' | 'custom'>('cash');
@@ -46,15 +46,15 @@ export default function AssignTaskModal({ isOpen, onClose, kidName }: AssignTask
 
     if (activeLeague && activeLeague.isActive) {
       if (difficulty === 'easy' && remainingEasy === 0) {
-        alert('عذراً، لقد استنفدت عدد المهام السهلة المسموح بها (الحد الأقصى: 5)');
+        showToast('عذراً، لقد استنفدت عدد المهام السهلة المسموح بها (الحد الأقصى: 5)', 'error');
         return;
       }
       if (difficulty === 'medium' && remainingMedium === 0) {
-        alert('عذراً، لقد استنفدت عدد المهام المتوسطة المسموح بها (الحد الأقصى: 3)');
+        showToast('عذراً، لقد استنفدت عدد المهام المتوسطة المسموح بها (الحد الأقصى: 3)', 'error');
         return;
       }
       if (difficulty === 'hard' && remainingHard === 0) {
-        alert('عذراً، لقد استنفدت عدد المهام الصعبة المسموح بها (الحد الأقصى: 3)');
+        showToast('عذراً، لقد استنفدت عدد المهام الصعبة المسموح بها (الحد الأقصى: 3)', 'error');
         return;
       }
     }
@@ -93,7 +93,7 @@ export default function AssignTaskModal({ isOpen, onClose, kidName }: AssignTask
         setDifficulty('easy');
         setBindToLeagueEnd(false);
         onClose();
-        alert(`تم إسناد المهمة "${title}" للابن ${kidName} بنجاح! 🎯✨`);
+        showToast(`تم إسناد المهمة "${title}" للابن ${kidName} بنجاح! 🎯✨`, 'success');
       } catch (err) {
         console.error(err);
         setIsLoading(false);

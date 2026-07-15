@@ -5,7 +5,7 @@ import { donationCauses } from '../data/mockData';
 
 export default function KidDonationsPage() {
   const navigate = useNavigate();
-  const { kids, profile, addDonation } = useApp();
+  const { kids, profile, addDonation, showToast } = useApp();
 
   // Find current active kid
   const kid = kids.find((k) => k.name === profile?.name) || kids.find((k) => k.name === 'سالم') || kids[0];
@@ -25,7 +25,7 @@ export default function KidDonationsPage() {
       await addDonation(kid.id, amount);
       setAmounts((prev) => ({ ...prev, [causeId]: 0 }));
       setLoading((prev) => ({ ...prev, [causeId]: false }));
-      alert(`شكراً لمساهمتك الكريمة بقيمة ${amount} ريال في مبادرة "${causeTitle}"! 💚🤲`);
+      showToast(`شكراً لمساهمتك الكريمة بقيمة ${amount} ريال في مبادرة "${causeTitle}"! 💚🤲`, 'success');
     }, 800);
   };
 

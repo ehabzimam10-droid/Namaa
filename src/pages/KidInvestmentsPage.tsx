@@ -4,7 +4,7 @@ import { useApp } from '../context/AppContext';
 
 export default function KidInvestmentsPage() {
   const navigate = useNavigate();
-  const { kids, profile, projects, investInProject } = useApp();
+  const { kids, profile, projects, investInProject, showToast } = useApp();
   
   // Find current active kid
   const kid = kids.find((k) => k.name === profile?.name) || kids.find((k) => k.name === 'سالم') || kids[0];
@@ -24,7 +24,7 @@ export default function KidInvestmentsPage() {
       await investInProject(kid.name, projectId, amount);
       setInvestLoading((prev) => ({ ...prev, [projectId]: false }));
       setInvestAmounts((prev) => ({ ...prev, [projectId]: 0 }));
-      alert(`تهانينا! 🎉 تم استثمار ${amount} ريال في مشروع "${projectTitle}" بنجاح! 📈💰`);
+      showToast(`تهانينا! 🎉 تم استثمار ${amount} ريال في مشروع "${projectTitle}" بنجاح! 📈💰`, 'success');
     }, 800);
   };
 

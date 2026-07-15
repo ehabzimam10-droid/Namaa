@@ -13,6 +13,7 @@ import FatherAICoachPage from './pages/FatherAICoachPage';
 import FatherLeaguePage from './pages/FatherLeaguePage';
 import KidLeaguePage from './pages/KidLeaguePage';
 import DashboardLayout from './components/layout/DashboardLayout';
+import { useApp } from './context/AppContext';
 
 function AuthLayout() {
   return (
@@ -47,8 +48,20 @@ function AuthLayout() {
 }
 
 function App() {
+  const { toast } = useApp();
+
   return (
     <BrowserRouter>
+      {toast.show && (
+        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[999] bg-[#111C2E]/90 backdrop-blur-xl border border-white/10 px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3 animate-bounce max-w-sm text-right">
+          <span className="text-lg">
+            {toast.type === 'success' ? '🎉' : '❌'}
+          </span>
+          <span className="text-xs font-bold text-white leading-relaxed">
+            {toast.message}
+          </span>
+        </div>
+      )}
       <Routes>
         {/* Auth / Dev Routes inside AuthLayout */}
         <Route element={<AuthLayout />}>

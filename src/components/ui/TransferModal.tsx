@@ -9,7 +9,7 @@ interface TransferModalProps {
 }
 
 export default function TransferModal({ isOpen, onClose, kidId, kidName }: TransferModalProps) {
-  const { transferMoney } = useApp();
+  const { transferMoney, showToast } = useApp();
 
   const [amount, setAmount] = useState<number | ''>('');
   const [reasonCategory, setReasonCategory] = useState<'مصروف' | 'عائد مستحق' | 'جائزة' | 'أخرى'>('مصروف');
@@ -35,7 +35,7 @@ export default function TransferModal({ isOpen, onClose, kidId, kidName }: Trans
       setReasonCategory('مصروف');
       setCustomReason('');
       onClose();
-      alert(`تم تحويل مبلغ ${amount} ريال للابن ${kidName} بنجاح! 💸✨`);
+      showToast(`تم تحويل مبلغ ${amount} ريال للابن ${kidName} بنجاح! 💸✨`, 'success');
     }, 800);
   };
 
