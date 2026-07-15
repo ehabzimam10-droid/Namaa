@@ -8,7 +8,7 @@ interface AssignTaskModalProps {
 }
 
 export default function AssignTaskModal({ isOpen, onClose, kidName }: AssignTaskModalProps) {
-  const { assignManualTask } = useApp();
+  const { assignManualTask, kids } = useApp();
 
   const [title, setTitle] = useState('');
   const [rewardType, setRewardType] = useState<'cash' | 'points' | 'custom'>('cash');
@@ -16,6 +16,21 @@ export default function AssignTaskModal({ isOpen, onClose, kidName }: AssignTask
   const [customReward, setCustomReward] = useState('');
   const [endDate, setEndDate] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
+  const kid = kids.find(k => k.name === kidName);
+  const now = new Date();
+  const currentMonthTasks = kid ? (kid.tasks || []).filter(task => {
+    const d = task.createdAt ? new Date(task.createdAt) : new Date();
+    return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+  }) : [];
+
+  const currentEasy = currentMonthTasks.filter(t => t.rewardType === 'points' ? t.rewardAmount <= 3 : t.rewardAmount <= 15).length;
+  const currentMedium = currentMonthTasks.filter(t => t.rewardType === 'points' ? (t.rewardAmount > 3 && t.rewardAmount <= 7) : (t.rewardAmount > 15 && t.rewardAmount <= 40)).length;
+  const currentHard = currentMonthTasks.filter(t => t.rewardType === 'points' ? t.rewardAmount > 7 : (t.rewardAmount > 40 || t.rewardType === 'custom')).length;
+
+  const remainingEasy = Math.max(0, 5 - currentEasy);
+  const remainingMedium = Math.max(0, 3 - currentMedium);
+  const remainingHard = Math.max(0, 3 - currentHard);
 
   if (!isOpen) return null;
 
@@ -80,6 +95,28 @@ export default function AssignTaskModal({ isOpen, onClose, kidName }: AssignTask
 
         {/* Modal Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Target Tasks Progress Helper */}
+          <div className="bg-white/5 border border-white/5 p-3 rounded-2xl text-right text-xs space-y-1.5 backdrop-blur-md">
+            <span className="font-bold text-orange-400 block">📊 أهداف المهام لهذا الشهر:</span>
+            <div className="grid grid-cols-3 gap-2 text-center text-[10px] text-slate-300 font-sans">
+              <div className="bg-white/5 p-1.5 rounded-xl border border-white/5">
+                <span className="block text-slate-400">سهلة (5)</span>
+                <span className="font-extrabold text-white">{currentEasy}/5</span>
+                <span className="block text-[8px] text-slate-500">(المتبقي: {remainingEasy})</span>
+              </div>
+              <div className="bg-white/5 p-1.5 rounded-xl border border-white/5">
+                <span className="block text-slate-400">متوسطة (3)</span>
+                <span className="font-extrabold text-white">{currentMedium}/3</span>
+                <span className="block text-[8px] text-slate-500">(المتبقي: {remainingMedium})</span>
+              </div>
+              <div className="bg-white/5 p-1.5 rounded-xl border border-white/5">
+                <span className="block text-slate-400">صعبة (3)</span>
+                <span className="font-extrabold text-white">{currentHard}/3</span>
+                <span className="block text-[8px] text-slate-500">(المتبقي: {remainingHard})</span>
+              </div>
+            </div>
+          </div>
+
           {/* Task Title */}
           <div className="space-y-1">
             <label className="block text-xs text-slate-400">عنوان المهمة</label>

@@ -44,8 +44,23 @@ interface AppContextType {
   markNotificationAsRead: (id: string) => Promise<void>;
   runCleanup: () => Promise<void>;
   activeLeague: ActiveLeague;
-  startLeague: (prize: string, bases: string[]) => Promise<void>;
-  endLeague: () => void;
+  startFamilyLeague: (prize: string, bases: string[], endDate: string, allowancesRecord: { [kidId: string]: number }) => Promise<void>;
+  endFamilyLeague: (leagueId: string | number) => Promise<void>;
+  calculateKidScores: (kid: Kid) => {
+    savingsScore: number;
+    savingsAmount: number;
+    investmentScore: number;
+    investmentAmount: number;
+    donationScore: number;
+    donationAmount: number;
+    tasksScore: number;
+    approvedTasks: number;
+    totalTasks: number;
+    spendingScore: number;
+    spentAmount: number;
+    totalPoints: number;
+    monthlyAllowance: number;
+  };
   transferAllowance: (kidId: string, amount: number) => Promise<void>;
   simulateDailyPurchase: (kidName: string, amount: number, reason: string) => Promise<void>;
 }
@@ -236,6 +251,31 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         fetchedNotifs = saved ? JSON.parse(saved) : [];
       }
       setNotifications(fetchedNotifs);
+
+      // Fetch active family league
+      try {
+        const { data: dbLeagues, error: leagueError } = await supabase
+          .from('family_leagues')
+          .select('*')
+          .eq('is_active', true);
+        
+        if (!leagueError && dbLeagues && dbLeagues.length > 0) {
+          const active = dbLeagues[0];
+          setActiveLeague({
+            id: active.id,
+            isActive: active.is_active,
+            prize: active.prize,
+            bases: active.bases || [],
+            startDate: active.start_date,
+            endDate: active.end_date,
+            allowances: active.allowances || {}
+          });
+        } else {
+          setActiveLeague({ isActive: false, prize: '', bases: [] });
+        }
+      } catch (err) {
+        console.warn('Failed to fetch active league from Supabase:', err);
+      }
     } catch (err) {
       console.error('Error fetching data from Supabase:', err);
     }
@@ -267,7 +307,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setProfileState(null);
   };
 
-  const logTransaction = async (kidName: string, title: string, amount: number, type: 'deposit' | 'withdrawal') => {
+  const logTransaction = async (kidName: string, title: string, amount: number, type: 'deposit' | 'withdrawal' | 'دوري_جديد') => {
     const newTx: Transaction = {
       id: `tx_${Date.now()}_${Math.random()}`,
       title,
@@ -950,22 +990,209 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
-  const startLeague = async (prize: string, bases: string[]) => {
-    // Distribute monthly allowance to all kids
-    for (const kid of kids) {
-      await transferAllowance(kid.id, kid.allowance || 100);
+  const calculateKidScores = (kid: Kid) => {
+    if (!activeLeague || !activeLeague.isActive || !activeLeague.startDate || !activeLeague.endDate) {
+      return {
+        savingsScore: 0,
+        savingsAmount: 0,
+        investmentScore: 0,
+        investmentAmount: 0,
+        donationScore: 0,
+        donationAmount: 0,
+        tasksScore: 0,
+        approvedTasks: 0,
+        totalTasks: 0,
+        spendingScore: 0,
+        spentAmount: 0,
+        totalPoints: 0,
+        monthlyAllowance: kid.allowance || 100,
+      };
     }
-    const newLeague = { isActive: true, prize, bases };
-    setActiveLeague(newLeague);
-    localStorage.setItem('namaa_active_league', JSON.stringify(newLeague));
 
-    addNotification('father', 'father', 'تم بدء دوري العائلة 🏆', `تم توزيع المصروف الشهري وتفعيل دوري الأبناء بجائزة: ${prize}`);
+    const baseAllowance = activeLeague.allowances?.[kid.id] || activeLeague.allowances?.[kid.name] || kid.allowance || 100;
+
+    const startTime = new Date(activeLeague.startDate).getTime();
+    const endTime = new Date(activeLeague.endDate).getTime();
+
+    const currentLeagueTx = (kid.transactions || []).filter((tx) => {
+      const txTime = new Date(tx.date).getTime();
+      return txTime >= startTime && txTime <= endTime;
+    });
+
+    const currentLeagueTasks = (kid.tasks || []).filter((task) => {
+      const taskTime = new Date(task.createdAt || task.endDate || '').getTime();
+      if (isNaN(taskTime)) return false;
+      return taskTime >= startTime && taskTime <= endTime;
+    });
+
+    // 1. Savings Points (Max 50)
+    const savingsAmount = currentLeagueTx
+      .filter(tx => tx.type === 'withdrawal' && (tx.title.includes('إيداع في حصالة') || tx.title.includes('حصالة')))
+      .reduce((sum, tx) => sum + tx.amount, 0);
+    const savingsScore = activeLeague.bases.includes('الادخار')
+      ? Math.min(50, Math.round((savingsAmount / baseAllowance) * 50))
+      : 0;
+
+    // 2. Investment Points (Max 50)
+    const investmentAmount = currentLeagueTx
+      .filter(tx => tx.type === 'withdrawal' && (tx.title.includes('استثمار') || tx.title.includes('مشروع')))
+      .reduce((sum, tx) => sum + tx.amount, 0);
+    const investmentScore = activeLeague.bases.includes('الاستثمار')
+      ? Math.min(50, Math.round((investmentAmount / baseAllowance) * 50))
+      : 0;
+
+    // 3. Donation Points (Max 50)
+    const donationAmount = currentLeagueTx
+      .filter(tx => tx.type === 'withdrawal' && tx.title.includes('تبرع'))
+      .reduce((sum, tx) => sum + tx.amount, 0);
+    const donationScore = activeLeague.bases.includes('التبرع')
+      ? Math.min(50, Math.round((donationAmount / baseAllowance) * 50))
+      : 0;
+
+    // 4. Tasks Points (Max 50)
+    const totalTasks = currentLeagueTasks.length;
+    const approvedTasks = currentLeagueTasks.filter(t => t.status === 'approved').length;
+    const tasksScore = activeLeague.bases.includes('إنجاز المهام') && totalTasks > 0
+      ? Math.min(50, Math.round((approvedTasks / totalTasks) * 50))
+      : 0;
+
+    // 5. Spending Points (Max 50)
+    const spentAmount = currentLeagueTx
+      .filter(tx => {
+        if (tx.type !== 'withdrawal') return false;
+        const isSavings = tx.title.includes('إيداع في حصالة') || tx.title.includes('حصالة');
+        const isInvestment = tx.title.includes('استثمار') || tx.title.includes('مشروع');
+        const isDonation = tx.title.includes('تبرع');
+        return !isSavings && !isInvestment && !isDonation;
+      })
+      .reduce((sum, tx) => sum + tx.amount, 0);
+    const spendingScore = activeLeague.bases.includes('إدارة المصروف')
+      ? Math.max(0, 50 - Math.round((spentAmount / baseAllowance) * 50))
+      : 0;
+
+    const totalPoints = savingsScore + investmentScore + donationScore + tasksScore + spendingScore;
+
+    return {
+      savingsScore,
+      savingsAmount,
+      investmentScore,
+      investmentAmount,
+      donationScore,
+      donationAmount,
+      tasksScore,
+      approvedTasks,
+      totalTasks,
+      spendingScore,
+      spentAmount,
+      totalPoints,
+      monthlyAllowance: baseAllowance,
+    };
   };
 
-  const endLeague = () => {
-    const newLeague = { isActive: false, prize: '', bases: [] };
-    setActiveLeague(newLeague);
-    localStorage.setItem('namaa_active_league', JSON.stringify(newLeague));
+  const startFamilyLeague = async (
+    prize: string,
+    bases: string[],
+    endDate: string,
+    allowancesRecord: { [kidId: string]: number }
+  ) => {
+    try {
+      const { data, error } = await supabase
+        .from('family_leagues')
+        .insert({
+          prize,
+          bases,
+          is_active: true,
+          start_date: new Date().toISOString(),
+          end_date: endDate,
+          allowances: allowancesRecord
+        })
+        .select()
+        .single();
+      
+      if (error) throw error;
+
+      if (data) {
+        // Loop and transfer allowances
+        const updatedKids = [...kids];
+        for (const [kidId, amountVal] of Object.entries(allowancesRecord)) {
+          const amount = Number(amountVal);
+          const targetKid = updatedKids.find(k => k.id === kidId);
+          if (targetKid) {
+            const newBalance = targetKid.balance + amount;
+            targetKid.balance = newBalance;
+
+            // Sync kid's balance to Supabase
+            await supabase
+              .from('kids_profiles')
+              .update({ balance: newBalance })
+              .eq('id', kidId);
+
+            // Log transaction with type 'دوري_جديد'
+            await logTransaction(targetKid.name, `مصروف التحدي العائلي الجديد 🏆`, amount, 'دوري_جديد');
+            
+            // Send notification to kid
+            await addNotification(kidId, 'kid', 'تحدي عائلي جديد 🏆', `تم إطلاق تحدي عائلي جديد! الجائزة: ${prize} 🏆`);
+          }
+        }
+        setKids(updatedKids);
+
+        const newLeague = {
+          id: data.id,
+          isActive: true,
+          prize,
+          bases,
+          startDate: data.start_date,
+          endDate: data.end_date,
+          allowances: allowancesRecord
+        };
+        setActiveLeague(newLeague);
+        localStorage.setItem('namaa_active_league', JSON.stringify(newLeague));
+      }
+    } catch (err) {
+      console.error('Failed to start family league:', err);
+    }
+  };
+
+  const endFamilyLeague = async (leagueId: string | number) => {
+    const confirmed = window.confirm('هل أنت متأكد من إنهاء التحدي العائلي الحالي؟ سيتم إلغاء جميع المهام المعلقة.');
+    if (!confirmed) return;
+
+    try {
+      // 1. Update is_active to false in Supabase
+      const { error: leagueError } = await supabase
+        .from('family_leagues')
+        .update({ is_active: false })
+        .eq('id', leagueId);
+      if (leagueError) throw leagueError;
+
+      // 2. Delete all pending tasks in Supabase
+      const { error: taskError } = await supabase
+        .from('kid_tasks')
+        .delete()
+        .eq('status', 'pending');
+      if (taskError) throw taskError;
+
+      // Delete locally
+      setKids((prevKids) =>
+        prevKids.map((kid) => ({
+          ...kid,
+          tasks: (kid.tasks || []).filter(t => t.status !== 'pending')
+        }))
+      );
+
+      // Send notifications
+      for (const kid of kids) {
+        await addNotification(kid.id, 'kid', 'انتهاء التحدي العائلي 🏁', 'تم إنهاء التحدي العائلي بنجاح!');
+      }
+      await addNotification('father', 'father', 'انتهاء التحدي العائلي 🏁', 'تم إنهاء التحدي العائلي بنجاح!');
+
+      const resetLeague = { isActive: false, prize: '', bases: [] };
+      setActiveLeague(resetLeague);
+      localStorage.setItem('namaa_active_league', JSON.stringify(resetLeague));
+
+    } catch (err) {
+      console.error('Failed to end family league:', err);
+    }
   };
 
   const assignManualTask = async (
@@ -1088,8 +1315,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         markNotificationAsRead,
         runCleanup,
         activeLeague,
-        startLeague,
-        endLeague,
+        startFamilyLeague,
+        endFamilyLeague,
+        calculateKidScores,
         transferAllowance,
         simulateDailyPurchase,
       }}

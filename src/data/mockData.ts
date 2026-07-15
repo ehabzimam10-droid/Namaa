@@ -8,16 +8,20 @@ export interface SavingsGoal {
 }
 
 export interface ActiveLeague {
+  id?: string | number;
   isActive: boolean;
   prize: string;
   bases: string[];
+  startDate?: string;
+  endDate?: string;
+  allowances?: { [kidId: string]: number };
 }
 
 export interface Transaction {
   id: string;
   title: string;
   amount: number;
-  type: 'deposit' | 'withdrawal';
+  type: 'deposit' | 'withdrawal' | 'دوري_جديد';
   date: string;
 }
 

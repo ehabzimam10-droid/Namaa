@@ -3,89 +3,9 @@ import { useApp } from '../context/AppContext';
 
 export default function KidLeaguePage() {
   const navigate = useNavigate();
-  const { kids, profile, activeLeague } = useApp();
+  const { kids, profile, activeLeague, calculateKidScores } = useApp();
 
   const activeKid = kids.find(k => k.name === profile?.name) || kids.find(k => k.name === 'سالم') || kids[0];
-
-  // Helper to calculate kid's detailed scores (aligned with FatherLeaguePage)
-  const calculateKidScores = (kid: typeof kids[0]) => {
-    const allowanceTx = (kid.transactions || []).find(tx => tx.title.includes('allowance_granted'));
-    const monthlyAllowance = allowanceTx ? allowanceTx.amount : (kid.allowance || 100);
-
-    const now = new Date();
-    const currentMonthTx = (kid.transactions || []).filter((tx) => {
-      const d = new Date(tx.date);
-      return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
-    });
-
-    const currentMonthTasks = (kid.tasks || []).filter((task) => {
-      const d = task.createdAt ? new Date(task.createdAt) : new Date();
-      return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
-    });
-
-    // 1. Savings Points (Max 50)
-    const savingsAmount = currentMonthTx
-      .filter(tx => tx.type === 'withdrawal' && (tx.title.includes('إيداع في حصالة') || tx.title.includes('حصالة')))
-      .reduce((sum, tx) => sum + tx.amount, 0);
-    const savingsScore = activeLeague.bases.includes('الادخار')
-      ? Math.min(50, Math.round((savingsAmount / monthlyAllowance) * 50))
-      : 0;
-
-    // 2. Investment Points (Max 50)
-    const investmentAmount = currentMonthTx
-      .filter(tx => tx.type === 'withdrawal' && (tx.title.includes('استثمار') || tx.title.includes('مشروع')))
-      .reduce((sum, tx) => sum + tx.amount, 0);
-    const investmentScore = activeLeague.bases.includes('الاستثمار')
-      ? Math.min(50, Math.round((investmentAmount / monthlyAllowance) * 50))
-      : 0;
-
-    // 3. Donation Points (Max 50)
-    const donationAmount = currentMonthTx
-      .filter(tx => tx.type === 'withdrawal' && tx.title.includes('تبرع'))
-      .reduce((sum, tx) => sum + tx.amount, 0);
-    const donationScore = activeLeague.bases.includes('التبرع')
-      ? Math.min(50, Math.round((donationAmount / monthlyAllowance) * 50))
-      : 0;
-
-    // 4. Tasks Points (Max 100)
-    const totalTasks = currentMonthTasks.length;
-    const approvedTasks = currentMonthTasks.filter(t => t.status === 'approved').length;
-    const tasksScore = activeLeague.bases.includes('إنجاز المهام') && totalTasks > 0
-      ? Math.min(100, Math.round((approvedTasks / totalTasks) * 100))
-      : 0;
-
-    // 5. AI Spending Eval Points (Max 100)
-    const spentAmount = currentMonthTx
-      .filter(tx => {
-        if (tx.type !== 'withdrawal') return false;
-        const isSavings = tx.title.includes('إيداع في حصالة') || tx.title.includes('حصالة');
-        const isInvestment = tx.title.includes('استثمار') || tx.title.includes('مشروع');
-        const isDonation = tx.title.includes('تبرع');
-        return !isSavings && !isInvestment && !isDonation;
-      })
-      .reduce((sum, tx) => sum + tx.amount, 0);
-    const spendingScore = activeLeague.bases.includes('إدارة المصروف')
-      ? Math.max(0, 100 - Math.round((spentAmount / monthlyAllowance) * 100))
-      : 0;
-
-    const totalPoints = savingsScore + investmentScore + donationScore + tasksScore + spendingScore;
-
-    return {
-      savingsScore,
-      savingsAmount,
-      investmentScore,
-      investmentAmount,
-      donationScore,
-      donationAmount,
-      tasksScore,
-      approvedTasks,
-      totalTasks,
-      spendingScore,
-      spentAmount,
-      totalPoints,
-      monthlyAllowance,
-    };
-  };
 
   // Compile leaderboard comparing Khalid and Salem
   const compiledList = kids.map(k => ({
@@ -237,7 +157,7 @@ export default function KidLeaguePage() {
               {activeLeague.bases.includes('إنجاز المهام') && (
                 <div className="bg-white/5 border border-white/5 p-4 rounded-2xl text-center space-y-1.5">
                   <span className="text-xs block">المهام المنجزة 🧹</span>
-                  <span className="text-base font-black text-white font-sans">{ourScores.tasksScore}/100</span>
+                  <span className="text-base font-black text-white font-sans">{ourScores.tasksScore}/50</span>
                   <p className="text-[9px] text-slate-400">أنجزت {ourScores.approvedTasks} مهام من أصل {ourScores.totalTasks}</p>
                 </div>
               )}
@@ -245,7 +165,7 @@ export default function KidLeaguePage() {
               {activeLeague.bases.includes('إدارة المصروف') && (
                 <div className="bg-white/5 border border-white/5 p-4 rounded-2xl text-center space-y-1.5">
                   <span className="text-xs block">إدارة المصروف 🛒</span>
-                  <span className="text-base font-black text-white font-sans">{ourScores.spendingScore}/100</span>
+                  <span className="text-base font-black text-white font-sans">{ourScores.spendingScore}/50</span>
                   <p className="text-[9px] text-slate-400">صرفت {ourScores.spentAmount} ريال استهلاكياً</p>
                 </div>
               )}

@@ -1,17 +1,29 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 
 export default function FatherLeaguePage() {
   const navigate = useNavigate();
-  const { kids, activeLeague, startLeague, endLeague } = useApp();
+  const { kids, activeLeague, startFamilyLeague, endFamilyLeague, calculateKidScores } = useApp();
 
   // Form states
   const [selectedBases, setSelectedBases] = useState<string[]>([
     'الادخار', 'الاستثمار', 'التبرع', 'إنجاز المهام', 'إدارة المصروف'
   ]);
   const [prize, setPrize] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [allowances, setAllowances] = useState<Record<string, number>>({});
   const [errorMsg, setErrorMsg] = useState('');
+
+  useEffect(() => {
+    if (kids.length > 0 && Object.keys(allowances).length === 0) {
+      const initial: Record<string, number> = {};
+      kids.forEach(k => {
+        initial[k.id] = k.allowance || 100;
+      });
+      setAllowances(initial);
+    }
+  }, [kids, allowances]);
 
   const toggleBase = (base: string) => {
     if (selectedBases.includes(base)) {
@@ -31,93 +43,38 @@ export default function FatherLeaguePage() {
       setErrorMsg('الرجاء اختيار معيار واحد على الأقل للدوري!');
       return;
     }
+    if (!endDate) {
+      setErrorMsg('الرجاء تحديد تاريخ نهاية التحدي!');
+      return;
+    }
+
+    const today = new Date();
+    const selectedEndDate = new Date(endDate);
+    const diffTime = selectedEndDate.getTime() - today.getTime();
+    const diffDays = diffTime / (1000 * 60 * 60 * 24);
+    if (diffDays < 6.9 || diffDays > 30.1) {
+      setErrorMsg('يجب أن تكون مدة التحدي بين 7 أيام و 30 يوماً!');
+      return;
+    }
+
     setErrorMsg('');
     try {
-      await startLeague(prize, selectedBases);
+      await startFamilyLeague(prize, selectedBases, endDate, allowances);
     } catch (err) {
       console.error(err);
       setErrorMsg('حدث خطأ أثناء بدء الدوري.');
     }
   };
 
-  // Helper to calculate kid's detailed scores
-  const calculateKidScores = (kid: typeof kids[0]) => {
-    const allowanceTx = (kid.transactions || []).find(tx => tx.title.includes('allowance_granted'));
-    const monthlyAllowance = allowanceTx ? allowanceTx.amount : (kid.allowance || 100);
+  const handleEndLeague = async () => {
+    const firstConfirm = window.confirm('هل أنت متأكد من رغبتك في إنهاء التحدي مبكراً؟');
+    if (!firstConfirm) return;
+    const secondConfirm = window.confirm('تحذير: سيؤدي هذا إلى إنهاء التحدي نهائياً وإلغاء جميع المهام المعلقة للأبناء. هل أنت متأكد تماماً؟');
+    if (!secondConfirm) return;
 
-    const now = new Date();
-    const currentMonthTx = (kid.transactions || []).filter((tx) => {
-      const d = new Date(tx.date);
-      return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
-    });
-
-    const currentMonthTasks = (kid.tasks || []).filter((task) => {
-      const d = task.createdAt ? new Date(task.createdAt) : new Date();
-      return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
-    });
-
-    // 1. Savings Points (Max 50)
-    const savingsAmount = currentMonthTx
-      .filter(tx => tx.type === 'withdrawal' && (tx.title.includes('إيداع في حصالة') || tx.title.includes('حصالة')))
-      .reduce((sum, tx) => sum + tx.amount, 0);
-    const savingsScore = activeLeague.bases.includes('الادخار')
-      ? Math.min(50, Math.round((savingsAmount / monthlyAllowance) * 50))
-      : 0;
-
-    // 2. Investment Points (Max 50)
-    const investmentAmount = currentMonthTx
-      .filter(tx => tx.type === 'withdrawal' && (tx.title.includes('استثمار') || tx.title.includes('مشروع')))
-      .reduce((sum, tx) => sum + tx.amount, 0);
-    const investmentScore = activeLeague.bases.includes('الاستثمار')
-      ? Math.min(50, Math.round((investmentAmount / monthlyAllowance) * 50))
-      : 0;
-
-    // 3. Donation Points (Max 50)
-    const donationAmount = currentMonthTx
-      .filter(tx => tx.type === 'withdrawal' && tx.title.includes('تبرع'))
-      .reduce((sum, tx) => sum + tx.amount, 0);
-    const donationScore = activeLeague.bases.includes('التبرع')
-      ? Math.min(50, Math.round((donationAmount / monthlyAllowance) * 50))
-      : 0;
-
-    // 4. Tasks Points (Max 100)
-    const totalTasks = currentMonthTasks.length;
-    const approvedTasks = currentMonthTasks.filter(t => t.status === 'approved').length;
-    const tasksScore = activeLeague.bases.includes('إنجاز المهام') && totalTasks > 0
-      ? Math.min(100, Math.round((approvedTasks / totalTasks) * 100))
-      : 0;
-
-    // 5. AI Spending Eval Points (Max 100)
-    const spentAmount = currentMonthTx
-      .filter(tx => {
-        if (tx.type !== 'withdrawal') return false;
-        const isSavings = tx.title.includes('إيداع في حصالة') || tx.title.includes('حصالة');
-        const isInvestment = tx.title.includes('استثمار') || tx.title.includes('مشروع');
-        const isDonation = tx.title.includes('تبرع');
-        return !isSavings && !isInvestment && !isDonation;
-      })
-      .reduce((sum, tx) => sum + tx.amount, 0);
-    const spendingScore = activeLeague.bases.includes('إدارة المصروف')
-      ? Math.max(0, 100 - Math.round((spentAmount / monthlyAllowance) * 100))
-      : 0;
-
-    const totalPoints = savingsScore + investmentScore + donationScore + tasksScore + spendingScore;
-
-    return {
-      savingsScore,
-      savingsAmount,
-      investmentScore,
-      investmentAmount,
-      donationScore,
-      donationAmount,
-      tasksScore,
-      approvedTasks,
-      totalTasks,
-      spendingScore,
-      spentAmount,
-      totalPoints,
-      monthlyAllowance,
-    };
+    if (activeLeague.id !== undefined) {
+      await endFamilyLeague(activeLeague.id);
+    }
   };
 
   // Compile leaderboard
@@ -200,6 +157,29 @@ export default function FatherLeaguePage() {
               </div>
             </div>
 
+            {/* Base allowance for each kid */}
+            <div className="space-y-3">
+              <span className="text-xs font-bold text-slate-300 block">حدد المصروف الأساسي لكل طفل 💵</span>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {kids.map((kid) => (
+                  <div key={kid.id} className="space-y-1">
+                    <label className="block text-[11px] text-slate-400">مصروف {kid.name}</label>
+                    <input
+                      type="number"
+                      required
+                      min="1"
+                      value={allowances[kid.id] !== undefined ? allowances[kid.id] : kid.allowance}
+                      onChange={(e) => setAllowances({
+                        ...allowances,
+                        [kid.id]: Number(e.target.value)
+                      })}
+                      className="w-full bg-[#0D1527]/90 border border-white/10 rounded-2xl px-3 py-2 text-right text-white text-xs outline-none focus:border-orange-500/50 font-sans"
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+
             {/* Prize Input */}
             <div className="space-y-2">
               <label className="text-xs font-bold text-slate-300 block">جائزة دوري هذا الشهر 🎁</label>
@@ -209,6 +189,18 @@ export default function FatherLeaguePage() {
                 onChange={(e) => setPrize(e.target.value)}
                 placeholder="مثال: بلايستيشن 5 🎮"
                 className="w-full bg-[#0D1527]/90 border border-white/10 rounded-2xl px-4 py-3 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-orange-500/50 transition-all text-right"
+              />
+            </div>
+
+            {/* End Date Input */}
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-slate-300 block">تاريخ نهاية التحدي 📅</label>
+              <input
+                type="datetime-local"
+                required
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="w-full bg-[#0D1527]/90 border border-white/10 rounded-2xl px-4 py-2.5 text-xs text-white text-right font-sans focus:outline-none focus:border-orange-500/50"
               />
             </div>
 
@@ -227,10 +219,10 @@ export default function FatherLeaguePage() {
           {/* Active League Prize Info */}
           <div className="relative overflow-hidden bg-gradient-to-r from-orange-500/10 to-indigo-500/5 border border-white/10 rounded-3xl p-6 text-right flex justify-between items-center gap-4">
             <button
-              onClick={endLeague}
-              className="bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 hover:text-rose-300 border border-rose-500/20 px-4 py-2 rounded-xl text-xs font-bold transition-all transform active:scale-95"
+              onClick={handleEndLeague}
+              className="bg-rose-500/10 hover:bg-rose-500/20 text-rose-450 hover:text-rose-450 border border-rose-500/20 px-4 py-2 rounded-xl text-xs font-bold transition-all transform active:scale-95 flex items-center gap-1"
             >
-              إنهاء التحدي 🏁
+              إنهاء التحدي مبكراً 🛑
             </button>
             <div className="space-y-1">
               <span className="text-[10px] text-orange-400 font-bold block">دوري الأبناء نشط حالياً 🔥</span>
