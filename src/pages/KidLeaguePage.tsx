@@ -157,7 +157,7 @@ export default function KidLeaguePage() {
               {activeLeague.bases.includes('إنجاز المهام') && (
                 <div className="bg-white/5 border border-white/5 p-4 rounded-2xl text-center space-y-1.5">
                   <span className="text-xs block">المهام المنجزة 🧹</span>
-                  <span className="text-base font-black text-white font-sans">{ourScores.tasksScore}/50</span>
+                  <span className="text-base font-black text-white font-sans">{ourScores.tasksScore}/100</span>
                   <p className="text-[9px] text-slate-400">أنجزت {ourScores.approvedTasks} مهام من أصل {ourScores.totalTasks}</p>
                 </div>
               )}
@@ -165,7 +165,7 @@ export default function KidLeaguePage() {
               {activeLeague.bases.includes('إدارة المصروف') && (
                 <div className="bg-white/5 border border-white/5 p-4 rounded-2xl text-center space-y-1.5">
                   <span className="text-xs block">إدارة المصروف 🛒</span>
-                  <span className="text-base font-black text-white font-sans">{ourScores.spendingScore}/50</span>
+                  <span className="text-base font-black text-white font-sans">{ourScores.spendingScore}/100</span>
                   <p className="text-[9px] text-slate-400">صرفت {ourScores.spentAmount} ريال استهلاكياً</p>
                 </div>
               )}

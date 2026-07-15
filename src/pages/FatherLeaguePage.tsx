@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
+import { evaluateKidsSpending } from '../utils/aiService';
 
 export default function FatherLeaguePage() {
   const navigate = useNavigate();
-  const { kids, activeLeague, startFamilyLeague, endFamilyLeague, calculateKidScores } = useApp();
+  const { kids, activeLeague, startFamilyLeague, endFamilyLeague, calculateKidScores, geminiApiKey } = useApp();
 
   // Form states
   const [selectedBases, setSelectedBases] = useState<string[]>([
@@ -15,6 +16,10 @@ export default function FatherLeaguePage() {
   const [allowances, setAllowances] = useState<Record<string, number>>({});
   const [errorMsg, setErrorMsg] = useState('');
   const [showEndConfirm, setShowEndConfirm] = useState(false);
+  const [showAiEvaluation, setShowAiEvaluation] = useState(false);
+  const [isAiLoading, setIsAiLoading] = useState(false);
+  const [aiEvaluations, setAiEvaluations] = useState<any[]>([]);
+  const [customScores, setCustomScores] = useState<Record<string, number>>({});
 
   useEffect(() => {
     if (kids.length > 0 && Object.keys(allowances).length === 0) {
@@ -69,6 +74,26 @@ export default function FatherLeaguePage() {
 
   const handleEndLeague = () => {
     setShowEndConfirm(true);
+  };
+
+  const handleTriggerAiEvaluation = async () => {
+    setShowAiEvaluation(true);
+    setIsAiLoading(true);
+    try {
+      const result = await evaluateKidsSpending(geminiApiKey, kids);
+      setAiEvaluations(result);
+      const scoresRecord: Record<string, number> = {};
+      result.forEach(item => {
+        const kidObj = kids.find(k => k.name === item.kidName);
+        const kidKey = kidObj ? kidObj.id : item.kidName;
+        scoresRecord[kidKey] = item.suggestedScore;
+      });
+      setCustomScores(scoresRecord);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsAiLoading(false);
+    }
   };
 
   // Compile leaderboard
@@ -213,7 +238,7 @@ export default function FatherLeaguePage() {
           {/* Active League Prize Info */}
           <div className="relative overflow-hidden bg-gradient-to-r from-orange-500/10 to-indigo-500/5 border border-white/10 rounded-3xl p-6 text-right flex justify-between items-center gap-4">
             <button
-              onClick={handleEndLeague}
+              onClick={handleTriggerAiEvaluation}
               className="bg-rose-500/10 hover:bg-rose-500/20 text-rose-450 hover:text-rose-450 border border-rose-500/20 px-4 py-2 rounded-xl text-xs font-bold transition-all transform active:scale-95 flex items-center gap-1"
             >
               إنهاء التحدي مبكراً 🛑
@@ -346,6 +371,96 @@ export default function FatherLeaguePage() {
                 نعم، متأكد
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* AI Evaluation Generative UI Modal */}
+      {showAiEvaluation && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md overflow-y-auto">
+          <div className="w-full max-w-xl bg-[#0D1527]/95 border border-white/10 p-6 rounded-3xl text-right space-y-6 shadow-2xl relative my-8">
+            <div className="border-b border-white/5 pb-3 flex justify-between items-center flex-row-reverse">
+              <h3 className="text-lg font-black text-white flex items-center gap-2">
+                <span>تقييم المستشار المالي النهائي 🤖</span>
+              </h3>
+              <button
+                type="button"
+                onClick={() => setShowAiEvaluation(false)}
+                className="text-slate-400 hover:text-white text-xs font-bold transition-colors"
+              >
+                ✕
+              </button>
+            </div>
+
+            {isAiLoading ? (
+              <div className="py-12 flex flex-col items-center justify-center space-y-3">
+                <div className="h-10 w-10 border-2 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
+                <span className="text-xs text-slate-300 font-bold">جاري تحليل معاملات الأبناء واحتساب التقييم النهائي... 🧠🤖</span>
+              </div>
+            ) : (
+              <>
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  يقوم المستشار المالي الآن بتقييم مهارات الإنفاق وإدارة المصروف للأبناء بناءً على سلوكياتهم ومعاملاتهم المالية خلال الدوري:
+                </p>
+
+                <div className="space-y-4">
+                  {aiEvaluations.map((evalItem, idx) => {
+                    const kidObj = kids.find(k => k.name === evalItem.kidName);
+                    const kidId = kidObj ? kidObj.id : evalItem.kidName;
+                    const currentScore = customScores[kidId] ?? evalItem.suggestedScore;
+
+                    return (
+                      <div key={idx} className="bg-white/5 border border-white/5 rounded-2xl p-4 space-y-3 text-right">
+                        <div className="flex justify-between items-center flex-row-reverse">
+                          <span className="font-extrabold text-sm text-white">الابن: {evalItem.kidName} 👦</span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] text-slate-400">الدرجة المقترحة (0-100):</span>
+                            <input
+                              type="number"
+                              min="0"
+                              max="100"
+                              value={currentScore}
+                              onChange={(e) => setCustomScores({
+                                ...customScores,
+                                [kidId]: Math.min(100, Math.max(0, Number(e.target.value)))
+                              })}
+                              className="w-16 bg-[#111C2E]/60 border border-white/10 rounded-xl px-2 py-1 text-center text-xs font-bold text-orange-400 font-sans outline-none focus:border-orange-500"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="bg-[#111C2E]/40 p-3 rounded-xl border border-white/5 text-[11px] leading-relaxed text-slate-300">
+                          <span className="font-bold text-orange-300 block mb-1">تحليل المستشار المالي:</span>
+                          {evalItem.reasoning}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <div className="flex gap-3 justify-end pt-2 border-t border-white/5">
+                  <button
+                    type="button"
+                    onClick={() => setShowAiEvaluation(false)}
+                    className="px-4 py-2 border border-white/10 rounded-xl text-xs font-bold text-slate-350 hover:bg-white/5 transition-all"
+                  >
+                    إلغاء
+                  </button>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      if (activeLeague.id !== undefined) {
+                        await endFamilyLeague(activeLeague.id, customScores);
+                      }
+                      setShowAiEvaluation(false);
+                    }}
+                    className="px-5 py-2.5 bg-gradient-to-r from-orange-500 to-[#8c7355] hover:from-orange-600 hover:to-[#9c8466] text-white rounded-xl text-xs font-black transition-all shadow-lg active:scale-95 flex items-center gap-1.5"
+                  >
+                    <span>اعتماد التقييم وإعلان النتائج 🏆</span>
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}

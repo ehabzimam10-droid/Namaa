@@ -108,3 +108,75 @@ export async function sendGeneralChatMessage(
   }
 }
 
+export interface KidSpendingEvaluation {
+  kidName: string;
+  suggestedScore: number;
+  reasoning: string;
+}
+
+export async function evaluateKidsSpending(
+  apiKey: string,
+  kidsData: any[]
+): Promise<KidSpendingEvaluation[]> {
+  const prompt = `
+    You are an expert financial advisor for Alinma Bank's family banking application "Namaa".
+    Your role is to analyze the spending transactions of the kids during their active league challenge.
+    
+    Kids Data (including recent transactions and allowance details):
+    ${JSON.stringify(kidsData)}
+    
+    Please evaluate the "Spending Management" score for each kid on a scale from 0 to 100.
+    - A higher score (e.g. 80-100) indicates they spent their money wisely on essential things or saved most of it, avoiding random consumer or unnecessary daily spending.
+    - A lower score indicates they spent a large part of their allowance on consumer purchases (like sweets, games, toys) quickly without planning.
+    
+    You MUST output a strict JSON array matching this exact schema:
+    [
+      {
+        "kidName": "Name of the kid (string)",
+        "suggestedScore": An integer between 0 and 100,
+        "reasoning": "A concise explanation in Arabic (1-2 sentences) justifying the score based on their transactions."
+      }
+    ]
+    
+    Output ONLY the parseable JSON array. Do not include markdown codeblocks (like \`\`\`json) or any additional text.
+  `;
+
+  try {
+    if (!apiKey) {
+      throw new Error('API key is missing');
+    }
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({
+      model: 'gemini-1.5-flash',
+      generationConfig: { responseMimeType: 'application/json' },
+    });
+
+    const result = await model.generateContent(prompt);
+    const text = result.response.text();
+
+    const cleanedText = text
+      .trim()
+      .replace(/^```json/i, '')
+      .replace(/```$/, '')
+      .trim();
+
+    return JSON.parse(cleanedText) as KidSpendingEvaluation[];
+  } catch (err) {
+    console.warn('Gemini spending evaluation failed, falling back to mock evaluation:', err);
+    return kidsData.map(kid => {
+      const spent = (kid.transactions || [])
+        .filter((tx: any) => tx.type === 'withdrawal' && !tx.title.includes('حصالة') && !tx.title.includes('استثمار') && !tx.title.includes('تبرع'))
+        .reduce((sum: number, tx: any) => sum + tx.amount, 0);
+      const allowance = kid.allowance || 100;
+      const pct = Math.min(100, Math.round((spent / allowance) * 100));
+      const score = Math.max(0, 100 - pct);
+
+      return {
+        kidName: kid.name,
+        suggestedScore: score,
+        reasoning: `(نمط محاكاة احتياطي) تم تقييم إدارة المصروف لـ ${kid.name} بـ ${score} بناءً على نسبة الإنفاق الاستهلاكي الفعلي لديه (${spent} ريال من أصل ${allowance} ريال).`
+      };
+    });
+  }
+}
+

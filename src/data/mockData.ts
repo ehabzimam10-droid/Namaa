@@ -15,6 +15,7 @@ export interface ActiveLeague {
   startDate?: string;
   endDate?: string;
   allowances?: { [kidId: string]: number };
+  spendingScores?: { [kidId: string]: number };
 }
 
 export interface Transaction {

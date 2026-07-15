@@ -23,7 +23,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         { title: 'إدارة الأبناء 👥', path: '/father/kids' },
         { title: 'مشاريع العائلة 📈', path: '/father/projects' },
         { title: 'المستشار الذكي 🤖', path: '/father/ai' },
-        { title: 'دوري العائلات 🏆', path: '/father/league' },
+        { title: 'دوري العائلة 🏆', path: '/father/league' },
       ]
     : [
         { title: 'الرئيسية 🏠', path: '/kid' },

@@ -45,7 +45,7 @@ interface AppContextType {
   runCleanup: () => Promise<void>;
   activeLeague: ActiveLeague;
   startFamilyLeague: (prize: string, bases: string[], endDate: string, allowancesRecord: { [kidId: string]: number }) => Promise<void>;
-  endFamilyLeague: (leagueId: string | number) => Promise<void>;
+  endFamilyLeague: (leagueId: string | number, finalSpendingScores?: Record<string, number>) => Promise<void>;
   calculateKidScores: (kid: Kid) => {
     savingsScore: number;
     savingsAmount: number;
@@ -991,7 +991,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const calculateKidScores = (kid: Kid) => {
-    if (!activeLeague || !activeLeague.isActive || !activeLeague.startDate || !activeLeague.endDate) {
+    if (!activeLeague || !activeLeague.startDate || !activeLeague.endDate) {
       return {
         savingsScore: 0,
         savingsAmount: 0,
@@ -1049,14 +1049,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       ? Math.min(50, Math.round((donationAmount / baseAllowance) * 50))
       : 0;
 
-    // 4. Tasks Points (Max 50)
+    // 4. Tasks Points (Max 100)
     const totalTasks = currentLeagueTasks.length;
     const approvedTasks = currentLeagueTasks.filter(t => t.status === 'approved').length;
     const tasksScore = activeLeague.bases.includes('إنجاز المهام') && totalTasks > 0
-      ? Math.min(50, Math.round((approvedTasks / totalTasks) * 50))
+      ? Math.min(100, Math.round((approvedTasks / totalTasks) * 100))
       : 0;
 
-    // 5. Spending Points (Max 50)
+    // 5. Spending Points (Max 100)
     const spentAmount = currentLeagueTx
       .filter(tx => {
         if (tx.type !== 'withdrawal') return false;
@@ -1066,9 +1066,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         return !isSavings && !isInvestment && !isDonation;
       })
       .reduce((sum, tx) => sum + tx.amount, 0);
-    const isLeagueEnded = new Date() >= new Date(activeLeague.endDate);
-    const spendingScore = activeLeague.bases.includes('إدارة المصروف') && isLeagueEnded
-      ? Math.max(0, 50 - Math.round((spentAmount / baseAllowance) * 50))
+    
+    const spendingScore = activeLeague.bases.includes('إدارة المصروف')
+      ? (activeLeague.spendingScores?.[kid.id] || activeLeague.spendingScores?.[kid.name] || 0)
       : 0;
 
     const totalPoints = savingsScore + investmentScore + donationScore + tasksScore + spendingScore;
@@ -1154,10 +1154,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
-  const endFamilyLeague = async (leagueId: string | number) => {
-    const confirmed = window.confirm('هل أنت متأكد من إنهاء التحدي العائلي الحالي؟ سيتم إلغاء جميع المهام المعلقة.');
-    if (!confirmed) return;
-
+  const endFamilyLeague = async (leagueId: string | number, finalSpendingScores?: Record<string, number>) => {
     try {
       // 1. Update is_active to false in Supabase
       const { error: leagueError } = await supabase
@@ -1183,11 +1180,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
       // Send notifications
       for (const kid of kids) {
-        await addNotification(kid.id, 'kid', 'انتهاء التحدي العائلي 🏁', 'تم إنهاء التحدي العائلي بنجاح!');
+        const score = finalSpendingScores?.[kid.id] || finalSpendingScores?.[kid.name] || 0;
+        await addNotification(
+          kid.id,
+          'kid',
+          'نتائج الدوري العائلي 🏆🏁',
+          `انتهى الدوري! حصلت على تقييم مصروف: ${score} نقطة.`
+        );
       }
-      await addNotification('father', 'father', 'انتهاء التحدي العائلي 🏁', 'تم إنهاء التحدي العائلي بنجاح!');
+      await addNotification('father', 'father', 'نتائج الدوري العائلي 🏆🏁', 'تم إعلان نتائج الدوري بنجاح!');
 
-      const resetLeague = { isActive: false, prize: '', bases: [] };
+      const resetLeague = {
+        ...activeLeague,
+        isActive: false,
+        spendingScores: finalSpendingScores
+      };
       setActiveLeague(resetLeague);
       localStorage.setItem('namaa_active_league', JSON.stringify(resetLeague));
 
