@@ -595,24 +595,33 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const targetKid = kids.find((k) => k.name === kidName);
     if (!targetKid || targetKid.balance < amount) return;
 
+    const targetGoal = (targetKid.savingsGoals || []).find(g => g.id === goalId);
+    if (targetGoal && targetGoal.currentAmount >= targetGoal.targetAmount) {
+      return;
+    }
+
     const kidId = targetKid.id;
     const updatedBalance = Math.max(0, targetKid.balance - amount);
-    const targetGoal = (targetKid.savingsGoals || []).find(g => g.id === goalId);
     const newCurrent = targetGoal ? targetGoal.currentAmount + amount : amount;
 
     // Local Update
     setKids((prevKids) =>
       prevKids.map((kid) => {
         if (kid.name === kidName) {
-          const updatedGoals = (kid.savingsGoals || []).map((goal) => {
-            if (goal.id === goalId) {
+          const goal = (kid.savingsGoals || []).find((g) => g.id === goalId);
+          if (goal && goal.currentAmount >= goal.targetAmount) {
+            return kid;
+          }
+
+          const updatedGoals = (kid.savingsGoals || []).map((goalItem) => {
+            if (goalItem.id === goalId) {
               return {
-                ...goal,
+                ...goalItem,
                 currentAmount: newCurrent,
-                isLocked: newCurrent < goal.targetAmount,
+                isLocked: newCurrent < goalItem.targetAmount,
               };
             }
-            return goal;
+            return goalItem;
           });
 
           return {
@@ -1190,6 +1199,34 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const endFamilyLeague = async (leagueId: string | number, finalSpendingScores?: Record<string, number>) => {
     try {
+      const isEvaluated = finalSpendingScores !== undefined;
+
+      // Send notifications BEFORE executing deletion/updates to ensure delivery
+      for (const kid of kids) {
+        if (isEvaluated) {
+          const score = finalSpendingScores?.[kid.id] || finalSpendingScores?.[kid.name] || 0;
+          await addNotification(
+            kid.id,
+            'kid',
+            'نتائج الدوري العائلي 🏆🏁',
+            `انتهى الدوري! حصلت على تقييم مصروف: ${score} نقطة.`
+          );
+        } else {
+          await addNotification(
+            kid.id,
+            'kid',
+            'إلغاء التحدي 🛑',
+            'قام والدك بإلغاء التحدي العائلي الحالي.'
+          );
+        }
+      }
+
+      if (isEvaluated) {
+        await addNotification('father', 'father', 'نتائج الدوري العائلي 🏆🏁', 'تم إعلان نتائج الدوري بنجاح!');
+      } else {
+        await addNotification('father', 'father', 'إلغاء التحدي 🛑', 'تم إلغاء التحدي العائلي بنجاح.');
+      }
+
       // 1. Update is_active to false in Supabase
       const { error: leagueError } = await supabase
         .from('family_leagues')
@@ -1248,33 +1285,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         }
       }
       setKids(updatedKids);
-
-      // Send notifications based on whether it was evaluated (ended naturally) or early cancelled
-      const isEvaluated = finalSpendingScores !== undefined;
-      for (const kid of updatedKids) {
-        if (isEvaluated) {
-          const score = finalSpendingScores?.[kid.id] || finalSpendingScores?.[kid.name] || 0;
-          await addNotification(
-            kid.id,
-            'kid',
-            'نتائج الدوري العائلي 🏆🏁',
-            `انتهى الدوري! حصلت على تقييم مصروف: ${score} نقطة.`
-          );
-        } else {
-          await addNotification(
-            kid.id,
-            'kid',
-            'إلغاء التحدي 🛑',
-            'قام والدك بإلغاء التحدي العائلي الحالي.'
-          );
-        }
-      }
-
-      if (isEvaluated) {
-        await addNotification('father', 'father', 'نتائج الدوري العائلي 🏆🏁', 'تم إعلان نتائج الدوري بنجاح!');
-      } else {
-        await addNotification('father', 'father', 'إلغاء التحدي 🛑', 'تم إلغاء التحدي العائلي بنجاح.');
-      }
 
       const resetLeague = {
         ...activeLeague,

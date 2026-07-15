@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { evaluateKidsSpending } from '../utils/aiService';
+import { supabase } from '../utils/supabaseClient';
 
 export default function FatherLeaguePage() {
   const navigate = useNavigate();
@@ -21,6 +22,26 @@ export default function FatherLeaguePage() {
   const [aiEvaluations, setAiEvaluations] = useState<any[]>([]);
   const [customScores, setCustomScores] = useState<Record<string, number>>({});
   const [countdownText, setCountdownText] = useState('');
+  const [pastLeagues, setPastLeagues] = useState<any[]>([]);
+  const [selectedPastLeague, setSelectedPastLeague] = useState<any | null>(null);
+
+  useEffect(() => {
+    const fetchPastLeagues = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('family_leagues')
+          .select('*')
+          .eq('is_active', false)
+          .order('end_date', { ascending: false });
+        if (!error && data) {
+          setPastLeagues(data);
+        }
+      } catch (err) {
+        console.error('Failed to fetch past leagues:', err);
+      }
+    };
+    fetchPastLeagues();
+  }, [activeLeague]);
 
   useEffect(() => {
     if (!activeLeague || !activeLeague.isActive || !activeLeague.endDate) return;
@@ -89,9 +110,10 @@ export default function FatherLeaguePage() {
       return;
     }
 
+    const isoEndDate = selectedEndDate.toISOString();
     setErrorMsg('');
     try {
-      await startFamilyLeague(prize, selectedBases, endDate, allowances);
+      await startFamilyLeague(prize, selectedBases, isoEndDate, allowances);
     } catch (err) {
       console.error(err);
       setErrorMsg('حدث خطأ أثناء بدء الدوري.');
@@ -503,6 +525,94 @@ export default function FatherLeaguePage() {
                 </div>
               </>
             )}
+          </div>
+        </div>
+      )}
+      {/* Past Leagues History Section */}
+      <div className="relative overflow-hidden bg-white/5 backdrop-blur-xl border border-white/10 shadow-2xl rounded-3xl p-6 text-right space-y-4">
+        <h3 className="text-base font-black text-white flex items-center justify-end gap-2">
+          <span>سجل التحديات السابقة 📜</span>
+        </h3>
+        
+        {pastLeagues.length === 0 ? (
+          <p className="text-xs text-slate-400">لا توجد تحديات سابقة مؤرشفة حالياً.</p>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+            {pastLeagues.map((league) => {
+              const formattedDate = new Date(league.end_date).toLocaleDateString('ar-SA');
+              return (
+                <div
+                  key={league.id}
+                  onClick={() => setSelectedPastLeague(league)}
+                  className="bg-[#111C2E]/60 border border-white/5 hover:border-orange-500/30 p-4 rounded-2xl cursor-pointer transition-all hover:scale-[1.02] flex flex-col justify-between gap-3 text-right"
+                >
+                  <div className="flex justify-between items-center flex-row-reverse border-b border-white/5 pb-2">
+                    <span className="text-xs font-black text-white">الجائزة: {league.prize} 🎁</span>
+                    <span className="text-[10px] text-slate-400">{formattedDate}</span>
+                  </div>
+                  <div className="text-[10px] text-slate-350 space-y-1">
+                    <p>المعايير: {league.bases?.join(' ، ')}</p>
+                  </div>
+                  <span className="text-[9px] text-orange-400 font-bold self-start mt-2">عرض التفاصيل ➜</span>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Past League Detail Modal */}
+      {selectedPastLeague && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
+          <div className="w-full max-w-md bg-[#0D1527]/95 border border-white/10 p-6 rounded-3xl text-right space-y-4 shadow-2xl relative">
+            <div className="border-b border-white/5 pb-3 flex justify-between items-center flex-row-reverse">
+              <h3 className="text-lg font-black text-white">تفاصيل التحدي المؤرشف 📜</h3>
+              <button
+                type="button"
+                onClick={() => setSelectedPastLeague(null)}
+                className="text-slate-400 hover:text-white text-xs font-bold transition-colors"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs text-slate-300">
+              <div className="flex justify-between flex-row-reverse bg-white/5 p-2.5 rounded-xl">
+                <span className="font-bold text-white">الجائزة الكبرى:</span>
+                <span className="text-orange-300 font-extrabold">{selectedPastLeague.prize} 🎁</span>
+              </div>
+              <div className="flex justify-between flex-row-reverse bg-white/5 p-2.5 rounded-xl font-sans">
+                <span className="font-bold text-white">تاريخ الانتهاء:</span>
+                <span>{new Date(selectedPastLeague.end_date).toLocaleString('ar-SA')}</span>
+              </div>
+              <div className="flex justify-between flex-row-reverse bg-white/5 p-2.5 rounded-xl">
+                <span className="font-bold text-white">المعايير المعتمدة:</span>
+                <span>{selectedPastLeague.bases?.join(' ، ')}</span>
+              </div>
+
+              <div className="space-y-2 border-t border-white/5 pt-3 mt-3">
+                <span className="font-bold text-white block mb-1">المصروفات الموزعة للأبناء:</span>
+                {Object.entries(selectedPastLeague.allowances || {}).map(([kidId, amount]) => {
+                  const kidObj = kids.find(k => k.id === kidId);
+                  return (
+                    <div key={kidId} className="flex justify-between flex-row-reverse bg-white/5 p-2 rounded-xl text-[11px]">
+                      <span className="text-slate-300 font-bold">{kidObj ? kidObj.name : 'ابن'}</span>
+                      <span className="text-white font-sans font-bold">{amount as number} ريال</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="flex justify-end pt-2">
+              <button
+                type="button"
+                onClick={() => setSelectedPastLeague(null)}
+                className="px-5 py-2.5 bg-gradient-to-r from-orange-500 to-[#8c7355] hover:from-orange-600 hover:to-[#9c8466] text-white rounded-xl text-xs font-black transition-all shadow-lg active:scale-95"
+              >
+                إغلاق
+              </button>
+            </div>
           </div>
         </div>
       )}
