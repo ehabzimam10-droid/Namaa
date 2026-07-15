@@ -57,9 +57,10 @@ export default function FatherLeaguePage() {
     const today = new Date();
     const selectedEndDate = new Date(endDate);
     const diffTime = selectedEndDate.getTime() - today.getTime();
+    const diffMinutes = diffTime / (1000 * 60);
     const diffDays = diffTime / (1000 * 60 * 60 * 24);
-    if (diffDays < 6.9 || diffDays > 30.1) {
-      setErrorMsg('يجب أن تكون مدة التحدي بين 7 أيام و 30 يوماً!');
+    if (diffMinutes < 1 || diffDays > 30.1) {
+      setErrorMsg('يجب أن تكون مدة التحدي دقيقة واحدة على الأقل و 30 يوماً كحد أقصى!');
       return;
     }
 
@@ -80,7 +81,7 @@ export default function FatherLeaguePage() {
     setShowAiEvaluation(true);
     setIsAiLoading(true);
     try {
-      const result = await evaluateKidsSpending(geminiApiKey, kids);
+      const result = await evaluateKidsSpending(geminiApiKey, kids, activeLeague.startDate, activeLeague.endDate);
       setAiEvaluations(result);
       const scoresRecord: Record<string, number> = {};
       result.forEach(item => {
@@ -103,6 +104,8 @@ export default function FatherLeaguePage() {
       scores: calculateKidScores(kid),
     }))
     .sort((a, b) => b.scores.totalPoints - a.scores.totalPoints);
+
+  const isLeagueExpired = activeLeague.endDate ? new Date() >= new Date(activeLeague.endDate) : false;
 
   return (
     <div className="w-full space-y-8 text-right font-sans">
@@ -237,12 +240,21 @@ export default function FatherLeaguePage() {
         <div className="space-y-6">
           {/* Active League Prize Info */}
           <div className="relative overflow-hidden bg-gradient-to-r from-orange-500/10 to-indigo-500/5 border border-white/10 rounded-3xl p-6 text-right flex justify-between items-center gap-4">
-            <button
-              onClick={handleTriggerAiEvaluation}
-              className="bg-rose-500/10 hover:bg-rose-500/20 text-rose-450 hover:text-rose-450 border border-rose-500/20 px-4 py-2 rounded-xl text-xs font-bold transition-all transform active:scale-95 flex items-center gap-1"
-            >
-              إنهاء التحدي مبكراً 🛑
-            </button>
+            {!isLeagueExpired ? (
+              <button
+                onClick={handleEndLeague}
+                className="bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 hover:text-rose-500 border border-rose-500/20 px-4 py-2 rounded-xl text-xs font-bold transition-all transform active:scale-95 flex items-center gap-1"
+              >
+                إنهاء التحدي مبكراً 🛑
+              </button>
+            ) : (
+              <button
+                onClick={handleTriggerAiEvaluation}
+                className="bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 hover:text-emerald-500 border border-emerald-500/20 px-4 py-2 rounded-xl text-xs font-bold transition-all transform active:scale-95 flex items-center gap-1"
+              >
+                تقييم الأبناء وإعلان النتائج 🏆
+              </button>
+            )}
             <div className="space-y-1">
               <span className="text-[10px] text-orange-400 font-bold block">دوري الأبناء نشط حالياً 🔥</span>
               <h4 className="text-sm font-extrabold text-white">
@@ -347,8 +359,8 @@ export default function FatherLeaguePage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
           <div className="w-full max-w-md bg-[#0D1527]/90 border border-white/10 p-6 rounded-3xl text-right space-y-4 shadow-2xl relative">
             <h3 className="text-lg font-black text-white">هل أنت متأكد؟</h3>
-            <p className="text-xs text-slate-300 leading-relaxed">
-              سيتم إنهاء الدوري الحالي وإلغاء جميع المهام المعلقة للأبناء بشكل نهائي. هل تريد الاستمرار؟
+            <p className="text-xs text-slate-350 leading-relaxed">
+              سيؤدي هذا إلى إلغاء التحدي بالكامل وحذف جميع المهام المرتبطة به دون تقييم.
             </p>
             <div className="flex gap-3 justify-end pt-2">
               <button

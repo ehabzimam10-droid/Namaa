@@ -63,19 +63,15 @@ export default function FatherDashboard() {
           <div className="absolute -left-6 -top-6 text-6xl opacity-15">🤖</div>
           <div className="space-y-3">
             <div className="flex items-center justify-end gap-2">
-              <h4 className="text-lg font-bold text-white">المستشار المالي الذكي</h4>
+              <h4 className="text-lg font-bold text-white">المستشار الذكي 🤖</h4>
               <span className="text-xl">🤖</span>
             </div>
-            <p className="text-xs text-slate-300 leading-relaxed">
-              تحليل سلوك الأطفال وتوصيات ذكية مخصصة لغرس ثقافة المسؤولية والادخار لديهم.
+            <p className="text-xs text-slate-300 leading-relaxed text-right">
+              استشارات وتوصيات ذكية مخصصة لمساعدتك في توجيه سلوك أبنائك المالي وغرس ثقافة الادخار.
             </p>
-            
-            <div className="p-3 bg-orange-500/10 border border-orange-500/20 rounded-xl text-xs text-orange-200">
-              💡 <strong>توصية:</strong> خالد صرف 80% من رصيده المتاح، نقترح تكليفه بمهمة منزلية.
-            </div>
           </div>
           <Link to="/father/ai" className="w-full mt-4 bg-orange-500/10 hover:bg-orange-500/20 text-orange-300 font-bold py-2 rounded-xl text-xs border border-orange-500/20 transition-all text-center block">
-            عرض لوحة التوصيات الكاملة 🤖
+            المستشار الذكي والدردشة 🤖
           </Link>
         </div>
 

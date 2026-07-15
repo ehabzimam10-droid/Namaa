@@ -1026,9 +1026,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     });
 
     // 1. Savings Points (Max 50)
-    const savingsAmount = currentLeagueTx
-      .filter(tx => tx.type === 'withdrawal' && (tx.title.includes('إيداع في حصالة') || tx.title.includes('حصالة')))
-      .reduce((sum, tx) => sum + tx.amount, 0);
+    const leagueGoal = (kid.savingsGoals || []).find((g) => g.title === 'حصالة دوري العائلة 🏆');
+    const savingsAmount = leagueGoal ? leagueGoal.currentAmount : 0;
     const savingsScore = activeLeague.bases.includes('الادخار')
       ? Math.min(50, Math.round((savingsAmount / baseAllowance) * 50))
       : 0;
@@ -1133,6 +1132,32 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             
             // Send notification to kid
             await addNotification(kidId, 'kid', 'تحدي عائلي جديد 🏆', `تم إطلاق تحدي عائلي جديد! الجائزة: ${prize} 🏆`);
+
+            // Automatically insert savings goal record
+            const { data: goalData, error: goalError } = await supabase
+              .from('savings_goals')
+              .insert({
+                title: 'حصالة دوري العائلة 🏆',
+                target_amount: amount,
+                current_amount: 0,
+                is_locked: true,
+                deadline_date: endDate,
+                kid_name: targetKid.name
+              })
+              .select()
+              .single();
+
+            if (!goalError && goalData) {
+              const localGoal: SavingsGoal = {
+                id: goalData.id,
+                title: 'حصالة دوري العائلة 🏆',
+                targetAmount: amount,
+                currentAmount: 0,
+                isLocked: true,
+                deadlineDate: endDate
+              };
+              targetKid.savingsGoals = [...(targetKid.savingsGoals || []), localGoal];
+            }
           }
         }
         setKids(updatedKids);
@@ -1178,17 +1203,69 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         }))
       );
 
-      // Send notifications
-      for (const kid of kids) {
-        const score = finalSpendingScores?.[kid.id] || finalSpendingScores?.[kid.name] || 0;
-        await addNotification(
-          kid.id,
-          'kid',
-          'نتائج الدوري العائلي 🏆🏁',
-          `انتهى الدوري! حصلت على تقييم مصروف: ${score} نقطة.`
-        );
+      // Automatically clean up 'حصالة دوري العائلة 🏆' and refund money
+      const updatedKids = [...kids];
+      for (const kid of updatedKids) {
+        const leagueGoal = (kid.savingsGoals || []).find(g => g.title === 'حصالة دوري العائلة 🏆');
+        if (leagueGoal) {
+          const refundAmount = leagueGoal.currentAmount;
+          const newBalance = kid.balance + refundAmount;
+          
+          // Remove from local savingsGoals list
+          kid.savingsGoals = (kid.savingsGoals || []).filter(g => g.title !== 'حصالة دوري العائلة 🏆');
+          kid.balance = newBalance;
+
+          // Delete from Supabase
+          const dbGoalId = isNaN(Number(leagueGoal.id)) ? leagueGoal.id : Number(leagueGoal.id);
+          await supabase.from('savings_goals').delete().eq('id', dbGoalId);
+
+          // Update kid balance in Supabase
+          const computedSaved = (kid.savingsGoals || []).reduce((sum, g) => sum + g.currentAmount, 0);
+          await supabase.from('kids_profiles').update({ balance: newBalance, saved: computedSaved }).eq('id', kid.id);
+
+          if (refundAmount > 0) {
+            // Log transaction
+            const txId = `tx_refund_${Date.now()}_${Math.random()}`;
+            const newTx: Transaction = {
+              id: txId,
+              title: `استرجاع مدخرات حصالة دوري العائلة 🔓`,
+              amount: refundAmount,
+              type: 'deposit',
+              date: new Date().toISOString()
+            };
+            kid.transactions = [newTx, ...(kid.transactions || [])];
+            await logTransaction(kid.name, `استرجاع مدخرات حصالة دوري العائلة 🔓`, refundAmount, 'deposit');
+          }
+        }
       }
-      await addNotification('father', 'father', 'نتائج الدوري العائلي 🏆🏁', 'تم إعلان نتائج الدوري بنجاح!');
+      setKids(updatedKids);
+
+      // Send notifications based on whether it was evaluated (ended naturally) or early cancelled
+      const isEvaluated = finalSpendingScores !== undefined;
+      for (const kid of updatedKids) {
+        if (isEvaluated) {
+          const score = finalSpendingScores?.[kid.id] || finalSpendingScores?.[kid.name] || 0;
+          await addNotification(
+            kid.id,
+            'kid',
+            'نتائج الدوري العائلي 🏆🏁',
+            `انتهى الدوري! حصلت على تقييم مصروف: ${score} نقطة.`
+          );
+        } else {
+          await addNotification(
+            kid.id,
+            'kid',
+            'إلغاء التحدي 🛑',
+            'قام والدك بإلغاء التحدي العائلي الحالي.'
+          );
+        }
+      }
+
+      if (isEvaluated) {
+        await addNotification('father', 'father', 'نتائج الدوري العائلي 🏆🏁', 'تم إعلان نتائج الدوري بنجاح!');
+      } else {
+        await addNotification('father', 'father', 'إلغاء التحدي 🛑', 'تم إلغاء التحدي العائلي بنجاح.');
+      }
 
       const resetLeague = {
         ...activeLeague,

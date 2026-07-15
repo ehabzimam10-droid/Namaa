@@ -116,14 +116,38 @@ export interface KidSpendingEvaluation {
 
 export async function evaluateKidsSpending(
   apiKey: string,
-  kidsData: any[]
+  kidsData: any[],
+  startDate?: string,
+  endDate?: string
 ): Promise<KidSpendingEvaluation[]> {
+  const startTime = startDate ? new Date(startDate).getTime() : 0;
+  const endTime = endDate ? new Date(endDate).getTime() : Infinity;
+
+  const filteredKids = kidsData.map(kid => {
+    const filteredTx = (kid.transactions || []).filter((tx: any) => {
+      const txTime = new Date(tx.date).getTime();
+      return txTime >= startTime && txTime <= endTime;
+    });
+
+    const filteredTasks = (kid.tasks || []).filter((task: any) => {
+      const taskTime = new Date(task.createdAt || task.endDate || '').getTime();
+      if (isNaN(taskTime)) return false;
+      return taskTime >= startTime && taskTime <= endTime;
+    });
+
+    return {
+      ...kid,
+      transactions: filteredTx,
+      tasks: filteredTasks
+    };
+  });
+
   const prompt = `
     You are an expert financial advisor for Alinma Bank's family banking application "Namaa".
     Your role is to analyze the spending transactions of the kids during their active league challenge.
     
     Kids Data (including recent transactions and allowance details):
-    ${JSON.stringify(kidsData)}
+    ${JSON.stringify(filteredKids)}
     
     Please evaluate the "Spending Management" score for each kid on a scale from 0 to 100.
     - A higher score (e.g. 80-100) indicates they spent their money wisely on essential things or saved most of it, avoiding random consumer or unnecessary daily spending.
@@ -147,7 +171,7 @@ export async function evaluateKidsSpending(
     }
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({
-      model: 'gemini-3.5-flash',
+      model: 'gemini-1.5-flash',
       generationConfig: { responseMimeType: 'application/json' },
     });
 
@@ -163,7 +187,7 @@ export async function evaluateKidsSpending(
     return JSON.parse(cleanedText) as KidSpendingEvaluation[];
   } catch (err) {
     console.warn('Gemini spending evaluation failed, falling back to mock evaluation:', err);
-    return kidsData.map(kid => {
+    return filteredKids.map(kid => {
       const spent = (kid.transactions || [])
         .filter((tx: any) => tx.type === 'withdrawal' && !tx.title.includes('حصالة') && !tx.title.includes('استثمار') && !tx.title.includes('تبرع'))
         .reduce((sum: number, tx: any) => sum + tx.amount, 0);
