@@ -32,7 +32,7 @@ export default function FatherVillagePage() {
 
   return (
     <div className="w-full space-y-8 text-right font-sans relative">
-      {/* Header Panel */}
+      {/* Clean Header Panel */}
       <div className="relative overflow-hidden bg-white/5 backdrop-blur-xl border border-white/10 shadow-2xl rounded-3xl p-6 flex flex-col md:flex-row-reverse md:items-center justify-between gap-4">
         <div className="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-orange-500/10 blur-2xl"></div>
         <div>
@@ -41,88 +41,138 @@ export default function FatherVillagePage() {
         </div>
       </div>
 
-      {/* Main Layout containing Outposts and the Center Board */}
-      <div className="relative w-full min-h-[680px] bg-[#090F1B]/40 border border-white/5 rounded-3xl p-6 overflow-visible flex flex-col items-center justify-between gap-6 shadow-inner">
+      {/* Main Structural Layout Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-stretch">
         
-        {/* Glowing background highlights */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] rounded-full bg-orange-500/5 blur-3xl pointer-events-none"></div>
-        <div className="absolute top-1/4 left-1/4 w-72 h-72 rounded-full bg-blue-500/5 blur-3xl pointer-events-none"></div>
-
-        {/* Backgound/Corners: Clickable Outposts representing kids' villages */}
-        <div className="w-full flex justify-between items-center z-10 px-4">
-          {/* Outpost 1: Khalid's Village (Top-Left) */}
+        {/* Left Side: Elegant Preview Card for Kid 1 (Khalid) */}
+        <div className="lg:col-span-1 flex flex-col justify-start">
           {(() => {
             const khalid = kids.find(k => k.name === 'خالد') || kids[0];
             if (!khalid) return null;
             return (
-              <button
-                type="button"
-                onClick={() => setSelectedKid(khalid)}
-                className="flex items-center gap-3 bg-[#111C2E]/80 hover:bg-[#1C2C42] border border-white/10 hover:border-blue-500/40 p-4 rounded-2xl transition-all duration-350 shadow-lg hover:scale-105 active:scale-95 group text-right focus:outline-none"
+              <div
+                className="w-full bg-[#111C2E]/60 border border-white/10 rounded-3xl p-6 shadow-xl text-center space-y-5 transition-all duration-300 hover:border-blue-500/30"
               >
-                <div className="text-2xl p-2 bg-blue-500/10 rounded-xl border border-blue-500/20 group-hover:border-blue-500/50 transition-all">
-                  🏰
+                <div className="w-20 h-20 mx-auto bg-blue-500/10 rounded-full flex items-center justify-center border border-blue-500/20">
+                  <span className="text-3xl">👦</span>
                 </div>
                 <div>
-                  <span className="text-[10px] text-blue-400 font-bold block">موقع استكشاف خارجي</span>
-                  <span className="text-xs font-black text-white block">قرية خالد 👦➜</span>
+                  <h4 className="font-extrabold text-white text-base">قرية خالد 🏰</h4>
+                  <p className="text-[10px] text-slate-400 mt-1">اضغط أدناه لاستكشاف قريته ثلاثية الأبعاد الحقيقية</p>
                 </div>
-              </button>
+                
+                <div className="bg-black/20 rounded-2xl p-4 text-xs space-y-2 text-right border border-white/5 font-sans">
+                  <div className="flex justify-between text-slate-300">
+                    <span className="font-bold text-orange-400">{khalid.bank_level || 3}</span>
+                    <span>البنك (الادخار):</span>
+                  </div>
+                  <div className="flex justify-between text-slate-300">
+                    <span className="font-bold text-emerald-400">{khalid.farm_level || 3}</span>
+                    <span>الواحة (التبرع):</span>
+                  </div>
+                  <div className="flex justify-between text-slate-300">
+                    <span className="font-bold text-amber-400">{khalid.market_level || 3}</span>
+                    <span>السوق (الاستثمار):</span>
+                  </div>
+                  <div className="flex justify-between text-slate-300">
+                    <span className="font-bold text-blue-400">{getKidWindmillLevel(khalid)}</span>
+                    <span>طاحونة المهام:</span>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setSelectedKid(khalid)}
+                  className="w-full py-2.5 rounded-xl bg-blue-600/80 hover:bg-blue-600 border border-blue-500/35 text-white font-bold text-xs transition-all shadow-md active:scale-95 cursor-pointer"
+                >
+                  استكشاف القرية التفصيلية 🗺️
+                </button>
+              </div>
             );
           })()}
+        </div>
 
-          {/* Outpost 2: Salem's Village (Top-Right) */}
+        {/* Center: The Grand Family Kingdom (Takes 2 columns in the middle) */}
+        <div className="lg:col-span-2 relative overflow-hidden bg-gradient-to-b from-[#1C2C4E]/40 to-[#0A111E]/60 border border-white/10 shadow-2xl rounded-3xl p-6 text-center space-y-6 flex flex-col items-center justify-center">
+          <div className="text-center space-y-1 z-10">
+            <span className="text-[10px] text-orange-400 font-bold block">المملكة العائلية الموحدة</span>
+            <h4 className="text-lg font-black text-white">قلعة نماء الكبرى والأسوار المحصنة 🏰🛡️</h4>
+            <p className="text-[10px] text-slate-450 font-sans">تتطور مبانيها بمتوسط إنجاز الأبناء والقلعة المركزية مربوطة بالمستوى العام للعائلة</p>
+          </div>
+
+          {/* Large and centered VillageBoard */}
+          <div className="w-full z-0">
+            <VillageBoard
+              levels={{
+                bank: averageBank,
+                farm: averageFarm,
+                market: averageMarket,
+                center: familyCastleLevel,
+                windmill: averageWindmill,
+              }}
+              wallLevel={familyCastleLevel}
+            />
+          </div>
+
+          <div className="w-full bg-black/20 border border-white/5 p-4 rounded-2xl text-center text-xs leading-relaxed text-slate-350 z-10">
+            🏰 مملكة العائلة تجمع مستويات التطور والتقدم لكافة أفراد العائلة بشكل مشترك.
+            الأسوار الخارجية المحصنة تزداد قوة مع ارتقاء القلعة المركزية المشتركة (مستواها الحالي: <span className="font-bold text-[#FFD700]">{familyCastleLevel}</span>).
+          </div>
+        </div>
+
+        {/* Right Side: Elegant Preview Card for Kid 2 (Salem) */}
+        <div className="lg:col-span-1 flex flex-col justify-start">
           {(() => {
             const salem = kids.find(k => k.name === 'سالم') || kids[1];
             if (!salem) return null;
             return (
-              <button
-                type="button"
-                onClick={() => setSelectedKid(salem)}
-                className="flex items-center gap-3 bg-[#111C2E]/80 hover:bg-[#1C2C42] border border-white/10 hover:border-emerald-500/40 p-4 rounded-2xl transition-all duration-350 shadow-lg hover:scale-105 active:scale-95 group text-right focus:outline-none"
+              <div
+                className="w-full bg-[#111C2E]/60 border border-white/10 rounded-3xl p-6 shadow-xl text-center space-y-5 transition-all duration-300 hover:border-emerald-500/30"
               >
-                <div className="text-2xl p-2 bg-emerald-500/10 rounded-xl border border-emerald-500/20 group-hover:border-emerald-500/50 transition-all">
-                  🏰
+                <div className="w-20 h-20 mx-auto bg-emerald-500/10 rounded-full flex items-center justify-center border border-emerald-500/20">
+                  <span className="text-3xl">👦</span>
                 </div>
                 <div>
-                  <span className="text-[10px] text-emerald-400 font-bold block">موقع استكشاف خارجي</span>
-                  <span className="text-xs font-black text-white block">قرية سالم 👦➜</span>
+                  <h4 className="font-extrabold text-white text-base">قرية سالم 🏰</h4>
+                  <p className="text-[10px] text-slate-400 mt-1">اضغط أدناه لاستكشاف قريته ثلاثية الأبعاد الحقيقية</p>
                 </div>
-              </button>
+                
+                <div className="bg-black/20 rounded-2xl p-4 text-xs space-y-2 text-right border border-white/5 font-sans">
+                  <div className="flex justify-between text-slate-300">
+                    <span className="font-bold text-orange-400">{salem.bank_level || 3}</span>
+                    <span>البنك (الادخار):</span>
+                  </div>
+                  <div className="flex justify-between text-slate-300">
+                    <span className="font-bold text-emerald-400">{salem.farm_level || 3}</span>
+                    <span>الواحة (التبرع):</span>
+                  </div>
+                  <div className="flex justify-between text-slate-300">
+                    <span className="font-bold text-amber-400">{salem.market_level || 3}</span>
+                    <span>السوق (الاستثمار):</span>
+                  </div>
+                  <div className="flex justify-between text-slate-300">
+                    <span className="font-bold text-blue-400">{getKidWindmillLevel(salem)}</span>
+                    <span>طاحونة المهام:</span>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setSelectedKid(salem)}
+                  className="w-full py-2.5 rounded-xl bg-emerald-600/80 hover:bg-emerald-600 border border-emerald-500/35 text-white font-bold text-xs transition-all shadow-md active:scale-95 cursor-pointer"
+                >
+                  استكشاف القرية التفصيلية 🗺️
+                </button>
+              </div>
             );
           })()}
         </div>
 
-        {/* Center: The Grand Family Kingdom (Center Castle + 4 Family Buildings inside the Wall) */}
-        <div className="w-full max-w-2xl py-6 z-0 flex flex-col items-center">
-          <div className="text-center space-y-1 mb-8">
-            <span className="text-[10px] text-orange-400 font-bold block">المملكة العائلية الموحدة</span>
-            <h4 className="text-lg font-black text-white">قلعة نماء الكبرى والأسوار المحصنة 🏰🛡️</h4>
-            <p className="text-[10px] text-slate-400 font-sans">تتطور مبانيها بمتوسط إنجاز الأبناء والقلعة المركزية مربوطة بالمستوى العام للعائلة</p>
-          </div>
-
-          <VillageBoard
-            levels={{
-              bank: averageBank,
-              farm: averageFarm,
-              market: averageMarket,
-              center: familyCastleLevel,
-              windmill: averageWindmill,
-            }}
-            wallLevel={familyCastleLevel}
-          />
-        </div>
-
-        {/* Bottom indicator details */}
-        <div className="w-full max-w-lg bg-black/20 border border-white/5 p-4 rounded-2xl text-center text-xs leading-relaxed text-slate-350 z-10">
-          🏰 <strong>المملكة العائلية</strong> تجمع مستويات الادخار والتبرع والاستثمار لكافة أفراد العائلة بشكل مشترك.
-          الأسوار الخارجية الحصينة تزداد قوة وجمالاً مع ارتقاء مستوى القلعة المركزية المشتركة (مستواها الحالي: <span className="font-bold text-[#FFD700]">{familyCastleLevel}</span>).
-        </div>
       </div>
 
       {/* Glassmorphic Modal for Kid's detailed 2.5D village view */}
       {selectedKid && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/75 backdrop-blur-md animate-fade-in">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fade-in">
           <div className="relative w-full max-w-2xl bg-[#0D1527]/90 border border-white/10 shadow-2xl rounded-3xl p-6 text-right font-sans overflow-hidden">
             <div className="absolute -left-10 -top-10 h-28 w-28 rounded-full bg-blue-500/10 blur-2xl pointer-events-none"></div>
 
