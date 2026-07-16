@@ -23,6 +23,14 @@ export default function KidVillageBoard({ kidLevel, kid }: KidVillageBoardProps)
     return k.tasks.filter(t => t.status === 'approved' || t.status === 'completed').length;
   };
 
+  // Helper to resolve the robust image path
+  const getImagePath = (name: string, level: number) => {
+    return `/assets/village/${name}_${level}.png`;
+  };
+
+  const imgSrc = getImagePath('village', kidLevel || 1);
+  console.log('Attempting to load image:', imgSrc);
+
   // Tooltip content helper for kid's individual progress
   const getTooltipData = (hotspot: string) => {
     if (!kid) return null;
@@ -73,17 +81,22 @@ export default function KidVillageBoard({ kidLevel, kid }: KidVillageBoardProps)
           boxShadow: '0 30px 60px rgba(0,0,0,0.8), inset 0 2px 10px rgba(255,255,255,0.05)',
         }}
       >
-        {/* Render the pre-rendered Kid Village Image based on their status level */}
+        {/* Render the pre-rendered Kid Village Image or Fallback Colored Box */}
         {imgError ? (
-          <div className="w-full h-auto min-h-[400px] aspect-square flex flex-col items-center justify-center bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl text-sm font-bold text-slate-350 select-none animate-pulse">
-            <span className="text-3xl mb-2">🏡</span>
-            <span>جاري تحميل معالم القرية...</span>
+          <div className="w-full h-full min-h-[400px] bg-gradient-to-br from-[#122A1E] to-[#06140D] border border-white/10 rounded-3xl flex flex-col items-center justify-center p-6 text-center select-none text-white space-y-4">
+            <div className="text-5xl animate-bounce">🏡</div>
+            <h3 className="text-xl font-black text-emerald-400">قرية {kid?.name || 'الابن'} الافتراضية</h3>
+            <div className="bg-white/5 px-4 py-2 rounded-2xl border border-white/5 font-sans">
+              المستوى الحالي لقريتك: <span className="font-extrabold text-yellow-400 text-lg">{kidLevel || 1}</span>
+            </div>
+            <p className="text-xs text-slate-400 max-w-md">قم بالتحويم فوق منصات المباني التفاعلية أدناه لرؤية إحصائيات نموك الفردية</p>
           </div>
         ) : (
           <img
-            src={`/assets/village/village_${kidLevel || 1}.png`}
+            src={imgSrc}
             alt={`Village Level ${kidLevel || 1}`}
             className="w-full h-auto min-h-[400px] object-contain block rounded-3xl"
+            style={{ minWidth: '600px', minHeight: '400px' }}
             onError={() => setImgError(true)}
           />
         )}
@@ -140,7 +153,7 @@ export default function KidVillageBoard({ kidLevel, kid }: KidVillageBoardProps)
             </div>
             <div className="flex justify-between items-center text-xs">
               <span className="font-bold text-orange-400 font-sans">{activeTooltip.val}</span>
-              <span className="text-slate-350">مستواك الحالي:</span>
+              <span className="text-slate-350">إحصائياتك:</span>
             </div>
           </div>
         )}

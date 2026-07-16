@@ -27,6 +27,14 @@ export default function KingdomBoard({ familyLevel, kids }: KingdomBoardProps) {
     return k.tasks.filter(t => t.status === 'approved' || t.status === 'completed').length;
   };
 
+  // Helper to resolve the robust image path
+  const getImagePath = (name: string, level: number) => {
+    return `/assets/village/${name}_${level}.png`;
+  };
+
+  const imgSrc = getImagePath('kingdom', familyLevel || 1);
+  console.log('Attempting to load image:', imgSrc);
+
   // Tooltip content helper
   const getTooltipData = (hotspot: string) => {
     switch (hotspot) {
@@ -91,17 +99,22 @@ export default function KingdomBoard({ familyLevel, kids }: KingdomBoardProps) {
           boxShadow: '0 30px 60px rgba(0,0,0,0.8), inset 0 2px 10px rgba(255,255,255,0.05)',
         }}
       >
-        {/* Render the Master Pre-rendered Kingdom Image based on family castle level */}
+        {/* Render the Master Pre-rendered Kingdom Image or Fallback Colored Box */}
         {imgError ? (
-          <div className="w-full h-auto min-h-[400px] aspect-square flex flex-col items-center justify-center bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl text-sm font-bold text-slate-350 select-none animate-pulse">
-            <span className="text-3xl mb-2">🏰</span>
-            <span>جاري تحميل معالم المملكة...</span>
+          <div className="w-full h-full min-h-[400px] bg-gradient-to-br from-[#1C2C4E] to-[#0A111E] border border-white/10 rounded-3xl flex flex-col items-center justify-center p-6 text-center select-none text-white space-y-4">
+            <div className="text-5xl animate-bounce">🏰</div>
+            <h3 className="text-xl font-black text-orange-400">مملكة نماء العائلية المشتركة</h3>
+            <div className="bg-white/5 px-4 py-2 rounded-2xl border border-white/5 font-sans">
+              المستوى الحالي للمملكة: <span className="font-extrabold text-yellow-400 text-lg">{familyLevel || 1}</span>
+            </div>
+            <p className="text-xs text-slate-400 max-w-md">قم بالتحويم فوق منصات المباني التفاعلية أدناه لرؤية مقارنة إحصائيات الأبناء الحية</p>
           </div>
         ) : (
           <img
-            src={`/assets/village/kingdom_${familyLevel || 1}.png`}
+            src={imgSrc}
             alt={`Kingdom Level ${familyLevel || 1}`}
             className="w-full h-auto min-h-[400px] object-contain block rounded-3xl"
+            style={{ minWidth: '600px', minHeight: '400px' }}
             onError={() => setImgError(true)}
           />
         )}
