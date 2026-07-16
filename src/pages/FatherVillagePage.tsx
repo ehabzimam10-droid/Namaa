@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import VillageBoard from '../components/village/VillageBoard';
+import KingdomBoard from '../components/village/KingdomBoard';
 import type { Kid } from '../data/mockData';
 
 export default function FatherVillagePage() {
@@ -52,15 +53,9 @@ export default function FatherVillagePage() {
         {/* Large and centered VillageBoard */}
         <div className="w-full z-0 overflow-visible flex justify-center">
           <div className="w-full max-w-4xl">
-            <VillageBoard
-              levels={{
-                bank: averageBank,
-                farm: averageFarm,
-                market: averageMarket,
-                center: familyCastleLevel,
-                windmill: averageWindmill,
-              }}
-              wallLevel={familyCastleLevel}
+            <KingdomBoard
+              familyLevel={familyCastleLevel}
+              kids={kids}
             />
           </div>
         </div>
