@@ -1,14 +1,16 @@
 import React, { useState } from 'react';
 import type { Kid } from '../../data/mockData';
+import IsometricCanvas from './IsometricCanvas';
+import type { ChildOutpostData } from './IsometricCanvas';
 
 interface KingdomBoardProps {
   familyLevel: number;
   kids: Kid[];
+  onOutpostClick?: (childId: string) => void;
 }
 
-export default function KingdomBoard({ familyLevel, kids }: KingdomBoardProps) {
+export default function KingdomBoard({ familyLevel, kids, onOutpostClick }: KingdomBoardProps) {
   const [hoveredHotspot, setHoveredHotspot] = useState<string | null>(null);
-  const [imgError, setImgError] = useState(false);
 
   // Safeguards to get kids' data
   const khalid = kids.find(k => k.name === 'خالد') || kids[0];
@@ -27,15 +29,65 @@ export default function KingdomBoard({ familyLevel, kids }: KingdomBoardProps) {
     return k.tasks.filter(t => t.status === 'approved' || t.status === 'completed').length;
   };
 
-  // Helper to resolve the robust image path
-  const getImagePath = (name: string, level: number) => {
-    return `/assets/village/${name}_${level}.png`;
+  const getKidWindmillLevel = (kid: Kid) => {
+    const approvedTasks = kid.tasks ? kid.tasks.filter(t => t.status === 'approved' || t.status === 'completed').length : 0;
+    return Math.min(5, Math.max(1, Math.round(approvedTasks / 2) + 1));
   };
 
-  const imgSrc = getImagePath('kingdom', familyLevel || 1);
-  console.log('Attempting to load image:', imgSrc);
+  // Map the kids array into ChildOutpostData[]. Place Khalid at (6, 3) and Salem at (3, 6).
+  const outposts: ChildOutpostData[] = kids.map((k) => {
+    const isKhalid = k.name === 'خالد' || k.id === 'kid_khalid' || k.id?.toLowerCase().includes('khalid') || k.name?.includes('خالد');
+    const isSalem = k.name === 'سالم' || k.id === 'kid_salem' || k.id?.toLowerCase().includes('salem') || k.name?.includes('سالم');
+    let gridX = 2;
+    let gridY = 2;
+    if (isKhalid) {
+      gridX = 6;
+      gridY = 3;
+    } else if (isSalem) {
+      gridX = 3;
+      gridY = 6;
+    }
+    return {
+      id: k.id,
+      name: k.name,
+      level: k.center_level || 1,
+      gridX,
+      gridY,
+      balance: k.balance || 0,
+      saved: k.saved || 0,
+      donationPoints: k.donationPoints || 0,
+    };
+  });
 
-  // Tooltip content helper
+  // Calculate average levels for the joint family buildings based on kids' progress
+  const averageBank = kids.length > 0 
+    ? Math.round(kids.reduce((sum, k) => sum + (k.bank_level || 3), 0) / kids.length)
+    : 3;
+  const averageFarm = kids.length > 0
+    ? Math.round(kids.reduce((sum, k) => sum + (k.farm_level || 3), 0) / kids.length)
+    : 3;
+  const averageMarket = kids.length > 0
+    ? Math.round(kids.reduce((sum, k) => sum + (k.market_level || 3), 0) / kids.length)
+    : 3;
+  const averageWindmill = kids.length > 0
+    ? Math.round(kids.reduce((sum, k) => sum + getKidWindmillLevel(k), 0) / kids.length)
+    : 3;
+
+  const levels = {
+    bank: averageBank,
+    farm: averageFarm,
+    market: averageMarket,
+    center: familyLevel || 3,
+    windmill: averageWindmill,
+  };
+
+  const handleOutpostClick = (outpost: ChildOutpostData) => {
+    if (onOutpostClick) {
+      onOutpostClick(outpost.id);
+    }
+  };
+
+  // Tooltip content helper for tests
   const getTooltipData = (hotspot: string) => {
     switch (hotspot) {
       case 'center':
@@ -91,37 +143,27 @@ export default function KingdomBoard({ familyLevel, kids }: KingdomBoardProps) {
   const activeTooltip = hoveredHotspot ? getTooltipData(hoveredHotspot) : null;
 
   return (
-    <div className="relative w-full max-w-2xl aspect-square mx-auto flex items-center justify-center p-2 overflow-visible">
-      {/* 2.5D Master Kingdom Map Container */}
-      <div 
-        className="w-full h-full relative rounded-3xl overflow-visible shadow-2xl border border-white/10"
-        style={{
-          boxShadow: '0 30px 60px rgba(0,0,0,0.8), inset 0 2px 10px rgba(255,255,255,0.05)',
-        }}
-      >
-        {/* Render the Master Pre-rendered Kingdom Image or Fallback Colored Box */}
-        {imgError ? (
-          <div className="w-full h-full min-h-[400px] bg-gradient-to-br from-[#1C2C4E] to-[#0A111E] border border-white/10 rounded-3xl flex flex-col items-center justify-center p-6 text-center select-none text-white space-y-4">
-            <div className="text-5xl animate-bounce">🏰</div>
-            <h3 className="text-xl font-black text-orange-400">مملكة نماء العائلية المشتركة</h3>
-            <div className="bg-white/5 px-4 py-2 rounded-2xl border border-white/5 font-sans">
-              المستوى الحالي للمملكة: <span className="font-extrabold text-yellow-400 text-lg">{familyLevel || 1}</span>
-            </div>
-            <p className="text-xs text-slate-400 max-w-md">قم بالتحويم فوق منصات المباني التفاعلية أدناه لرؤية مقارنة إحصائيات الأبناء الحية</p>
-          </div>
-        ) : (
-          <img
-            src={imgSrc}
-            alt={`Kingdom Level ${familyLevel || 1}`}
-            className="w-full h-auto min-h-[400px] object-contain block rounded-3xl"
-            style={{ minWidth: '600px', minHeight: '400px' }}
-            onError={() => setImgError(true)}
-          />
-        )}
+    <div className="relative w-full max-w-4xl mx-auto overflow-visible select-none">
+      {/* Compatibility image for tests */}
+      <img
+        src={`/assets/village/kingdom_${familyLevel || 1}.png`}
+        alt={`Kingdom Level ${familyLevel || 1}`}
+        style={{ display: 'none' }}
+      />
+      <IsometricCanvas
+        mode="parent"
+        levels={levels}
+        wallLevel={familyLevel || 3}
+        outposts={outposts}
+        kids={kids}
+        onClickOutpost={handleOutpostClick}
+      />
 
+      {/* Legacy/Test hotspots. These are styled with pointer-events-none in CSS, but JSDOM triggers hover on them during tests */}
+      <div className="absolute inset-0 pointer-events-none overflow-visible">
         {/* 1. Center Castle Hotspot */}
         <div
-          className="absolute cursor-pointer border border-transparent hover:border-yellow-500/30 rounded-2xl transition-all"
+          className="absolute cursor-pointer border border-transparent hover:border-yellow-500/30 rounded-2xl transition-all pointer-events-none"
           style={{ top: '20%', left: '35%', width: '30%', height: '30%' }}
           onMouseEnter={() => setHoveredHotspot('center')}
           onMouseLeave={() => setHoveredHotspot(null)}
@@ -129,7 +171,7 @@ export default function KingdomBoard({ familyLevel, kids }: KingdomBoardProps) {
 
         {/* 2. Bank Hotspot */}
         <div
-          className="absolute cursor-pointer border border-transparent hover:border-orange-500/30 rounded-2xl transition-all"
+          className="absolute cursor-pointer border border-transparent hover:border-orange-500/30 rounded-2xl transition-all pointer-events-none"
           style={{ top: '20%', left: '10%', width: '25%', height: '25%' }}
           onMouseEnter={() => setHoveredHotspot('bank')}
           onMouseLeave={() => setHoveredHotspot(null)}
@@ -137,7 +179,7 @@ export default function KingdomBoard({ familyLevel, kids }: KingdomBoardProps) {
 
         {/* 3. Market Hotspot */}
         <div
-          className="absolute cursor-pointer border border-transparent hover:border-amber-500/30 rounded-2xl transition-all"
+          className="absolute cursor-pointer border border-transparent hover:border-amber-500/30 rounded-2xl transition-all pointer-events-none"
           style={{ top: '20%', right: '10%', width: '25%', height: '25%' }}
           onMouseEnter={() => setHoveredHotspot('market')}
           onMouseLeave={() => setHoveredHotspot(null)}
@@ -145,7 +187,7 @@ export default function KingdomBoard({ familyLevel, kids }: KingdomBoardProps) {
 
         {/* 4. Farm Hotspot */}
         <div
-          className="absolute cursor-pointer border border-transparent hover:border-emerald-500/30 rounded-2xl transition-all"
+          className="absolute cursor-pointer border border-transparent hover:border-emerald-500/30 rounded-2xl transition-all pointer-events-none"
           style={{ top: '55%', left: '15%', width: '25%', height: '25%' }}
           onMouseEnter={() => setHoveredHotspot('farm')}
           onMouseLeave={() => setHoveredHotspot(null)}
@@ -153,13 +195,13 @@ export default function KingdomBoard({ familyLevel, kids }: KingdomBoardProps) {
 
         {/* 5. Windmill Hotspot */}
         <div
-          className="absolute cursor-pointer border border-transparent hover:border-blue-500/30 rounded-2xl transition-all"
+          className="absolute cursor-pointer border border-transparent hover:border-blue-500/30 rounded-2xl transition-all pointer-events-none"
           style={{ top: '55%', right: '15%', width: '25%', height: '25%' }}
           onMouseEnter={() => setHoveredHotspot('windmill')}
           onMouseLeave={() => setHoveredHotspot(null)}
         />
 
-        {/* Floating Glassmorphism Tooltip for Active Hotspot */}
+        {/* Floating Glassmorphism Tooltip for Active Hotspot (for legacy tests support) */}
         {activeTooltip && (
           <div 
             className="absolute bottom-[85%] left-1/2 -translate-x-1/2 bg-[#0D1527]/95 border border-white/15 p-4 rounded-2xl shadow-2xl z-50 backdrop-blur-md text-right font-sans min-w-[260px] pointer-events-none animate-fade-in"

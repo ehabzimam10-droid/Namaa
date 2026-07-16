@@ -22,8 +22,10 @@ export interface Transaction {
   id: string;
   title: string;
   amount: number;
-  type: 'deposit' | 'withdrawal' | 'دوري_جديد';
+  type: 'deposit' | 'withdrawal' | 'دوري_جديد' | 'investment' | string;
   date: string;
+  description?: string;
+  category?: string;
 }
 
 export interface Task {

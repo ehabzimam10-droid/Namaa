@@ -28,6 +28,7 @@ export default function FatherVillagePage() {
               name: k.name,
               age: k.age || 10,
               balance: k.balance || 0,
+              saved: k.saved || 0,
               donationPoints: k.donation_points || 0,
               allowance: k.allowance || 0,
               tasks: [],
@@ -99,6 +100,12 @@ export default function FatherVillagePage() {
             <KingdomBoard
               familyLevel={familyCastleLevel}
               kids={localKids}
+              onOutpostClick={(childId) => {
+                const kid = localKids.find(k => k.id === childId);
+                if (kid) {
+                  setSelectedKid(kid);
+                }
+              }}
             />
           </div>
         </div>

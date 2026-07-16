@@ -4,9 +4,11 @@ import type { Kid, FamilyProject, Task, Transaction, SavingsGoal, ActiveLeague }
 import { supabase } from '../utils/supabaseClient';
 
 export interface UserProfile {
+  id?: string;
   name: string;
   role: 'father' | 'kid' | 'dev';
   email?: string;
+  family_castle_level?: number;
 }
 
 export interface Notification {
