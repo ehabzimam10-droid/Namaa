@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
-import VillageBoard from '../components/village/VillageBoard';
+import KidVillageBoard from '../components/village/KidVillageBoard';
 
 export default function KidCastlePage() {
   const navigate = useNavigate();
@@ -54,15 +54,9 @@ export default function KidCastlePage() {
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-72 h-72 rounded-full bg-orange-500/5 blur-3xl pointer-events-none"></div>
         <div className="absolute top-1/3 left-1/4 w-48 h-48 rounded-full bg-blue-500/5 blur-3xl pointer-events-none"></div>
 
-        <VillageBoard
-          levels={{
-            bank: bankLevel,
-            farm: farmLevel,
-            market: marketLevel,
-            center: centerLevel,
-            windmill: windmillLevel,
-          }}
-          wallLevel={centerLevel}
+        <KidVillageBoard
+          kidLevel={centerLevel}
+          kid={kid}
         />
       </div>
 
