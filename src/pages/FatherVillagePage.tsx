@@ -12,6 +12,11 @@ export default function FatherVillagePage() {
 
   // Calculate average levels for the joint family buildings based on kids' progress
   const activeKids = kids.length > 0 ? kids : [];
+
+  const getKidWindmillLevel = (kid: Kid) => {
+    return Math.min(5, Math.max(1, Math.round((kid.tasks?.filter(t => t.status === 'approved').length || 0) / 2) + 1));
+  };
+
   const averageBank = activeKids.length > 0 
     ? Math.round(activeKids.reduce((sum, k) => sum + (k.bank_level || 3), 0) / activeKids.length)
     : 3;
@@ -20,6 +25,9 @@ export default function FatherVillagePage() {
     : 3;
   const averageMarket = activeKids.length > 0
     ? Math.round(activeKids.reduce((sum, k) => sum + (k.market_level || 3), 0) / activeKids.length)
+    : 3;
+  const averageWindmill = activeKids.length > 0
+    ? Math.round(activeKids.reduce((sum, k) => sum + getKidWindmillLevel(k), 0) / activeKids.length)
     : 3;
 
   return (
@@ -99,6 +107,7 @@ export default function FatherVillagePage() {
               farm: averageFarm,
               market: averageMarket,
               center: familyCastleLevel,
+              windmill: averageWindmill,
             }}
             wallLevel={familyCastleLevel}
           />
@@ -140,6 +149,7 @@ export default function FatherVillagePage() {
                   farm: selectedKid.farm_level || 3,
                   market: selectedKid.market_level || 3,
                   center: selectedKid.center_level || 3,
+                  windmill: getKidWindmillLevel(selectedKid),
                 }}
                 wallLevel={selectedKid.center_level || 3}
               />

@@ -15,6 +15,7 @@ export default function KidCastlePage() {
   const farmLevel = kid.farm_level || 3;
   const marketLevel = kid.market_level || 3;
   const centerLevel = kid.center_level || 3;
+  const windmillLevel = Math.min(5, Math.max(1, Math.round((kid.tasks?.filter(t => t.status === 'approved').length || 0) / 2) + 1));
 
   return (
     <div className="w-full space-y-8 text-right font-sans">
@@ -42,7 +43,8 @@ export default function KidCastlePage() {
           <li><strong>البنك العائلي 💰 (مستوى {bankLevel}):</strong> ينمو ويتزين بالذهب بناءً على التزامك بادخار الأموال بانتظام.</li>
           <li><strong>واحة التبرعات 💚 (مستوى {farmLevel}):</strong> تصبح خضراء ويفيض بئرها بالماء العذب عند مشاركتك المجتمعية بالخير والتبرع.</li>
           <li><strong>سوق الاستثمار 📈 (مستوى {marketLevel}):</strong> يمتلئ بالخيام والنشاط التجاري مع زيادة حجم استثماراتك في المشاريع العائلية.</li>
-          <li><strong>المركز الرئيسي 🏛️ (مستوى {centerLevel}):</strong> قصر قريتك الذي يعكس شموخه وجماله مستواك المالي الشامل والتزامك بأهدافك.</li>
+          <li><strong>المركز الرئيسي 🏛️ (مستوى {centerLevel}):</strong> قصر قريتك (منزل القصر) الذي يعكس شموخه وجماله مستواك المالي الشامل والتزامك بأهدافك.</li>
+          <li><strong>طاحونة المهام ⚙️ (مستوى {windmillLevel}):</strong> تدور وتنظف الساحة بناءً على إنجازك للمسؤوليات والواجبات المطلوبة.</li>
         </ul>
       </div>
 
@@ -58,7 +60,9 @@ export default function KidCastlePage() {
             farm: farmLevel,
             market: marketLevel,
             center: centerLevel,
+            windmill: windmillLevel,
           }}
+          wallLevel={centerLevel}
         />
       </div>
 
