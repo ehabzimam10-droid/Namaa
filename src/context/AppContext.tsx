@@ -66,7 +66,7 @@ interface AppContextType {
   toast: { show: boolean; message: string; type: 'success' | 'error' | null };
   showToast: (message: string, type: 'success' | 'error') => void;
   updateFamilyLevel: (newLevel: number) => Promise<void>;
-  updateKidLevels: (kidId: string, level: number) => Promise<void>;
+  updateKidLevels: (kidId: string, newLevel: number) => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -1064,28 +1064,32 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
-  const updateKidLevels = async (kidId: string, level: number) => {
+  const updateKidLevels = async (kidId: string, newLevel: number) => {
     try {
       const { error } = await supabase
         .from('kids_profiles')
         .update({
-          bank_level: level,
-          farm_level: level,
-          market_level: level,
-          center_level: level
+          bank_level: newLevel,
+          farm_level: newLevel,
+          market_level: newLevel,
+          center_level: newLevel
         })
         .eq('id', kidId);
       
+      if (error) {
+        console.error('Supabase kids_profiles update error payload:', error);
+      }
+
       if (!error) {
         setKids((prevKids) =>
           prevKids.map((k) =>
             k.id === kidId
               ? {
                   ...k,
-                  bank_level: level,
-                  farm_level: level,
-                  market_level: level,
-                  center_level: level,
+                  bank_level: newLevel,
+                  farm_level: newLevel,
+                  market_level: newLevel,
+                  center_level: newLevel,
                 }
               : k
           )

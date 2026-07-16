@@ -1,19 +1,61 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import VillageBoard from '../components/village/VillageBoard';
 import KingdomBoard from '../components/village/KingdomBoard';
 import LevelSlider from '../components/ui/LevelSlider';
 import type { Kid } from '../data/mockData';
+import { supabase } from '../utils/supabaseClient';
 
 export default function FatherVillagePage() {
   const { profile, kids, updateFamilyLevel } = useApp();
   const [selectedKid, setSelectedKid] = useState<Kid | null>(null);
+  const [localKids, setLocalKids] = useState<Kid[]>(kids || []);
+
+  useEffect(() => {
+    if (kids && kids.length > 0) {
+      setLocalKids(kids);
+    }
+  }, [kids]);
+
+  useEffect(() => {
+    if (!kids || kids.length === 0) {
+      const fetchKids = async () => {
+        try {
+          const { data, error } = await supabase.from('kids_profiles').select('*');
+          if (!error && data && data.length > 0) {
+            const mapped: Kid[] = data.map((k: any) => ({
+              id: k.id,
+              name: k.name,
+              age: k.age || 10,
+              balance: k.balance || 0,
+              donationPoints: k.donation_points || 0,
+              allowance: k.allowance || 0,
+              tasks: [],
+              savingsGoals: [],
+              transactions: [],
+              is_league_winner: !!k.is_league_winner,
+              last_savings_points: k.last_savings_points || 0,
+              last_league_score: k.last_league_score || 0,
+              bank_level: k.bank_level || 3,
+              farm_level: k.farm_level || 3,
+              market_level: k.market_level || 3,
+              center_level: k.center_level || 3,
+            }));
+            setLocalKids(mapped);
+          }
+        } catch (err) {
+          console.error('Error fetching kids profiles directly:', err);
+        }
+      };
+      fetchKids();
+    }
+  }, []);
 
   // Father overall family castle level
   const familyCastleLevel = profile?.family_castle_level || 3;
 
   // Calculate average levels for the joint family buildings based on kids' progress
-  const activeKids = kids.length > 0 ? kids : [];
+  const activeKids = localKids.length > 0 ? localKids : [];
 
   const getKidWindmillLevel = (kid: Kid) => {
     return Math.min(5, Math.max(1, Math.round((kid.tasks?.filter(t => t.status === 'approved').length || 0) / 2) + 1));
@@ -56,7 +98,7 @@ export default function FatherVillagePage() {
           <div className="w-full max-w-4xl">
             <KingdomBoard
               familyLevel={familyCastleLevel}
-              kids={kids}
+              kids={localKids}
             />
           </div>
         </div>
@@ -71,7 +113,7 @@ export default function FatherVillagePage() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
         {/* Left Side: Elegant Preview Card for Khalid */}
         {(() => {
-          const khalid = kids.find(k => k.name === 'خالد') || kids[0];
+          const khalid = localKids.find(k => k.name === 'خالد') || localKids[0];
           if (!khalid) return null;
           return (
             <div
@@ -119,7 +161,7 @@ export default function FatherVillagePage() {
 
         {/* Right Side: Elegant Preview Card for Salem */}
         {(() => {
-          const salem = kids.find(k => k.name === 'سالم') || kids[1];
+          const salem = localKids.find(k => k.name === 'سالم') || localKids[1];
           if (!salem) return null;
           return (
             <div
