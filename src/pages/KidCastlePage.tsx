@@ -2,10 +2,11 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import KidVillageBoard from '../components/village/KidVillageBoard';
+import LevelSlider from '../components/ui/LevelSlider';
 
 export default function KidCastlePage() {
   const navigate = useNavigate();
-  const { kids, profile } = useApp();
+  const { kids, profile, updateKidLevels } = useApp();
 
   // Find current active kid from context
   const kid = kids.find((k) => k.name === profile?.name) || kids.find((k) => k.name === 'سالم') || kids[0];
@@ -63,6 +64,20 @@ export default function KidCastlePage() {
       {/* Tips Section */}
       <div className="bg-[#8c7355]/10 border border-[#8c7355]/20 text-[#e9e3db] p-5 rounded-3xl text-xs text-right leading-relaxed font-sans">
         <strong>💡 نصيحة للنمو:</strong> لإعمار قريتك وتحويلها إلى قلعة ذهبية شامخة 👑، استمر في إيداع الأموال بحصالتك الذكية، وشارك في التبرعات، ولا تهمل إتمام المهام المنزلية الموكلة إليك بانتظام من ولي أمرك!
+      </div>
+      {/* Demo bypass/father control slider */}
+      <div className="w-full bg-[#111C2E]/60 border border-white/10 rounded-3xl p-6 shadow-xl flex flex-col md:flex-row items-center justify-between gap-4">
+        <div className="text-right">
+          <h4 className="font-extrabold text-sm text-white font-sans">لوحة تحكم ولي الأمر التجريبية (عرض تجريبي) ⚙️</h4>
+          <p className="text-[10px] text-slate-400 mt-0.5">اسحب المؤشر لترقية وتوحيد مستوى مباني قرية الابن بالكامل في الوقت الفعلي لأغراض العرض التقديمي</p>
+        </div>
+        <div className="w-full md:w-auto min-w-[280px]">
+          <LevelSlider
+            currentLevel={centerLevel}
+            onLevelChange={(lvl) => updateKidLevels(kid.id, lvl)}
+            label="مستوى قرية الابن الموحد:"
+          />
+        </div>
       </div>
     </div>
   );

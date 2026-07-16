@@ -2,10 +2,11 @@ import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import VillageBoard from '../components/village/VillageBoard';
 import KingdomBoard from '../components/village/KingdomBoard';
+import LevelSlider from '../components/ui/LevelSlider';
 import type { Kid } from '../data/mockData';
 
 export default function FatherVillagePage() {
-  const { profile, kids } = useApp();
+  const { profile, kids, updateFamilyLevel } = useApp();
   const [selectedKid, setSelectedKid] = useState<Kid | null>(null);
 
   // Father overall family castle level
@@ -166,6 +167,21 @@ export default function FatherVillagePage() {
       </div>
 
       {/* Glassmorphic Modal for Kid's detailed 2.5D village view */}
+      {/* Dynamic Evolution Controller Slider at the Bottom */}
+      <div className="w-full bg-[#111C2E]/60 border border-white/10 rounded-3xl p-6 shadow-xl flex flex-col md:flex-row items-center justify-between gap-4">
+        <div className="text-right">
+          <h4 className="font-extrabold text-sm text-white font-sans">التحكم في تطور المملكة العائلية (عرض تجريبي) ⚙️</h4>
+          <p className="text-[10px] text-slate-400 mt-0.5">اسحب المؤشر لترقية مستوى قلعة العائلة والأسوار المحيطة بها في الوقت الفعلي</p>
+        </div>
+        <div className="w-full md:w-auto min-w-[280px]">
+          <LevelSlider
+            currentLevel={familyCastleLevel}
+            onLevelChange={updateFamilyLevel}
+            label="مستوى القلعة والتحصينات:"
+          />
+        </div>
+      </div>
+
       {selectedKid && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fade-in">
           <div className="relative w-full max-w-4xl bg-[#0D1527]/90 border border-white/10 shadow-2xl rounded-3xl p-6 text-right font-sans overflow-hidden">

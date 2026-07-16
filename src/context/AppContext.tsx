@@ -65,6 +65,8 @@ interface AppContextType {
   simulateDailyPurchase: (kidName: string, amount: number, reason: string) => Promise<void>;
   toast: { show: boolean; message: string; type: 'success' | 'error' | null };
   showToast: (message: string, type: 'success' | 'error') => void;
+  updateFamilyLevel: (newLevel: number) => Promise<void>;
+  updateKidLevels: (kidId: string, level: number) => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -1040,6 +1042,64 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
+  const updateFamilyLevel = async (newLevel: number) => {
+    if (!profile) return;
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ family_castle_level: newLevel })
+        .eq('id', profile.id);
+      
+      if (!error) {
+        const updatedProfile = { ...profile, family_castle_level: newLevel };
+        setProfileState(updatedProfile);
+        localStorage.setItem('namaa_profile', JSON.stringify(updatedProfile));
+        showToast('تم تحديث مستوى القلعة العائلية بنجاح!', 'success');
+      } else {
+        console.error('Supabase profile update error:', error.message);
+        showToast('فشل تحديث مستوى القلعة في السيرفر', 'error');
+      }
+    } catch (err) {
+      console.error('Error updating family level:', err);
+    }
+  };
+
+  const updateKidLevels = async (kidId: string, level: number) => {
+    try {
+      const { error } = await supabase
+        .from('kids_profiles')
+        .update({
+          bank_level: level,
+          farm_level: level,
+          market_level: level,
+          center_level: level
+        })
+        .eq('id', kidId);
+      
+      if (!error) {
+        setKids((prevKids) =>
+          prevKids.map((k) =>
+            k.id === kidId
+              ? {
+                  ...k,
+                  bank_level: level,
+                  farm_level: level,
+                  market_level: level,
+                  center_level: level,
+                }
+              : k
+          )
+        );
+        showToast('تم تحديث مستويات قرية الابن بنجاح!', 'success');
+      } else {
+        console.error('Supabase kids_profiles update error:', error.message);
+        showToast('فشل تحديث مستويات قرية الابن', 'error');
+      }
+    } catch (err) {
+      console.error('Error updating kid levels:', err);
+    }
+  };
+
   const calculateKidScores = (kid: Kid) => {
     if (!activeLeague || !activeLeague.startDate || !activeLeague.endDate) {
       return {
@@ -1572,6 +1632,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         simulateDailyPurchase,
         toast,
         showToast,
+        updateFamilyLevel,
+        updateKidLevels,
       }}
     >
       {children}
