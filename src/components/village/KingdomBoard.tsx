@@ -74,11 +74,11 @@ export default function KingdomBoard({ familyLevel, kids, onOutpostClick }: King
     : 3;
 
   const levels = {
-    bank: averageBank,
-    farm: averageFarm,
-    market: averageMarket,
+    bank: familyLevel || 3,
+    farm: familyLevel || 3,
+    market: familyLevel || 3,
     center: familyLevel || 3,
-    windmill: averageWindmill,
+    windmill: familyLevel || 3,
   };
 
   const handleOutpostClick = (outpost: ChildOutpostData) => {

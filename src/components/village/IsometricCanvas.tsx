@@ -219,10 +219,10 @@ export default function IsometricCanvas({
       ctx.scale(dpr, dpr);
 
       // ── Tile Geometry ────────────────────────────────────────
-      const W_tile = cssWidth / 10;
+      const W_tile = cssWidth / 13.5;
       const H_tile = W_tile / 2;
       const X_offset = cssWidth / 2;
-      const Y_offset = (cssHeight - (8 * H_tile)) / 2 + 40;
+      const Y_offset = (cssHeight - (12 * H_tile)) / 2 + 15;
 
       // ── 1. BACKGROUND: Always draw procedural green kingdom ground ───
       // Sky gradient
@@ -255,8 +255,8 @@ export default function IsometricCanvas({
       });
 
       // ── Isometric Green Ground Tiles (always drawn) ──────────
-      for (let gx = 0; gx < 8; gx++) {
-        for (let gy = 0; gy < 8; gy++) {
+      for (let gx = 0; gx < 12; gx++) {
+        for (let gy = 0; gy < 12; gy++) {
           const tpx = (gx - gy) * (W_tile / 2) + X_offset;
           const tpy = (gx + gy) * (H_tile / 2) + Y_offset;
           const evenOdd = (gx + gy) % 2 === 0;
@@ -562,8 +562,8 @@ export default function IsometricCanvas({
 
       // ── Helper: draw wall segment at tile (x, y) ──
       const drawWall = (wx: number, wy: number) => {
-        const isYAxis = (wx === 0 || wx === 7);
-        const isCorner = (wx === 0 && wy === 0) || (wx === 0 && wy === 7) || (wx === 7 && wy === 0) || (wx === 7 && wy === 7);
+        const isYAxis = (wx === 0 || wx === 11);
+        const isCorner = (wx === 0 && wy === 0) || (wx === 0 && wy === 11) || (wx === 11 && wy === 0) || (wx === 11 && wy === 11);
 
         const wpx = (wx - wy) * (W_tile / 2) + X_offset;
         const wpy = (wx + wy) * (H_tile / 2) + Y_offset;
@@ -684,11 +684,11 @@ export default function IsometricCanvas({
         let hX = -1, hY = -1, footprintSize = 1;
         if (hoveredItem.type === 'building') {
           const footMap: Partial<Record<keyof BuildingLevels, [number, number, number]>> = {
-            windmill: [1, 1, 1],
-            bank: [1, 5, 2],
-            center: [3, 3, 2],
-            market: [5, 1, 2],
-            farm: [5, 5, 2],
+            windmill: [2, 2, 1],
+            bank: [2, 9, 2],
+            center: [5, 5, 2],
+            market: [9, 2, 2],
+            farm: [9, 9, 2],
           };
           const fp = footMap[hoveredItem.key];
           if (fp) { hX = fp[0]; hY = fp[1]; footprintSize = fp[2]; }
@@ -722,15 +722,15 @@ export default function IsometricCanvas({
       }
 
       // ── 5. PAINTER'S ALGORITHM — Back-to-Front Building Loop ─
-      for (let x = 0; x < 8; x++) {
-        for (let y = 0; y < 8; y++) {
+      for (let x = 0; x < 12; x++) {
+        for (let y = 0; y < 12; y++) {
           const px = (x - y) * (W_tile / 2) + X_offset;
           const py = (x + y) * (H_tile / 2) + Y_offset;
 
           // ── Programmatic Wall Segment Drawing ──
-          const isYWall = (x === 0) || (x === 7 && y !== 3 && y !== 4);
-          const isXWall = (y === 0) || (y === 7 && x !== 3 && x !== 4);
-          const isCorner = (x === 0 && y === 0) || (x === 0 && y === 7) || (x === 7 && y === 0) || (x === 7 && y === 7);
+          const isYWall = (x === 0) || (x === 11 && y !== 5 && y !== 6);
+          const isXWall = (y === 0) || (y === 11 && x !== 5 && x !== 6);
+          const isCorner = (x === 0 && y === 0) || (x === 0 && y === 11) || (x === 11 && y === 0) || (x === 11 && y === 11);
 
           if (isCorner || isYWall || isXWall) {
             drawWall(x, y);
@@ -739,132 +739,25 @@ export default function IsometricCanvas({
           const isHovered = (b: keyof BuildingLevels) =>
             hoveredItem?.type === 'building' && hoveredItem.key === b;
 
-          // Windmill at (1, 1)
-          if (x === 1 && y === 1) {
-            drawBuilding('windmill', px, py, W_tile * 1.4, H_tile * 2.8, H_tile * 0.5, isHovered('windmill'));
-            drawWindmillBlades(px, py, W_tile * 1.4, H_tile * 2.8, H_tile * 0.5);
+          // Windmill at (2, 2)
+          if (x === 2 && y === 2) {
+            drawBuilding('windmill', px, py, W_tile * 1.5, W_tile * 2.25, H_tile * 0.9, isHovered('windmill'));
           }
-          // Bank at (1, 5)
-          if (x === 1 && y === 5) {
-            drawBuilding('bank', px, py, W_tile * 2.2, H_tile * 3.2, H_tile, isHovered('bank'));
+          // Bank at (2, 9)
+          if (x === 2 && y === 9) {
+            drawBuilding('bank', px, py, W_tile * 2.2, W_tile * 2.3, H_tile * 1.5, isHovered('bank'));
           }
-          // Castle at (3, 3)
-          if (x === 3 && y === 3) {
-            drawBuilding('center', px, py, W_tile * 2.4, H_tile * 3.5, H_tile, isHovered('center'));
-          }
-          // Market at (5, 1)
-          if (x === 5 && y === 1) {
-            drawBuilding('market', px, py, W_tile * 2.2, H_tile * 3.2, H_tile, isHovered('market'));
-          }
-          // Farm at (5, 5)
+          // Castle at (5, 5)
           if (x === 5 && y === 5) {
-            drawBuilding('farm', px, py, W_tile * 2.2, H_tile * 3.2, H_tile, isHovered('farm'));
+            drawBuilding('center', px, py, W_tile * 2.7, W_tile * 2.95, H_tile * 1.5, isHovered('center'));
           }
-
-          // ── Outposts (parent mode) ──────────────────────────
-          if (mode === 'parent') {
-            const outpost = outposts.find(o => o.gridX === x && o.gridY === y);
-            if (outpost) {
-              const floatOffset = Math.sin(now / 950 + (x * 1.37) + (y * 0.73)) * 5.5;
-              const animatedPy = py + floatOffset;
-
-              const outW = W_tile * 1.5;
-              const outH = H_tile * 2.7;
-              const outImgKey = outpost.level >= 3 ? 'center_3' : outpost.level >= 2 ? 'center_2' : 'center_1';
-
-              // Platform glow
-              const pulseAlpha = 0.18 + Math.abs(Math.sin(now / 1100)) * 0.16;
-              ctx.save();
-              ctx.beginPath();
-              ctx.ellipse(px, py + H_tile * 0.08, W_tile * 0.75, H_tile * 0.55, 0, 0, Math.PI * 2);
-              const platGrad = ctx.createRadialGradient(px, py, 0, px, py, W_tile * 0.75);
-              platGrad.addColorStop(0, `rgba(120, 200, 255, ${0.32 + pulseAlpha})`);
-              platGrad.addColorStop(0.7, `rgba(60, 130, 220, ${0.14})`);
-              platGrad.addColorStop(1, 'rgba(0,0,0,0)');
-              ctx.fillStyle = platGrad;
-              ctx.shadowBlur = 20;
-              ctx.shadowColor = 'rgba(80, 180, 255, 0.5)';
-              ctx.fill();
-              ctx.strokeStyle = `rgba(160, 230, 255, ${0.4 + pulseAlpha})`;
-              ctx.lineWidth = 1.2;
-              ctx.stroke();
-              ctx.restore();
-
-              // Pulsing ring
-              const ringPhase = (now / 1500) % 1;
-              const ringR = W_tile * (0.55 + ringPhase * 0.55);
-              ctx.save();
-              ctx.beginPath();
-              ctx.ellipse(px, py + H_tile * 0.08, ringR, ringR * 0.40, 0, 0, Math.PI * 2);
-              ctx.strokeStyle = `rgba(150, 230, 255, ${0.55 * (1 - ringPhase)})`;
-              ctx.lineWidth = 1.5;
-              ctx.stroke();
-              ctx.restore();
-
-              // Outpost image
-              const outpostImg = assetManager.get(outImgKey);
-              if (outpostImg) {
-                ctx.save();
-                ctx.shadowBlur = 14;
-                ctx.shadowColor = 'rgba(0,0,0,0.55)';
-                ctx.drawImage(outpostImg, px - outW / 2, animatedPy - outH + H_tile * 0.38, outW, outH);
-                ctx.restore();
-              }
-
-              // Level badge
-              const badgeText = `⭐ Lv.${outpost.level}`;
-              const topOfBuilding = animatedPy - outH + H_tile * 0.38;
-              ctx.save();
-              ctx.font = 'bold 8.5px "Segoe UI", sans-serif';
-              const badgeW = ctx.measureText(badgeText).width + 14;
-              const badgeH = 16;
-              const badgeX = px - badgeW / 2;
-              const badgeY = topOfBuilding - 25;
-              ctx.fillStyle = 'rgba(255, 210, 0, 0.95)';
-              ctx.shadowBlur = 8;
-              ctx.shadowColor = 'rgba(255, 180, 0, 0.9)';
-              ctx.beginPath();
-              if (typeof (ctx as CanvasRenderingContext2D & { roundRect?: Function }).roundRect === 'function') {
-                (ctx as any).roundRect(badgeX, badgeY, badgeW, badgeH, 8);
-              } else {
-                ctx.rect(badgeX, badgeY, badgeW, badgeH);
-              }
-              ctx.fill();
-              ctx.shadowBlur = 0;
-              ctx.fillStyle = '#0D1527';
-              ctx.textAlign = 'center';
-              ctx.textBaseline = 'middle';
-              ctx.fillText(badgeText, px, badgeY + badgeH / 2);
-              ctx.restore();
-
-              // Name label
-              const labelText = `قرية ${outpost.name}`;
-              ctx.save();
-              ctx.font = 'bold 11px "Segoe UI", sans-serif';
-              const labelW = ctx.measureText(labelText).width + 18;
-              const labelH = 20;
-              const labelX = px - labelW / 2;
-              const labelY = badgeY + badgeH + 3;
-              ctx.fillStyle = 'rgba(13, 21, 39, 0.90)';
-              ctx.strokeStyle = 'rgba(255,255,255,0.20)';
-              ctx.lineWidth = 1;
-              ctx.shadowBlur = 10;
-              ctx.shadowColor = 'rgba(0,0,0,0.5)';
-              ctx.beginPath();
-              if (typeof (ctx as any).roundRect === 'function') {
-                (ctx as any).roundRect(labelX, labelY, labelW, labelH, 8);
-              } else {
-                ctx.rect(labelX, labelY, labelW, labelH);
-              }
-              ctx.fill();
-              ctx.stroke();
-              ctx.shadowBlur = 0;
-              ctx.fillStyle = '#ffffff';
-              ctx.textAlign = 'center';
-              ctx.textBaseline = 'middle';
-              ctx.fillText(labelText, px, labelY + labelH / 2);
-              ctx.restore();
-            }
+          // Market at (9, 2)
+          if (x === 9 && y === 2) {
+            drawBuilding('market', px, py, W_tile * 2.2, W_tile * 2.3, H_tile * 1.5, isHovered('market'));
+          }
+          // Farm at (9, 9)
+          if (x === 9 && y === 9) {
+            drawBuilding('farm', px, py, W_tile * 3.1, W_tile * 2.5, H_tile * 1.4, isHovered('farm'));
           }
         }
       }
@@ -906,40 +799,23 @@ export default function IsometricCanvas({
     const dpr = window.devicePixelRatio || 1;
     const cssWidth = canvas.width / dpr;
     const cssHeight = canvas.height / dpr;
-    const W_tile = cssWidth / 10;
+    const W_tile = cssWidth / 13.5;
     const H_tile = W_tile / 2;
     const X_offset = cssWidth / 2;
-    const Y_offset = (cssHeight - (8 * H_tile)) / 2 + 40;
+    const Y_offset = (cssHeight - (12 * H_tile)) / 2 + 15;
 
-    for (let x = 7; x >= 0; x--) {
-      for (let y = 7; y >= 0; y--) {
+    for (let x = 11; x >= 0; x--) {
+      for (let y = 11; y >= 0; y--) {
         const px = (x - y) * (W_tile / 2) + X_offset;
         const py = (x + y) * (H_tile / 2) + Y_offset;
 
-        if (mode === 'parent') {
-          const outpost = outposts.find(o => o.gridX === x && o.gridY === y);
-          if (outpost) {
-            const floatOffset = Math.sin(performance.now() / 950 + (x * 1.37) + (y * 0.73)) * 5.5;
-            const animatedPy = py + floatOffset;
-            const outW = W_tile * 1.5;
-            const outH = H_tile * 2.7;
-            const minX = px - outW / 2;
-            const maxX = px + outW / 2;
-            const minY = animatedPy - outH + H_tile * 0.38;
-            const maxY = animatedPy + H_tile * 0.5;
-            if (mx >= minX && mx <= maxX && my >= minY && my <= maxY) {
-              return { type: 'outpost', data: outpost, px, py: animatedPy };
-            }
-          }
-        }
-
         // Main buildings hit tests
         const hits: Array<[number, number, number, number, number, number, keyof BuildingLevels]> = [
-          [1, 1, W_tile * 0.7, W_tile * 0.7, H_tile * 2, H_tile * 0.5, 'windmill'],
-          [1, 5, W_tile, W_tile, H_tile * 2.5, H_tile, 'bank'],
-          [3, 3, W_tile * 1.2, W_tile * 1.2, H_tile * 3, H_tile, 'center'],
-          [5, 1, W_tile, W_tile, H_tile * 2.5, H_tile, 'market'],
-          [5, 5, W_tile, W_tile, H_tile * 2.5, H_tile, 'farm'],
+          [2, 2, W_tile * 0.75, W_tile * 0.75, W_tile * 1.8, H_tile * 0.9, 'windmill'],
+          [2, 9, W_tile * 1.1, W_tile * 1.1, W_tile * 2.0, H_tile * 1.5, 'bank'],
+          [5, 5, W_tile * 1.35, W_tile * 1.35, W_tile * 2.6, H_tile * 1.5, 'center'],
+          [9, 2, W_tile * 1.1, W_tile * 1.1, W_tile * 2.0, H_tile * 1.5, 'market'],
+          [9, 9, W_tile * 1.55, W_tile * 1.55, W_tile * 2.2, H_tile * 1.4, 'farm'],
         ];
         for (const [hx, hy, hw, , hh, , bKey] of hits) {
           if (x === hx && y === hy) {
@@ -1040,7 +916,7 @@ export default function IsometricCanvas({
   }
 
   const canvasWidth = canvasRef.current ? canvasRef.current.width : 0;
-  const W_tile = canvasWidth ? (canvasWidth / (window.devicePixelRatio || 1)) / 10 : 60;
+  const W_tile = canvasWidth ? (canvasWidth / (window.devicePixelRatio || 1)) / 13.5 : 60;
   const H_tile = W_tile / 2;
 
   return (
@@ -1060,7 +936,7 @@ export default function IsometricCanvas({
           className="absolute bg-[#0D1527]/95 border border-white/15 p-4 rounded-2xl shadow-2xl z-50 backdrop-blur-md text-right font-sans min-w-[240px] pointer-events-none"
           style={{
             left: `${hoveredItem.px}px`,
-            top: `${hoveredItem.py - (hoveredItem.type === 'building' && hoveredItem.key === 'windmill' ? H_tile * 1.5 : H_tile * 2) - 15}px`,
+            top: `${hoveredItem.py - (hoveredItem.type === 'building' && hoveredItem.key === 'windmill' ? W_tile * 1.8 : W_tile * 2.3) - 15}px`,
             transform: 'translate(-50%, -100%)',
           }}
         >

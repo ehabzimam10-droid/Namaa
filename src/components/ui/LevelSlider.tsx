@@ -21,15 +21,15 @@ export default function LevelSlider({ currentLevel, onLevelChange, label }: Leve
         onChange={(e) => onLevelChange(parseInt(e.target.value))}
         className="w-full h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer accent-[#E57A44]"
         style={{
-          background: `linear-gradient(to left, #E57A44 ${((currentLevel - 1) / 4) * 100}%, rgba(255,255,255,0.1) 0%)`
+          background: `linear-gradient(to right, #E57A44 ${((currentLevel - 1) / 4) * 100}%, rgba(255,255,255,0.1) 0%)`
         }}
       />
       <div className="flex justify-between text-[9px] text-slate-500 px-1 font-sans">
-        <span>5 (عظيم)</span>
-        <span>4</span>
-        <span>3</span>
-        <span>2</span>
         <span>1 (تأسيسي)</span>
+        <span>2</span>
+        <span>3</span>
+        <span>4</span>
+        <span>5 (عظيم)</span>
       </div>
     </div>
   );
