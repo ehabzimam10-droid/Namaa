@@ -1046,14 +1046,35 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const updateFamilyLevel = async (newLevel: number) => {
     if (!profile) return;
+    if (profile.family_castle_level === newLevel) return; // Prevent redundant spam updates
     try {
+      let userId = profile.id;
+      if (!userId || userId === 'undefined') {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          userId = user.id;
+          const updatedProfile = { ...profile, id: user.id };
+          setProfileState(updatedProfile);
+          localStorage.setItem('namaa_profile', JSON.stringify(updatedProfile));
+        }
+      }
+
+      if (!userId || userId === 'undefined') {
+        console.warn('Skipped Supabase profiles update: No valid authenticated user ID found.');
+        // Perform optimistic update anyway
+        const updatedProfile = { ...profile, family_castle_level: newLevel };
+        setProfileState(updatedProfile);
+        localStorage.setItem('namaa_profile', JSON.stringify(updatedProfile));
+        return;
+      }
+
       const { error } = await supabase
         .from('profiles')
         .update({ family_castle_level: newLevel })
-        .eq('id', profile.id);
+        .eq('id', userId);
       
       if (!error) {
-        const updatedProfile = { ...profile, family_castle_level: newLevel };
+        const updatedProfile = { ...profile, id: userId, family_castle_level: newLevel };
         setProfileState(updatedProfile);
         localStorage.setItem('namaa_profile', JSON.stringify(updatedProfile));
         showToast('تم تحديث مستوى القلعة العائلية بنجاح!', 'success');
@@ -1067,6 +1088,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const updateKidLevels = async (kidId: string, newLevel: number) => {
+    if (!kidId || kidId === 'undefined') {
+      console.warn('Skipped kids_profiles update: kidId is undefined.');
+      return;
+    }
+    
+    // Find the kid to check if levels are already equal
+    const targetKid = kids.find(k => k.id === kidId);
+    if (targetKid && targetKid.center_level === newLevel && targetKid.bank_level === newLevel && targetKid.farm_level === newLevel && targetKid.market_level === newLevel) {
+      return; // Skip redundant updates
+    }
+
     try {
       const { error } = await supabase
         .from('kids_profiles')

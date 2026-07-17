@@ -102,9 +102,7 @@ export default function FatherVillagePage() {
               kids={localKids}
               onOutpostClick={(childId) => {
                 const kid = localKids.find(k => k.id === childId);
-                if (kid) {
-                  setSelectedKid(kid);
-                }
+                if (kid) setSelectedKid(kid);
               }}
             />
           </div>

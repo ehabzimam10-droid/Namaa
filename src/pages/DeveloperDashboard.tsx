@@ -96,13 +96,13 @@ export default function DeveloperDashboard() {
     setLoginLoading(email);
     try {
       // Attempt sign-in with default password
-      await supabase.auth.signInWithPassword({
+      const { data } = await supabase.auth.signInWithPassword({
         email,
         password: 'password123',
       });
       
       const name = email === 'father@namaa.com' ? 'أبو خالد' : email === 'salem@namaa.com' ? 'سالم' : 'خالد';
-      setProfile({ name, role });
+      setProfile({ id: data?.user?.id, name, role });
 
       if (email === 'father@namaa.com') {
         navigate('/father');

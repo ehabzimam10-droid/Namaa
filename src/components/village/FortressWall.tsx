@@ -8,7 +8,7 @@ export default function FortressWall({ level }: FortressWallProps) {
   const lvl = Math.min(5, Math.max(1, level));
   return (
     <img
-      src={`/assets/village/wall_${lvl}.png.png`}
+      src={`/assets/village/wall_${lvl}.png`}
       alt={`Fortress Wall Level ${lvl}`}
       className="w-full h-full object-contain"
     />

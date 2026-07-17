@@ -71,7 +71,9 @@ export default function LoginPage() {
       }
 
       // Set profile in Context
-      setProfile({ name, role });
+      const userId = data?.user?.id;
+      const fCastleLvl = profile?.family_castle_level || 3;
+      setProfile({ id: userId, name, role, family_castle_level: fCastleLvl });
 
       // Redirect based on role
       if (role === 'father') {
