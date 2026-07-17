@@ -52,21 +52,17 @@ export default function VillageBoard({ levels, wallLevel }: VillageBoardProps) {
   return (
     <div className="w-full max-w-4xl mx-auto p-6 font-sans text-right select-none relative">
       {/* 1. Production Interactive CSS Grid Layout */}
-      <div 
-        className="grid grid-cols-1 md:grid-cols-3 gap-[2rem] justify-center items-center"
-        style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '2rem' }}
-      >
-        {/* BANK (Column 1, Row 1) */}
+      <div className="grid grid-cols-3 gap-8 p-4 bg-slate-950/80 rounded-3xl border border-white/10">
+        
+        {/* BANK (Cell 1) */}
         <div
           onMouseEnter={() => setHoveredBuilding('bank')}
           onMouseLeave={() => setHoveredBuilding(null)}
-          className="relative group cursor-pointer transition-all duration-300 hover:scale-110 w-full flex flex-col items-center justify-center p-6 bg-white/5 border border-white/10 rounded-3xl shadow-xl backdrop-blur-md"
-          style={{ gridColumn: '1', gridRow: '1' }}
+          className="relative group cursor-pointer flex items-center justify-center transition-transform hover:scale-110 p-4"
         >
           <div className="w-32 h-32 flex items-center justify-center">
             <BankSVG level={levels.bank} />
           </div>
-          <span className="mt-3 text-xs font-bold text-slate-300">حصالة الادخار 💰</span>
           
           {/* Glassmorphic Tooltip */}
           <div className="absolute bottom-[105%] left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 pointer-events-none transition-all duration-300 bg-[#0D1527]/95 border border-white/15 px-3 py-1.5 rounded-xl shadow-2xl text-center z-50 backdrop-blur-md text-white whitespace-nowrap min-w-[200px]">
@@ -75,36 +71,32 @@ export default function VillageBoard({ levels, wallLevel }: VillageBoardProps) {
           </div>
         </div>
 
-        {/* CENTER CASTLE (Column 2, Row 1 & 2) */}
+        {/* FARM (Cell 2) */}
         <div
-          onMouseEnter={() => setHoveredBuilding('center')}
+          onMouseEnter={() => setHoveredBuilding('farm')}
           onMouseLeave={() => setHoveredBuilding(null)}
-          className="relative group cursor-pointer transition-all duration-300 hover:scale-110 w-full flex flex-col items-center justify-center p-8 bg-white/5 border border-white/10 rounded-3xl shadow-xl backdrop-blur-md md:col-start-2 md:row-start-1 md:row-span-2"
-          style={{ gridColumn: '2', gridRow: '1 / span 2' }}
+          className="relative group cursor-pointer flex items-center justify-center transition-transform hover:scale-110 p-4"
         >
-          <div className="w-40 h-40 flex items-center justify-center">
-            <CenterSVG level={levels.center} />
+          <div className="w-32 h-32 flex items-center justify-center">
+            <FarmSVG level={levels.farm} />
           </div>
-          <span className="mt-4 text-sm font-extrabold text-orange-400">القلعة المركزية 🏰</span>
 
           {/* Glassmorphic Tooltip */}
           <div className="absolute bottom-[105%] left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 pointer-events-none transition-all duration-300 bg-[#0D1527]/95 border border-white/15 px-3 py-1.5 rounded-xl shadow-2xl text-center z-50 backdrop-blur-md text-white whitespace-nowrap min-w-[200px]">
-            <span className="text-[10px] text-slate-400 block font-sans">{buildingDetails.center.desc}</span>
-            <span className="text-xs font-black text-[#FFD700] block mt-1">{buildingDetails.center.title} - {buildingDetails.center.levelText}</span>
+            <span className="text-[10px] text-slate-400 block font-sans">{buildingDetails.farm.desc}</span>
+            <span className="text-xs font-black text-emerald-400 block mt-1">{buildingDetails.farm.title} - {buildingDetails.farm.levelText}</span>
           </div>
         </div>
 
-        {/* MARKET (Column 3, Row 1) */}
+        {/* MARKET (Cell 3) */}
         <div
           onMouseEnter={() => setHoveredBuilding('market')}
           onMouseLeave={() => setHoveredBuilding(null)}
-          className="relative group cursor-pointer transition-all duration-300 hover:scale-110 w-full flex flex-col items-center justify-center p-6 bg-white/5 border border-white/10 rounded-3xl shadow-xl backdrop-blur-md"
-          style={{ gridColumn: '3', gridRow: '1' }}
+          className="relative group cursor-pointer flex items-center justify-center transition-transform hover:scale-110 p-4"
         >
           <div className="w-32 h-32 flex items-center justify-center">
             <MarketSVG level={levels.market} />
           </div>
-          <span className="mt-3 text-xs font-bold text-slate-300">سوق الاستثمار 📈</span>
 
           {/* Glassmorphic Tooltip */}
           <div className="absolute bottom-[105%] left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 pointer-events-none transition-all duration-300 bg-[#0D1527]/95 border border-white/15 px-3 py-1.5 rounded-xl shadow-2xl text-center z-50 backdrop-blur-md text-white whitespace-nowrap min-w-[200px]">
@@ -113,17 +105,32 @@ export default function VillageBoard({ levels, wallLevel }: VillageBoardProps) {
           </div>
         </div>
 
-        {/* WINDMILL (Column 1, Row 2) */}
+        {/* CENTER CASTLE (Cell 4: Prominent grid area - e.g. center col-start-2 in Row 2) */}
+        <div
+          onMouseEnter={() => setHoveredBuilding('center')}
+          onMouseLeave={() => setHoveredBuilding(null)}
+          className="relative group cursor-pointer flex items-center justify-center transition-transform hover:scale-110 p-4 col-start-2"
+        >
+          <div className="w-36 h-36 flex items-center justify-center">
+            <CenterSVG level={levels.center} />
+          </div>
+
+          {/* Glassmorphic Tooltip */}
+          <div className="absolute bottom-[105%] left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 pointer-events-none transition-all duration-300 bg-[#0D1527]/95 border border-white/15 px-3 py-1.5 rounded-xl shadow-2xl text-center z-50 backdrop-blur-md text-white whitespace-nowrap min-w-[200px]">
+            <span className="text-[10px] text-slate-400 block font-sans">{buildingDetails.center.desc}</span>
+            <span className="text-xs font-black text-[#FFD700] block mt-1">{buildingDetails.center.title} - {buildingDetails.center.levelText}</span>
+          </div>
+        </div>
+
+        {/* WINDMILL (Cell 5: Last grid cell) */}
         <div
           onMouseEnter={() => setHoveredBuilding('windmill')}
           onMouseLeave={() => setHoveredBuilding(null)}
-          className="relative group cursor-pointer transition-all duration-300 hover:scale-110 w-full flex flex-col items-center justify-center p-6 bg-white/5 border border-white/10 rounded-3xl shadow-xl backdrop-blur-md"
-          style={{ gridColumn: '1', gridRow: '2' }}
+          className="relative group cursor-pointer flex items-center justify-center transition-transform hover:scale-110 p-4 col-start-3"
         >
           <div className="w-32 h-32 flex items-center justify-center">
             <Windmill level={levels.windmill} />
           </div>
-          <span className="mt-3 text-xs font-bold text-slate-300">طاحونة المهام ⚙️</span>
 
           {/* Glassmorphic Tooltip */}
           <div className="absolute bottom-[105%] left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 pointer-events-none transition-all duration-300 bg-[#0D1527]/95 border border-white/15 px-3 py-1.5 rounded-xl shadow-2xl text-center z-50 backdrop-blur-md text-white whitespace-nowrap min-w-[200px]">
@@ -132,24 +139,6 @@ export default function VillageBoard({ levels, wallLevel }: VillageBoardProps) {
           </div>
         </div>
 
-        {/* FARM (Column 3, Row 2) */}
-        <div
-          onMouseEnter={() => setHoveredBuilding('farm')}
-          onMouseLeave={() => setHoveredBuilding(null)}
-          className="relative group cursor-pointer transition-all duration-300 hover:scale-110 w-full flex flex-col items-center justify-center p-6 bg-white/5 border border-white/10 rounded-3xl shadow-xl backdrop-blur-md"
-          style={{ gridColumn: '3', gridRow: '2' }}
-        >
-          <div className="w-32 h-32 flex items-center justify-center">
-            <FarmSVG level={levels.farm} />
-          </div>
-          <span className="mt-3 text-xs font-bold text-slate-300">واحة التبرعات 💚</span>
-
-          {/* Glassmorphic Tooltip */}
-          <div className="absolute bottom-[105%] left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 pointer-events-none transition-all duration-300 bg-[#0D1527]/95 border border-white/15 px-3 py-1.5 rounded-xl shadow-2xl text-center z-50 backdrop-blur-md text-white whitespace-nowrap min-w-[200px]">
-            <span className="text-[10px] text-slate-400 block font-sans">{buildingDetails.farm.desc}</span>
-            <span className="text-xs font-black text-emerald-400 block mt-1">{buildingDetails.farm.title} - {buildingDetails.farm.levelText}</span>
-          </div>
-        </div>
       </div>
 
       {/* 2. Legacy DOM block for test suite compatibility (hidden from production UI) */}
